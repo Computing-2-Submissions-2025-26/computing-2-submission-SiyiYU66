@@ -1,0 +1,306 @@
+/* Single Player styles — layered on top of multiplayer.css so both modes
+   share the same colour language, HUD and animation quality.
+   Only Single-Player-specific UI (difficulty select, bot deploy) lives here. */
+
+/* ═══════════════════════════════════════════════
+   DIFFICULTY SELECT — game-mode style carousel
+   ═══════════════════════════════════════════════ */
+#difficulty_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.2rem, 3.5vh, 2.6rem);
+    color: var(--ink);
+    font-family: var(--body-font-family);
+    background:
+        radial-gradient(circle at 50% 28%, rgba(79, 227, 255, 0.10), transparent 60%),
+        linear-gradient(135deg, #05080f, #0a1e2e 55%, #0e1c2a);
+}
+
+#difficulty_overlay.hidden {
+    display: none;
+}
+
+.diff-heading {
+    margin: 0;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 28px rgba(79, 227, 255, 0.5);
+}
+
+.diff-sub {
+    margin-top: -0.6rem;
+    color: var(--muted-ink);
+    font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+}
+
+.diff-carousel {
+    position: relative;
+    width: min(90vw, 34rem);
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid rgba(79, 227, 255, 0.18);
+    background: rgba(4, 8, 18, 0.6);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(79, 227, 255, 0.05);
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+}
+
+.diff-carousel:active {
+    cursor: grabbing;
+}
+
+.diff-track {
+    display: flex;
+    transition: transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.diff-card {
+    flex: 0 0 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    padding: clamp(1.8rem, 5vh, 3rem) 1.5rem;
+    opacity: 0.35;
+    transform: scale(0.82);
+    transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.diff-card.is-focus {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.diff-emoji {
+    font-size: clamp(4rem, 16vw, 8rem);
+    line-height: 1;
+    filter: drop-shadow(0 0 24px rgba(79, 227, 255, 0.4));
+}
+
+.diff-card.is-focus .diff-emoji {
+    animation: diff-emoji-in 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes diff-emoji-in {
+    0%   { transform: rotate(-45deg) scale(0.35); opacity: 0; }
+    60%  { transform: rotate(10deg) scale(1.18); opacity: 1; }
+    100% { transform: rotate(0) scale(1); opacity: 1; }
+}
+
+.diff-name {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.diff-desc {
+    max-width: 26ch;
+    text-align: center;
+    color: var(--muted-ink);
+    font-size: clamp(0.85rem, 2.2vw, 1.15rem);
+    line-height: 1.35;
+    min-height: 2.6em;
+}
+
+.diff-easy   .diff-name { color: #4ee08a; text-shadow: 0 0 18px rgba(78, 224, 138, 0.55); }
+.diff-normal .diff-name { color: #f7d37a; text-shadow: 0 0 18px rgba(247, 211, 122, 0.55); }
+.diff-hard   .diff-name { color: #ff5a4f; text-shadow: 0 0 18px rgba(255, 90, 79, 0.55); }
+
+.diff-controls {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.2rem, 4vw, 2.4rem);
+}
+
+.diff-arrow {
+    width: clamp(3rem, 7vw, 4.2rem);
+    height: clamp(3rem, 7vw, 4.2rem);
+    padding: 0;
+    border-radius: 50%;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    line-height: 1;
+}
+
+.diff-dots {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.diff-dot {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transition: all 320ms ease;
+}
+
+.diff-dot.is-active {
+    width: 2rem;
+    border-radius: 1rem;
+    background: var(--radar);
+    box-shadow: 0 0 12px rgba(79, 227, 255, 0.6);
+}
+
+.diff-start {
+    min-width: 14rem;
+    font-size: clamp(1.1rem, 3vw, 1.55rem);
+    padding: 1rem 2.5rem;
+}
+
+/* ═══════════════════════════════════════════════
+   BOT DEPLOY PHASE
+   ═══════════════════════════════════════════════ */
+#bot_deploy_banner {
+    position: fixed;
+    top: 13%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9000;
+    padding: 0.9rem 2rem;
+    border-radius: 14px;
+    color: #cdeaff;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: clamp(1rem, 3vw, 1.7rem);
+    background: rgba(4, 8, 18, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(58, 174, 224, 0.5);
+    box-shadow: 0 0 30px rgba(58, 174, 224, 0.3);
+    animation: banner-pulse 1400ms ease-in-out infinite alternate;
+}
+
+#bot_deploy_banner.hidden {
+    display: none;
+}
+
+@keyframes banner-pulse {
+    from { box-shadow: 0 0 20px rgba(58, 174, 224, 0.2); }
+    to   { box-shadow: 0 0 40px rgba(58, 174, 224, 0.6); }
+}
+
+/* ── (4) Radar scanner sweeping the bot board perimeter ──
+   The bot board stays EMPTY — the scanner only glows border cells, it never
+   reveals ship positions. A bright head with a 3-cell fading trail. */
+body.bot-deploying #game_board_2 td.scan-head {
+    background: rgba(79, 227, 255, 0.40) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(150, 240, 255, 0.95),
+        0 0 20px rgba(79, 227, 255, 0.9) !important;
+}
+
+body.bot-deploying #game_board_2 td.scan-t1 {
+    background: rgba(79, 227, 255, 0.24) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(150, 240, 255, 0.55),
+        0 0 13px rgba(79, 227, 255, 0.5) !important;
+}
+
+body.bot-deploying #game_board_2 td.scan-t2 {
+    background: rgba(79, 227, 255, 0.13) !important;
+    box-shadow: 0 0 9px rgba(79, 227, 255, 0.32) !important;
+}
+
+body.bot-deploying #game_board_2 td.scan-t3 {
+    background: rgba(79, 227, 255, 0.06) !important;
+}
+
+/* (5) Subtle "AI system running" pulse on the empty bot board */
+.scanning-pulse {
+    animation: scan-pulse 1.8s ease-in-out infinite;
+    border-radius: 10px;
+}
+
+@keyframes scan-pulse {
+    0%, 100% { box-shadow: inset 0 0 26px rgba(79, 227, 255, 0.05); }
+    50%      { box-shadow: inset 0 0 60px rgba(79, 227, 255, 0.20); }
+}
+
+/* ── (3) Bot deployment status list — 5 ships fading one by one ── */
+.bot-deploy-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.6rem, 1.6vw, 1.4rem);
+    width: min(calc(var(--side-w) - 0.8rem), 820px);
+    max-width: 99%;
+    margin-top: clamp(0.6rem, 1.4vh, 1.1rem);
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: rgba(4, 8, 18, 0.7);
+    border: 1px solid rgba(58, 174, 224, 0.45);
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.42), 0 0 24px rgba(58, 174, 224, 0.16);
+}
+
+.bot-deploy-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 1;
+    transition: opacity 480ms ease, filter 480ms ease;
+}
+
+.bot-deploy-item img {
+    height: clamp(2.6rem, 6vmin, 4.4rem);
+    width: auto;
+    object-fit: contain;
+    /* Blue Bot tint, consistent with the main-side fleet colour */
+    filter: grayscale(1) brightness(1) sepia(1) saturate(3) hue-rotate(160deg);
+}
+
+.bot-deploy-item .ship-size-pip {
+    width: clamp(0.4rem, 1vw, 0.7rem);
+    height: clamp(0.4rem, 1vw, 0.7rem);
+    background: #40b8ff;
+    box-shadow: 0 0 6px rgba(64, 184, 255, 0.6);
+}
+
+.bot-deploy-item .ship-size-count { display: none; }
+
+/* Deployed: fade to 40% with a confirmation pop + glow */
+.bot-deploy-item.deployed {
+    opacity: 0.4;
+    animation: deploy-confirm 520ms ease;
+}
+
+@keyframes deploy-confirm {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.14); filter: drop-shadow(0 0 16px rgba(79, 227, 255, 0.9)); }
+    100% { transform: scale(1); }
+}
+
+/* During bot deploy both boards are calm (no turn dimming yet) */
+body.bot-deploying.battle-phase aside,
+body.bot-deploying.battle-phase main {
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+/* Single-player headings reuse the battle h2 colours (You = orange, Bot = blue) */
+body.battle-phase aside h2 { /* You — inherits orange from multiplayer.css */ }
+body.battle-phase main h2  { /* Bot — inherits blue from multiplayer.css */ }
+
+/* The base stylesheet hides #game_board_2 (multiplayer reveals it via JS).
+   Single player must explicitly show the bot board for deploy + battle. */
+body.battle-phase #game_board_2 {
+    visibility: visible;
+}
+
+/* Once the battle begins, the placement-only ship tray + buttons are gone. */
+body.battle-phase .ship_container,
+body.battle-phase #button_container_1 {
+    display: none;
+}

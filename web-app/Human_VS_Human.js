@@ -1,10 +1,10 @@
 import R from "./ramda.js";
-import Battleship from "./Battleship.js";
+import Battleship from "./BattleShip.js";
 import {
     playHitSound,
     playMissSound,
     playSunkSound
-} from "./sounds.js";
+} from "./sound.js";
 
 // ==========================================
 // AUDIO SYSTEM
@@ -593,14 +593,17 @@ const get_preview_cells = function (ship, x, y) {
 };
 
 // A placement is valid when every cell is in bounds and free of other ships.
-const is_preview_valid = function (game_board_index, cells) {
+// Valid when every cell is in bounds and free — except cells held by the ship
+// currently being repositioned (it is moving off them).
+const is_preview_valid = function (game_board_index, cells, ignore_name) {
     return cells.every(function (coords) {
         const cx = coords[0];
         const cy = coords[1];
         if (cx < 0 || cx >= width || cy < 0 || cy >= height) {
             return false;
         }
-        return !Battleship.is_ship_here(game_state[game_board_index][cy][cx]);
+        const cell = game_state[game_board_index][cy][cx];
+        return !Battleship.is_ship_here(cell) || cell.shipName === ignore_name;
     });
 };
 
@@ -616,10 +619,46 @@ const clear_preview = function (game_board_index) {
     });
 };
 
+// Keep the repositioning ship's current footprint highlighted as a reference.
+const mark_origin = function (game_board_index) {
+    if (!table_cells || !table_cells[game_board_index]) {
+        return;
+    }
+    table_cells[game_board_index].forEach(function (row) {
+        row.forEach(function (td) { td.classList.remove("place-origin"); });
+    });
+    if (!repositioning || selected_ship_name === undefined) {
+        return;
+    }
+    game_state[game_board_index].forEach(function (row, r) {
+        row.forEach(function (cell, c) {
+            if (cell.shipName === selected_ship_name) {
+                table_cells[game_board_index][r][c].classList.add("place-origin");
+            }
+        });
+    });
+};
+
+// Brief settle animation on the cells a repositioned ship just landed on.
+const flash_landing = function (game_board_index, ship_name) {
+    game_state[game_board_index].forEach(function (row, r) {
+        row.forEach(function (cell, c) {
+            if (cell.shipName === ship_name) {
+                const cell_td = table_cells[game_board_index][r][c];
+                cell_td.classList.add("place-landed");
+                setTimeout(function () {
+                    cell_td.classList.remove("place-landed");
+                }, 500);
+            }
+        });
+    });
+};
+
 // Highlights, in green or red, the cells the selected ship would occupy.
 const show_preview = function (game_board_index, column_index, row_index) {
     clear_preview(game_board_index);
     if (selected_ship_name === undefined) {
+        mark_origin(game_board_index);
         return;
     }
     const ship = multiplayer_ship_array[game_board_index].find(
@@ -629,7 +668,11 @@ const show_preview = function (game_board_index, column_index, row_index) {
         return;
     }
     const cells = get_preview_cells(ship, column_index, row_index);
-    const valid = is_preview_valid(game_board_index, cells);
+    const valid = is_preview_valid(
+        game_board_index,
+        cells,
+        repositioning ? selected_ship_name : null
+    );
     cells.forEach(function (coords) {
         const cx = coords[0];
         const cy = coords[1];
@@ -639,6 +682,7 @@ const show_preview = function (game_board_index, column_index, row_index) {
             );
         }
     });
+    mark_origin(game_board_index);
 };
 
 // This function generates/fills up the cells of the tables in place mode.
@@ -661,30 +705,64 @@ const create_cell_in_row_to_place_ships = function (
         };
 
         td.onclick = function () {
-            if (selected_ship_name !== undefined) {
-                const ship_element = document.getElementsByClassName(
-                    "dragging"
-                );
-                const ship = multiplayer_ship_array[game_board_index].find(
-                    (ship) => ship.name === selected_ship_name
-                );
-                game_state[game_board_index] = Battleship.place_ship(
-                    game_state[game_board_index],
-                    ship,
-                    column_index,
-                    row_index,
-                    game_board_index
-                );
-                if (ship.placed === true) {
-                    if (ship_element[0]) {
-                        // Keep the ship in the tray, just dim it to "placed".
-                        ship_element[0].className = "ship is-placed";
-                    }
-                    selected_ship_name = undefined;
-                }
-                update_display();
-                update_deploy_controls();
+            if (selected_ship_name === undefined) {
+                return;
             }
+            const ship = multiplayer_ship_array[game_board_index].find(
+                (s) => s.name === selected_ship_name
+            );
+
+            // ── Repositioning an already-placed ship ──
+            if (repositioning) {
+                const cells = get_preview_cells(ship, column_index, row_index);
+                const valid = is_preview_valid(
+                    game_board_index, cells, selected_ship_name
+                );
+                const card = document.querySelector(
+                    "#ships_" + (game_board_index + 1) +
+                    " [data-ship=\"" + selected_ship_name + "\"]"
+                );
+                const moved_name = selected_ship_name;
+                if (valid) {
+                    pickup_ship(game_board_index, ship);
+                    game_state[game_board_index] = Battleship.place_ship(
+                        game_state[game_board_index], ship,
+                        column_index, row_index, game_board_index
+                    );
+                    repositioning = false;
+                    selected_ship_name = undefined;
+                    if (card) card.className = "ship is-placed";
+                    update_display();
+                    flash_landing(game_board_index, moved_name);
+                } else {
+                    repositioning = false;
+                    selected_ship_name = undefined;
+                    if (card) card.className = "ship is-placed";
+                    update_display();
+                }
+                clear_preview(game_board_index);
+                mark_origin(game_board_index);
+                update_deploy_controls();
+                return;
+            }
+
+            // ── Fresh placement ──
+            const ship_element = document.getElementsByClassName("dragging");
+            game_state[game_board_index] = Battleship.place_ship(
+                game_state[game_board_index],
+                ship,
+                column_index,
+                row_index,
+                game_board_index
+            );
+            if (ship.placed === true) {
+                if (ship_element[0]) {
+                    ship_element[0].className = "ship is-placed";
+                }
+                selected_ship_name = undefined;
+            }
+            update_display();
+            update_deploy_controls();
         };
 
         td.onkeydown = function (event) {
@@ -799,8 +877,20 @@ const create_ship_cell = function (ship, game_board_index, tr) {
             (s) => s.name === ship.name
         );
 
-        // Restore the previously selected tray cell to its resting look.
-        const prev = table.querySelector(".dragging");
+        // Clicking the ship already in reposition mode cancels it.
+        if (repositioning && selected_ship_name === ship.name) {
+            repositioning = false;
+            selected_ship_name = undefined;
+            td.className = "ship is-placed";
+            update_display();
+            clear_preview(game_board_index);
+            mark_origin(game_board_index);
+            update_deploy_controls();
+            return;
+        }
+
+        // Restore whichever card was previously active.
+        const prev = table.querySelector(".dragging, .is-repositioning");
         if (prev && prev !== td) {
             const prev_ship = multiplayer_ship_array[game_board_index].find(
                 (s) => s.name === prev.dataset.ship
@@ -808,18 +898,19 @@ const create_ship_cell = function (ship, game_board_index, tr) {
             prev.className = "ship" + (prev_ship && prev_ship.placed ? " is-placed" : "");
         }
 
-        // If already on the board, lift it back up so it can be repositioned.
-        if (ship_obj && ship_obj.placed) {
-            pickup_ship(game_board_index, ship_obj);
-        }
-
-        td.className = "dragging";
+        // A placed ship enters reposition mode and STAYS on the board as a
+        // reference until the move is confirmed; a fresh ship is just selected.
+        repositioning = Boolean(ship_obj && ship_obj.placed);
         selected_ship_name = img.id;
+        td.className = repositioning
+            ? "ship is-placed is-repositioning"
+            : "dragging";
         if (ship_obj) {
             img.style.transform = ship_obj.orientation === "vertical"
                 ? "rotate(90deg)" : "rotate(0deg)";
         }
         update_display();
+        mark_origin(game_board_index);
         update_deploy_controls();
     };
     td.tabIndex = 0;
@@ -885,10 +976,10 @@ const create_cell_in_row_to_shoot_ships = function (
                 return;
             }
 
-            // 
+            // 寮€鐏拰澹板憪蹇呴』浣滅敤鍦ㄧ洰鏍囨鐩樹笂
             if (next_player % 2 === game_board_index) {
                 
-                // 1. 
+                // 1. 鏍囧噯寮€鐏ā寮?
                 if (current_action_mode === "shoot" && td.className === "unshot" && !board_locked) {
                     board_locked = true;
                     document.body.classList.add("board-locked");
@@ -1055,7 +1146,7 @@ document.body.onkeydown = function (event) {
         }
     }
     
-    // 
+    // 鎸?R 閿棆杞垬鑸?
     if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
         const active_board_index = game_board_1.style.visibility === "hidden" ? 1 : 0;
         const selected_ship_object = multiplayer_ship_array[active_board_index].find((ship) => ship.name === selected_ship_name);
@@ -1079,6 +1170,7 @@ document.body.onkeydown = function (event) {
 // 1. Global battle state
 // ==========================================
 let selected_ship_name = undefined;
+let repositioning = false;   // true while moving an already-placed ship
 let next_player = 0;
 let sonar_scans_left = [2, 2];       // Each player has 2 sonar scans.
 let ghost_moves_left = [1, 1];       // Each player has 1 ghost move.
@@ -1589,7 +1681,7 @@ const update_battle_controls = function () {
 };
 
 // ==========================================
-// 5. 
+// 5. 鍒濆鍖栫粦瀹氫笌鍚姩
 // ==========================================
 create_rotate_button(button_container_1, 0);
 create_rotate_button(button_container_2, 1);

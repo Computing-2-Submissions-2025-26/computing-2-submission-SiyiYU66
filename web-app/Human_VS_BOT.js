@@ -1,11 +1,11 @@
 import R from "./ramda.js";
-import Battleship from "./Battleship.js";
+import Battleship from "./BattleShip.js";
 import {
     playHitSound,
     playMissSound,
     playSunkSound,
     playWinSound
-} from "./sounds.js";
+} from "./sound.js";
 
 // ==========================================================================
 // Single Player — same visual universe as Multiplayer, different rules.
@@ -30,6 +30,7 @@ let player_fleet = JSON.parse(JSON.stringify(Battleship.ship_array));
 let difficulty = "normal";
 let table_cells = [null, null];
 let selected_ship_name = undefined;
+let repositioning = false;   // true while moving an already-placed ship
 let board_locked = false;
 let phase = "difficulty";   // difficulty | placing | deploying | battle | over
 let turn = "player";        // player | bot
@@ -152,6 +153,21 @@ const pickup_ship = function (ship) {
     ship.placed = false;
 };
 
+// Brief settle animation on the cells a repositioned ship just landed on.
+const flash_landing = function (ship_name) {
+    game_state[0].forEach(function (row, r) {
+        row.forEach(function (cell, c) {
+            if (cell.shipName === ship_name) {
+                const cell_td = table_cells[0][r][c];
+                cell_td.classList.add("place-landed");
+                setTimeout(function () {
+                    cell_td.classList.remove("place-landed");
+                }, 500);
+            }
+        });
+    });
+};
+
 const create_ship_cell = function (ship, tr) {
     const td = document.createElement("td");
     td.className = "ship";
@@ -169,25 +185,38 @@ const create_ship_cell = function (ship, tr) {
     td.onclick = function () {
         const ship_obj = player_fleet.find((s) => s.name === ship.name);
 
-        // Restore the previously selected ship to its resting look.
-        const prev = ships_1.querySelector(".dragging");
+        // Clicking the ship that is already in reposition mode cancels it.
+        if (repositioning && selected_ship_name === ship.name) {
+            repositioning = false;
+            selected_ship_name = undefined;
+            td.className = "ship is-placed";
+            render_placement();
+            clear_preview();
+            mark_origin();
+            update_deploy_controls();
+            return;
+        }
+
+        // Restore whichever card was previously active.
+        const prev = ships_1.querySelector(".dragging, .is-repositioning");
         if (prev && prev !== td) {
             const prev_ship = player_fleet.find((s) => s.name === prev.dataset.ship);
             prev.className = "ship" + (prev_ship && prev_ship.placed ? " is-placed" : "");
         }
 
-        // Already placed? Lift it back up to reposition.
-        if (ship_obj && ship_obj.placed) {
-            pickup_ship(ship_obj);
-        }
-
-        td.className = "dragging";
+        // A placed ship enters reposition mode — it STAYS on the board as a
+        // reference until the move is confirmed. A fresh ship is just selected.
+        repositioning = Boolean(ship_obj && ship_obj.placed);
         selected_ship_name = img.id;
+        td.className = repositioning
+            ? "ship is-placed is-repositioning"
+            : "dragging";
         if (ship_obj) {
             img.style.transform = ship_obj.orientation === "vertical"
                 ? "rotate(90deg)" : "rotate(0deg)";
         }
         render_placement();
+        mark_origin();
         update_deploy_controls();
     };
     td.tabIndex = 0;
@@ -223,12 +252,15 @@ const get_preview_cells = function (ship, x, y) {
     return cells;
 };
 
-const is_preview_valid = function (cells) {
+// A placement is valid when every cell is in bounds and free — except cells
+// occupied by the ship currently being repositioned (it is moving off them).
+const is_preview_valid = function (cells, ignore_name) {
     return cells.every(function (coord) {
         const cx = coord[0];
         const cy = coord[1];
         if (cx < 0 || cx >= width || cy < 0 || cy >= height) return false;
-        return !Battleship.is_ship_here(game_state[0][cy][cx]);
+        const cell = game_state[0][cy][cx];
+        return !Battleship.is_ship_here(cell) || cell.shipName === ignore_name;
     });
 };
 
@@ -241,13 +273,36 @@ const clear_preview = function () {
     });
 };
 
+// While repositioning, keep the ship's current footprint highlighted (yellow)
+// as a reference until the move is confirmed.
+const mark_origin = function () {
+    if (!table_cells[0]) return;
+    table_cells[0].forEach(function (row) {
+        row.forEach(function (td) { td.classList.remove("place-origin"); });
+    });
+    if (!repositioning || selected_ship_name === undefined) return;
+    game_state[0].forEach(function (row, r) {
+        row.forEach(function (cell, c) {
+            if (cell.shipName === selected_ship_name) {
+                table_cells[0][r][c].classList.add("place-origin");
+            }
+        });
+    });
+};
+
 const show_preview = function (column_index, row_index) {
     clear_preview();
-    if (selected_ship_name === undefined) return;
+    if (selected_ship_name === undefined) {
+        mark_origin();
+        return;
+    }
     const ship = player_fleet.find((s) => s.name === selected_ship_name);
     if (!ship) return;
     const cells = get_preview_cells(ship, column_index, row_index);
-    const valid = is_preview_valid(cells);
+    const valid = is_preview_valid(
+        cells,
+        repositioning ? selected_ship_name : null
+    );
     cells.forEach(function (coord) {
         const cx = coord[0];
         const cy = coord[1];
@@ -257,6 +312,7 @@ const show_preview = function (column_index, row_index) {
             );
         }
     });
+    mark_origin();
 };
 
 const create_place_cell = function (row_index, tr) {
@@ -268,6 +324,39 @@ const create_place_cell = function (row_index, tr) {
         td.onclick = function () {
             if (selected_ship_name === undefined) return;
             const ship = player_fleet.find((s) => s.name === selected_ship_name);
+
+            // ── Repositioning an already-placed ship ──
+            if (repositioning) {
+                const cells = get_preview_cells(ship, column_index, row_index);
+                const valid = is_preview_valid(cells, selected_ship_name);
+                const card = ships_1.querySelector(
+                    "[data-ship=\"" + selected_ship_name + "\"]"
+                );
+                const moved_name = selected_ship_name;
+                if (valid) {
+                    pickup_ship(ship);   // clear the old position
+                    game_state[0] = Battleship.place_ship(
+                        game_state[0], ship, column_index, row_index, 0
+                    );
+                    repositioning = false;
+                    selected_ship_name = undefined;
+                    if (card) card.className = "ship is-placed";
+                    render_placement();
+                    flash_landing(moved_name);
+                } else {
+                    // Invalid drop — cancel smoothly, keep the original.
+                    repositioning = false;
+                    selected_ship_name = undefined;
+                    if (card) card.className = "ship is-placed";
+                    render_placement();
+                }
+                clear_preview();
+                mark_origin();
+                update_deploy_controls();
+                return;
+            }
+
+            // ── Fresh placement ──
             game_state[0] = Battleship.place_ship(
                 game_state[0], ship, column_index, row_index, 0
             );

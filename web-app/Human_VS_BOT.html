@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en-gb">
+<meta charset="utf-8">
+<title>Battleship — Single Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Reuse the full Multiplayer visual system, then add SP-only styles -->
+<link rel="stylesheet" href="Human_VS_Human.css">
+<link rel="stylesheet" href="Human_VS_BOT.css">
+<link rel="icon" href="./assets/favicon.png">
+<script type="module" src="Human_VS_BOT.js"></script>
+
+<header>
+    <h1>
+        <img src="./assets/battleship.png">
+        Battleship
+        <img src="./assets/battleship.png">
+    </h1>
+    <div id="game_rules"></div>
+</header>
+
+<aside>
+    <h2>You</h2>
+    <div class="game_board_container" id="game_container_1">
+        <table id="game_board_1" index="0"></table>
+    </div>
+    <div class="ship_container">
+        <table id="ships_1"></table>
+    </div>
+    <div id="button_container_1" class="button_container"></div>
+</aside>
+
+<div id="center_control" class="center-control"></div>
+
+<main>
+    <h2>Bot</h2>
+    <div class="game_board_container" id="game_container_2">
+        <table id="game_board_2" index="1"></table>
+    </div>
+</main>
+
+<div id="legend">
+    <div class="label-table">
+        <div class="legend-item">
+            <div class="colour-box ship-label"></div>
+            <div class="label">Ship</div>
+        </div>
+        <div class="legend-item">
+            <div class="colour-box hit-label"></div>
+            <div class="label">Hit</div>
+        </div>
+        <div class="legend-item">
+            <div class="colour-box miss-label"></div>
+            <div class="label">Miss</div>
+        </div>
+        <div class="legend-item">
+            <div class="colour-box sunken-ship-label"></div>
+            <div class="label">Sunken Ship</div>
+        </div>
+    </div>
+    <button onClick="window.location.reload();">New Game</button>
+</div>
+
+<div id="bot_deploy_banner" class="hidden">Bot is deploying its fleet…</div>
+
+<div id="difficulty_overlay">
+    <h1 class="diff-heading">Choose Your Battle</h1>
+    <div class="diff-sub">Drag or use the arrows to pick a difficulty</div>
+
+    <div class="diff-carousel" id="diff_carousel">
+        <div class="diff-track" id="diff_track">
+            <div class="diff-card diff-easy">
+                <div class="diff-emoji">🐟</div>
+                <div class="diff-name">Easy</div>
+                <div class="diff-desc">The bot fires blindly at random. A gentle warm-up.</div>
+            </div>
+            <div class="diff-card diff-normal">
+                <div class="diff-emoji">🎯</div>
+                <div class="diff-name">Normal</div>
+                <div class="diff-desc">The bot hunts around every hit to finish your ships.</div>
+            </div>
+            <div class="diff-card diff-hard">
+                <div class="diff-emoji">💀</div>
+                <div class="diff-name">Hard</div>
+                <div class="diff-desc">Ruthless targeting — the bot tracks lines and searches efficiently.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="diff-controls">
+        <button class="diff-arrow" id="diff_prev" aria-label="Previous difficulty">‹</button>
+        <div class="diff-dots" id="diff_dots"></div>
+        <button class="diff-arrow" id="diff_next" aria-label="Next difficulty">›</button>
+    </div>
+
+    <button class="diff-start save-turn-button is-ready" id="diff_start">Deploy Fleet</button>
+</div>

@@ -11,8 +11,8 @@
     --center-w: clamp(14rem, 22vw, 22rem);
     --side-w: calc((100vw - var(--center-w)) / 2);
 
-    --title-font-family: "Trebuchet MS", Arial, sans-serif;
-    --body-font-family: "Trebuchet MS", Arial, sans-serif;
+    --title-font-family: "Orbitron", "Trebuchet MS", Arial, sans-serif;
+    --body-font-family: "Chakra Petch", "Trebuchet MS", Arial, sans-serif;
 
     --ink: #edf8ff;
     --muted-ink: #7a9aae;
@@ -2450,4 +2450,147 @@ body.battle-phase td {
         filter 200ms ease,
         box-shadow 220ms ease,
         background 220ms ease;
+}
+
+/* ═══════════════════════════════════════════════
+   DEPLOY PHASE — horizontal tactical layout (desktop)
+   Left: vertical fleet panel · Right: dominant board.
+   Mobile keeps the original stacked column layout.
+   ═══════════════════════════════════════════════ */
+@media (min-width: 901px) {
+    body.placing-player-1,
+    body.placing-player-2 {
+        --deploy-header-height: clamp(6.5rem, 15vh, 9.5rem);
+    }
+
+    body.placing-player-1 aside,
+    body.placing-player-2 main {
+        display: grid;
+        grid-template-columns: minmax(17rem, 28vw) 1fr;
+        grid-template-rows: 1fr auto;
+        grid-template-areas:
+            "fleet board"
+            "controls board";
+        align-items: center;
+        justify-items: center;
+        gap: clamp(1rem, 2.5vw, 2.4rem);
+        padding: clamp(1rem, 2.4vh, 2rem) clamp(1.4rem, 4vw, 4rem);
+    }
+
+    /* Left fleet panel — vertical list, ~1.5x larger, with a header */
+    body.placing-player-1 .ship_container,
+    body.placing-player-2 .ship_container {
+        grid-area: fleet;
+        align-self: stretch;
+        width: 100%;
+        max-width: 34rem;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: clamp(0.6rem, 1.4vh, 1.1rem);
+        overflow-y: auto;
+    }
+    body.placing-player-1 .ship_container::before,
+    body.placing-player-2 .ship_container::before {
+        content: "FLEET ROSTER";
+        font-family: var(--title-font-family);
+        font-size: clamp(0.8rem, 1.3vw, 1.05rem);
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--radar);
+        text-align: center;
+        opacity: 0.85;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid var(--line);
+    }
+
+    body.placing-player-1 .ship_container table,
+    body.placing-player-2 .ship_container table {
+        flex-direction: column;
+        width: 100%;
+        gap: clamp(0.5rem, 1.2vh, 1rem);
+    }
+    body.placing-player-1 .ship_container tr,
+    body.placing-player-2 .ship_container tr {
+        flex-direction: column;
+        width: 100%;
+        gap: clamp(0.5rem, 1.2vh, 1rem);
+    }
+    /* Horizontal ship cards: icon left, name + length pips right */
+    body.placing-player-1 .ship_container td,
+    body.placing-player-2 .ship_container td {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: clamp(0.8rem, 1.6vw, 1.5rem);
+        width: 100%;
+        padding: clamp(0.55rem, 1.3vh, 1rem) clamp(0.9rem, 1.6vw, 1.4rem);
+        text-align: left;
+    }
+    body.placing-player-1 .ship_container img,
+    body.placing-player-2 .ship_container img {
+        height: clamp(3.4rem, 5.4vw, 5.4rem);   /* ~1.5x the stacked size */
+        flex: 0 0 auto;
+    }
+    body.placing-player-1 .ship_container .ship-name,
+    body.placing-player-2 .ship_container .ship-name {
+        font-size: clamp(0.85rem, 1.4vw, 1.2rem);
+    }
+    body.placing-player-1 .ship_container .ship-size-strip,
+    body.placing-player-2 .ship_container .ship-size-strip {
+        justify-content: flex-start;
+    }
+
+    /* Controls (rotate / save) under the fleet panel */
+    body.placing-player-1 .button_container,
+    body.placing-player-2 .button_container {
+        grid-area: controls;
+        width: 100%;
+        max-width: 34rem;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    body.placing-player-1 .button_container button,
+    body.placing-player-2 .button_container button {
+        width: 100%;
+    }
+
+    /* Right side — the board is the dominant element, centred */
+    body.placing-player-1 .game_board_container,
+    body.placing-player-2 .game_board_container {
+        grid-area: board;
+        width: min(54vw, calc(100vh - var(--deploy-header-height) - 4rem), 56rem);
+        max-width: 100%;
+    }
+}
+
+/* ── Reposition reference: the ship being moved stays visible (yellow) ── */
+body.placing-player-1 #game_board_1 td.place-origin,
+body.placing-player-2 #game_board_2 td.place-origin {
+    box-shadow:
+        inset 0 0 0 3px rgba(247, 211, 122, 0.95),
+        0 0 16px rgba(247, 211, 122, 0.5) !important;
+    animation: place-origin-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes place-origin-pulse {
+    from { box-shadow: inset 0 0 0 3px rgba(247,211,122,0.6), 0 0 10px rgba(247,211,122,0.3); }
+    to   { box-shadow: inset 0 0 0 3px rgba(247,211,122,1),   0 0 22px rgba(247,211,122,0.6); }
+}
+
+/* Landing flash when a repositioned ship settles into its new spot */
+.place-landed { animation: place-land 480ms ease both; }
+@keyframes place-land {
+    0%   { transform: scale(0.62); filter: brightness(2.2); }
+    55%  { transform: scale(1.12); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* The tray card currently being repositioned reads as "active" */
+.ship.is-repositioning {
+    opacity: 1;
+    outline: 2px solid var(--splash);
+    background:
+        linear-gradient(135deg, rgba(247, 211, 122, 0.26), rgba(79, 227, 255, 0.12)) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset, 0 0 24px rgba(247,211,122,0.3);
 }
