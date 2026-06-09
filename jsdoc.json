@@ -1,10 +1,10 @@
-{
+﻿{
     "tags": {
         "allowUnknownTags": false
     },
     "source": {
         "include": [
-            "web-app/Module.js"
+            "web-app/BattleShip.js"
         ],
         "includePattern": "\\.js$",
         "excludePattern": "(node_modules/|docs)"
@@ -41,3 +41,4 @@
         "ShortenTypes": true
     }
 }
+
