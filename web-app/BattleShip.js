@@ -2,7 +2,11 @@ import R from "./ramda.js";
 
 /**
  * @namespace Battleship
- * @description Module for the classic Battleship board game.
+ * @description A pure-functional engine for the classic Battleship board game.
+ * The board is the single source of truth: a ship's identity and footprint are
+ * read directly from the cells (via {@link Battleship.cell|cell.shipName}),
+ * so every operation depends only on its arguments — there is no hidden
+ * module state to keep in sync.
  * @see https://en.wikipedia.org/wiki/Battleship_(game)
  * @author Siyi Yu
  * @version 2026
@@ -14,6 +18,7 @@ const Battleship = Object.create(null);
  * @typedef {Object} cell
  * @property {boolean} ship Whether a ship occupies this square
  * @property {boolean} shot Whether this square has been fired upon
+ * @property {string} [shipName] Identity of the occupying ship, if any
  */
 
 /**
@@ -31,44 +36,36 @@ const Battleship = Object.create(null);
  * @property {boolean} placed
  */
 
+// ===========================================================================
+// 1. FLEET DATA
+// ===========================================================================
+
 /**
+ * The five standard ships of a single fleet.
  * @memberof Battleship
  * @typedef {Battleship.Ship[]} ship_array
  */
 Battleship.ship_array = [
-    {
-        "name": "carrier",
-        "length": 5,
-        "orientation": "horizontal",
-        "placed": false
-    },
-    {
-        "name": "battleship",
-        "length": 4,
-        "orientation": "horizontal",
-        "placed": false
-    },
-    {
-        "name": "cruiser",
-        "length": 3,
-        "orientation": "horizontal",
-        "placed": false
-    },
-    {
-        "name": "submarine",
-        "length": 3,
-        "orientation": "horizontal",
-        "placed": false
-    },
-    {
-        "name": "destroyer",
-        "length": 2,
-        "orientation": "horizontal",
-        "placed": false
-    }
+    {"name": "carrier", "length": 5, "orientation": "horizontal", "placed": false},
+    {"name": "battleship", "length": 4, "orientation": "horizontal", "placed": false},
+    {"name": "cruiser", "length": 3, "orientation": "horizontal", "placed": false},
+    {"name": "submarine", "length": 3, "orientation": "horizontal", "placed": false},
+    {"name": "destroyer", "length": 2, "orientation": "horizontal", "placed": false}
 ];
 
-let ship_locations = [{}, {}];
+/**
+ * Two independent fleets, one per player, for the two-player game.
+ * @memberof Battleship
+ * @typedef {Battleship.ship_array[]} multiplayer_ship_array
+ */
+Battleship.multiplayer_ship_array = [
+    JSON.parse(JSON.stringify(Battleship.ship_array)),
+    JSON.parse(JSON.stringify(Battleship.ship_array))
+];
+
+// ===========================================================================
+// 2. BOARD CREATION
+// ===========================================================================
 
 /**
  * Returns a fresh empty board of the given dimensions.
@@ -79,11 +76,12 @@ let ship_locations = [{}, {}];
  * @returns {Battleship.Board} An empty board
  */
 Battleship.empty_board = function (width = 10, height = 10) {
-    return R.repeat(
-        R.repeat({"ship": false, "shot": false}, width),
-        height
-    );
+    return R.repeat(R.repeat({"ship": false, "shot": false}, width), height);
 };
+
+// ===========================================================================
+// 3. CELL PREDICATES
+// ===========================================================================
 
 /**
  * Returns true when the cell contains a ship.
@@ -96,211 +94,182 @@ Battleship.is_ship_here = function (cell) {
     return cell.ship === true;
 };
 
-const get_occupied_cells = function (board, ship, col, row) {
-    if (ship.orientation === "horizontal") {
-        return board[row].slice(col, col + ship.length);
-    }
-    if (ship.orientation === "vertical") {
-        const column = board.map(function (r) {
-            return r[col];
-        });
-        return column.slice(row, row + ship.length);
-    }
+const is_cell_shot = function (cell) {
+    return cell.shot === true;
 };
 
-const check_overlap = function (board, ship, col, row) {
-    const cells = get_occupied_cells(board, ship, col, row);
-    if (cells) {
-        return get_occupied_cells(board, ship, col, row).some(
-            Battleship.is_ship_here
+// ===========================================================================
+// 4. GEOMETRY & VALIDATION  (pure helpers)
+// ===========================================================================
+
+// The list of [x, y] cells a ship would occupy from a top-left anchor.
+const ship_footprint = function (ship, col, row) {
+    return R.range(0, ship.length).map(function (offset) {
+        return (
+            ship.orientation === "vertical"
+            ? [col, row + offset]
+            : [col + offset, row]
         );
-    }
+    });
 };
 
-const check_out_of_bounds = function (board, ship, col, row) {
-    if (ship.orientation === "vertical") {
-        return col < 0 || col > board[0].length ||
-        row < 0 || row > (board.length - ship.length);
-    }
-    if (ship.orientation === "horizontal") {
-        return col < 0 || col > (board[0].length - ship.length) ||
-        row < 0 || row > board.length;
-    }
+const is_in_bounds = function (board, coords) {
+    return coords[0] >= 0 && coords[0] < board[0].length &&
+        coords[1] >= 0 && coords[1] < board.length;
 };
 
-const insert_ship_into_board = function (
-    board,
-    ship,
-    col,
-    row,
-    boardIdx
-) {
-    ship_locations[boardIdx][ship.name] = [];
-    if (ship.orientation === "horizontal") {
-        R.range(0, ship.length).forEach(function (offset) {
-            const cx = col + offset;
-            const new_cell = Object.assign({}, board[row][cx], {
-                "ship": true,
-                "shipName": ship.name
-            });
-            const new_row = R.update(cx, new_cell, board[row]);
-            board = R.update(row, new_row, board);
-            ship_locations[boardIdx][ship.name].push([cx, row]);
-        });
-    }
-    if (ship.orientation === "vertical") {
-        R.range(0, ship.length).forEach(function (offset) {
-            const cy = row + offset;
-            const new_cell = Object.assign({}, board[cy][col], {
-                "ship": true,
-                "shipName": ship.name
-            });
-            const new_row = R.update(col, new_cell, board[cy]);
-            board = R.update(cy, new_row, board);
-            ship_locations[boardIdx][ship.name].push([col, cy]);
-        });
-    }
-    return board;
+const footprint_in_bounds = function (board, footprint) {
+    return footprint.every(function (coords) {
+        return is_in_bounds(board, coords);
+    });
 };
+
+const footprint_overlaps = function (board, footprint) {
+    return footprint.some(function (coords) {
+        return Battleship.is_ship_here(board[coords[1]][coords[0]]);
+    });
+};
+
+// Immutably returns a board with one cell merged with the given patch.
+const update_cell = function (board, x, y, patch) {
+    const merged = Object.assign({}, board[y][x], patch);
+    return R.update(y, R.update(x, merged, board[y]), board);
+};
+
+// Immutably returns a board with a ship cleared from one cell (shot is kept).
+const clear_ship_from_cell = function (board, x, y) {
+    const cleared = Object.assign({}, board[y][x], {"ship": false});
+    delete cleared.shipName;
+    return R.update(y, R.update(x, cleared, board[y]), board);
+};
+
+// Every [x, y] on the board currently occupied by the named ship.
+const ship_cells_of = function (board, ship_name) {
+    return board.reduce(function (coords, row, y) {
+        return coords.concat(row.reduce(function (in_row, cell, x) {
+            return (
+                cell.shipName === ship_name
+                ? in_row.concat([[x, y]])
+                : in_row
+            );
+        }, []));
+    }, []);
+};
+
+// ===========================================================================
+// 5. PLACEMENT
+// ===========================================================================
 
 /**
- * Places a ship on the board if all constraints are satisfied.
+ * Places a ship on the board when in bounds, non-overlapping and not yet
+ * placed. On any rule violation the original board is returned unchanged
+ * (same reference), which callers can test with `result === board`.
  * @memberof Battleship
  * @function
  * @param {Battleship.Board} board The board to place on
  * @param {Battleship.Ship} ship The ship being placed
  * @param {number} x_top_left Column index of the top-left cell
  * @param {number} y_top_left Row index of the top-left cell
- * @param {(0|1)} game_board_index The board number
- * @returns {Battleship.Board} The new board with the ship placed
+ * @returns {Battleship.Board} A new board with the ship placed, or the
+ * original board if placement was illegal
  */
-Battleship.place_ship = function (
-    board,
-    ship,
-    x_top_left,
-    y_top_left,
-    game_board_index
-) {
+Battleship.place_ship = function (board, ship, x_top_left, y_top_left) {
     if (ship === undefined) {
-        console.log("You haven't selected a ship yet");
         return board;
     }
-    if (check_out_of_bounds(board, ship, x_top_left, y_top_left)) {
-        console.log("The ship is out of bounds");
+    const footprint = ship_footprint(ship, x_top_left, y_top_left);
+    if (!footprint_in_bounds(board, footprint)) {
         return board;
     }
-    if (check_overlap(board, ship, x_top_left, y_top_left)) {
-        console.log("There is already a ship here");
+    if (footprint_overlaps(board, footprint)) {
         return board;
     }
     if (ship.placed === true) {
-        console.log("This ship has already been placed");
         return board;
     }
-    const new_board = insert_ship_into_board(
-        board,
-        ship,
-        x_top_left,
-        y_top_left,
-        game_board_index
+    // Only tag the cell with an identity when the ship actually has a name.
+    const patch = (
+        ship.name === undefined
+        ? {"ship": true}
+        : {"ship": true, "shipName": ship.name}
     );
+    const new_board = footprint.reduce(function (acc, coords) {
+        return update_cell(acc, coords[0], coords[1], patch);
+    }, board);
     ship.placed = true;
     return new_board;
 };
 
+// ===========================================================================
+// 6. MOVEMENT  (ghost move)
+// ===========================================================================
+
 /**
- * Shifts a placed ship one step in the given direction.
+ * Shifts an already-placed ship one cell in the given direction. The vacated
+ * cells keep their `shot` flag (a hit there becomes a miss), while the cells
+ * the ship moves onto are reset to un-shot. Illegal moves (off-board, or
+ * blocked by a different ship) return the original board unchanged.
  * @memberof Battleship
  * @function
  * @param {Battleship.Board} board
  * @param {string} ship_name
  * @param {("up"|"down"|"left"|"right")} direction
- * @param {(0|1)} game_board_index
  * @returns {Battleship.Board}
  */
-Battleship.move_ship = function (
-    board,
-    ship_name,
-    direction,
-    game_board_index
-) {
-    const delta_map = {
+Battleship.move_ship = function (board, ship_name, direction) {
+    const deltas = {
         "up": [0, -1],
         "down": [0, 1],
         "left": [-1, 0],
         "right": [1, 0]
     };
-    const delta = delta_map[direction];
-    const current_coords = ship_locations[game_board_index][ship_name];
+    const delta = deltas[direction];
+    const current_coords = ship_cells_of(board, ship_name);
 
-    if (!delta || current_coords === undefined) {
+    if (delta === undefined || current_coords.length === 0) {
         return board;
     }
 
-    const new_coords = current_coords.map(function (cell_coords) {
-        return [
-            cell_coords[0] + delta[0],
-            cell_coords[1] + delta[1]
-        ];
+    const new_coords = current_coords.map(function (coords) {
+        return [coords[0] + delta[0], coords[1] + delta[1]];
     });
 
-    if (new_coords.some(function (cell_coords) {
-        return cell_coords[0] < 0 ||
-            cell_coords[0] >= board[0].length ||
-            cell_coords[1] < 0 ||
-            cell_coords[1] >= board.length;
-    })) {
+    if (!footprint_in_bounds(board, new_coords)) {
         return board;
     }
 
-    const old_coord_keys = current_coords.map(function (cell_coords) {
-        return `${cell_coords[0]},${cell_coords[1]}`;
+    // A destination is blocked only by a *different* ship, not by the cells
+    // this ship is vacating.
+    const old_keys = current_coords.map(function (coords) {
+        return coords[0] + "," + coords[1];
     });
-
-    if (new_coords.some(function (cell_coords) {
-        const target_cell = board[cell_coords[1]][cell_coords[0]];
-        const key = `${cell_coords[0]},${cell_coords[1]}`;
-        return Battleship.is_ship_here(target_cell) &&
-            !R.includes(key, old_coord_keys);
-    })) {
+    const is_blocked = new_coords.some(function (coords) {
+        const cell = board[coords[1]][coords[0]];
+        return Battleship.is_ship_here(cell) &&
+            !R.includes(coords[0] + "," + coords[1], old_keys);
+    });
+    if (is_blocked) {
         return board;
     }
 
-    let new_board = board.map(function (row) {
-        return row.map(function (cell) {
-            return Object.assign({}, cell);
-        });
-    });
-
-    current_coords.forEach(function (cell_coords) {
-        const x = cell_coords[0];
-        const y = cell_coords[1];
-        new_board[y][x] = Object.assign(
-            {}, new_board[y][x], {"ship": false}
-        );
-        delete new_board[y][x].shipName;
-    });
-
-    new_coords.forEach(function (cell_coords) {
-        const x = cell_coords[0];
-        const y = cell_coords[1];
-        new_board[y][x] = Object.assign({}, new_board[y][x], {
+    const cleared_board = current_coords.reduce(function (acc, coords) {
+        return clear_ship_from_cell(acc, coords[0], coords[1]);
+    }, board);
+    return new_coords.reduce(function (acc, coords) {
+        return update_cell(acc, coords[0], coords[1], {
             "ship": true,
             "shipName": ship_name,
             "shot": false
         });
-    });
-
-    ship_locations[game_board_index][ship_name] = new_coords;
-    return new_board;
+    }, cleared_board);
 };
 
-const is_cell_shot = function (cell) {
-    return cell.shot === true;
-};
+// ===========================================================================
+// 7. SHOOTING
+// ===========================================================================
 
 /**
- * Marks a cell as shot and returns the updated board.
+ * Fires at a cell. An already-shot cell leaves the board unchanged.
  * @memberof Battleship
  * @function
  * @param {Battleship.Board} board The board being played on
@@ -310,18 +279,54 @@ const is_cell_shot = function (cell) {
 Battleship.shoot_cell = function (board, cell_coords) {
     const x = cell_coords[0];
     const y = cell_coords[1];
-    const target_cell = board[y][x];
-    if (is_cell_shot(target_cell)) {
+    if (is_cell_shot(board[y][x])) {
         return board;
     }
-    const updated_cell = Object.assign({}, target_cell, {"shot": true});
-    const updated_row = R.update(x, updated_cell, board[y]);
-    return R.update(y, updated_row, board);
+    return update_cell(board, x, y, {"shot": true});
+};
+
+// ===========================================================================
+// 8. STATE QUERIES
+// ===========================================================================
+
+// Whether the ship occupying [x, y] is fully shot. Falls back to the single
+// cell when it carries no ship identity.
+const is_ship_sunk_at = function (board, x, y) {
+    const cell = board[y][x];
+    const ship_cells = (
+        cell.shipName === undefined
+        ? [cell]
+        : ship_cells_of(board, cell.shipName).map(function (coords) {
+            return board[coords[1]][coords[0]];
+        })
+    );
+    return ship_cells.every(is_cell_shot);
+};
+
+/**
+ * Returns the display state of a cell.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board A battleship board
+ * @param {Battleship.cell} cell A cell from the board
+ * @param {number[]} coords The [x, y] coordinates of the cell
+ * @returns {string} "unshot", "miss", "hit", or "sunken_ship"
+ */
+Battleship.cell_state = function (board, cell, coords) {
+    if (!is_cell_shot(cell)) {
+        return "unshot";
+    }
+    if (!Battleship.is_ship_here(cell)) {
+        return "miss";
+    }
+    if (is_ship_sunk_at(board, coords[0], coords[1])) {
+        return "sunken_ship";
+    }
+    return "hit";
 };
 
 const all_ships_hit_in_row = function (row) {
-    const ship_cells = row.filter(Battleship.is_ship_here);
-    return ship_cells.every(is_cell_shot);
+    return row.filter(Battleship.is_ship_here).every(is_cell_shot);
 };
 
 /**
@@ -334,111 +339,6 @@ const all_ships_hit_in_row = function (row) {
 Battleship.has_player_won = function (board) {
     return board.every(all_ships_hit_in_row);
 };
-
-/**
- * Returns the display state of a cell.
- * @memberof Battleship
- * @function
- * @param {Battleship.Board} board A battleship board
- * @param {Battleship.cell} cell A cell from the board
- * @param {number[]} coords The [x, y] coordinates of the cell
- * @param {(0|1)} game_board_index The board number
- * @returns {string} "unshot", "miss", "hit", or "sunken_ship"
- */
-Battleship.cell_state = function (
-    board,
-    cell,
-    coords,
-    game_board_index
-) {
-    if (is_cell_shot(cell)) {
-        if (Battleship.is_ship_here(cell)) {
-            if (is_cell_ship_sunk(board, coords, game_board_index)) {
-                return "sunken_ship";
-            }
-            return "hit";
-        }
-        return "miss";
-    }
-    return "unshot";
-};
-
-const set_random_orientation = function (ship) {
-    const options = ["horizontal", "vertical"];
-    ship.orientation = options[
-        Math.floor(Math.random() * options.length)
-    ];
-    return ship;
-};
-
-/**
- * Generates a board with all ships placed at random valid positions.
- * @memberof Battleship
- * @function
- * @returns {Battleship.Board} A board with randomly placed ships
- */
-Battleship.random_board = function () {
-    let board = Battleship.empty_board(10, 10);
-    Battleship.ship_array.forEach(function (ship) {
-        ship = set_random_orientation(ship);
-        let col = Math.floor(Math.random() * (10 - ship.length));
-        let row = Math.floor(Math.random() * (10 - ship.length));
-        let new_board = Battleship.place_ship(
-            board, ship, col, row, 0
-        );
-        while (new_board === board) {
-            col = Math.floor(Math.random() * (10 - ship.length));
-            row = Math.floor(Math.random() * (10 - ship.length));
-            new_board = Battleship.place_ship(
-                board, ship, col, row, 0
-            );
-        }
-        board = new_board.map(function (r) {
-            return r.map(R.identity);
-        });
-    });
-    return board;
-};
-// random → not unit-testable
-
-const all_ship_cells_shot = function (board, ship_cells_coords) {
-    if (ship_cells_coords === undefined) {
-    }
-    const ship_cells = ship_cells_coords.map(function (cell_coords) {
-        return board[cell_coords[1]][cell_coords[0]];
-    });
-    return ship_cells.every(is_cell_shot);
-};
-
-const find_ship_coords = function (cell_coords, game_board_index) {
-    const ships = Object.entries(ship_locations[game_board_index]);
-    let result = undefined;
-    ships.forEach(function (ship) {
-        const positions = ship[1];
-        if (R.includes(cell_coords, positions)) {
-            result = positions;
-        }
-    });
-    return result;
-};
-
-const is_cell_ship_sunk = function (board, cell_coords, game_board_index) {
-    return all_ship_cells_shot(
-        board,
-        find_ship_coords(cell_coords, game_board_index)
-    );
-};
-
-// multiplayer functions and variables
-
-/**
- * @memberof Battleship
- * @typedef {Battleship.ship_array[]} multiplayer_ship_array
- */
-Battleship.multiplayer_ship_array = [
-    JSON.parse(JSON.stringify(Battleship.ship_array)),
-    JSON.parse(JSON.stringify(Battleship.ship_array))
-];
 
 /**
  * Returns true if the named ship has been placed on the given board.
@@ -455,12 +355,43 @@ Battleship.is_ship_placed = function (
     multiplayer_ship_array,
     game_board_index
 ) {
-    const ship = multiplayer_ship_array[
-        game_board_index
-    ].find(function (s) {
-        return s.name === ship_name;
-    });
+    const ship = multiplayer_ship_array[game_board_index].find(
+        function (candidate) {
+            return candidate.name === ship_name;
+        }
+    );
     return ship.placed;
+};
+
+// ===========================================================================
+// 9. RANDOM SETUP  (single-player convenience; not unit-tested as it is random)
+// ===========================================================================
+
+const set_random_orientation = function (ship) {
+    const options = ["horizontal", "vertical"];
+    ship.orientation = options[Math.floor(Math.random() * options.length)];
+    return ship;
+};
+
+/**
+ * Generates a board with all of {@link Battleship.ship_array} placed at random
+ * valid positions.
+ * @memberof Battleship
+ * @function
+ * @returns {Battleship.Board} A board with randomly placed ships
+ */
+Battleship.random_board = function () {
+    return Battleship.ship_array.reduce(function (board, ship) {
+        ship.placed = false;
+        set_random_orientation(ship);
+        let next_board = board;
+        while (next_board === board) {
+            const col = Math.floor(Math.random() * (10 - ship.length));
+            const row = Math.floor(Math.random() * (10 - ship.length));
+            next_board = Battleship.place_ship(board, ship, col, row);
+        }
+        return next_board;
+    }, Battleship.empty_board(10, 10));
 };
 
 export default Object.freeze(Battleship);
