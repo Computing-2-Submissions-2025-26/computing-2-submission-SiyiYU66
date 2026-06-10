@@ -375,7 +375,7 @@ const create_play_button = function () {
             set_battle_titles();
             reset_display_to_shoot();
             
-            // 鍒涘缓娴姩闈㈡澘
+            // 
             // Centre control is in HTML — no dynamic panel needed
 
             // Create ship-status trackers (one per side)
@@ -423,7 +423,7 @@ const create_play_button = function () {
             [game_state[0], game_state[1]] = [game_state[1], game_state[0]];
             Audio_Manager.start_ambient();
 
-            // 鍗囩骇锛氬悎骞舵櫘閫氭覆鏌撲笌骞界伒鍙鎬ч€昏緫鐨勭粺涓€鏄剧ず寮曟搸
+            // 
             update_display = function () {
                 const active_player_idx = next_player % 2;
 
@@ -463,7 +463,7 @@ const create_play_button = function () {
                         row.forEach(function (cell, column_index) {
                             const table_cell = table_cells[game_board_index][row_index][column_index];
                             
-                            // 榛樿鐨偆娓叉煋
+                            // 
                             table_cell.className = Battleship.cell_state(
                                 game_board,
                                 cell,
@@ -479,20 +479,20 @@ const create_play_button = function () {
                                 "ghost-origin", "ghost-preview", "ghost-preview-invalid"
                             );
 
-                            // 鐗规畩閫昏緫锛氬菇鐏垫綔琛岄€夎埞妯″紡 涓?灞炰簬褰撳墠琛屽姩鐜╁鐨勩€愬繁鏂规鐩樸€?
-                            // 娉ㄦ剰锛氱敱浜庝笂闈㈤鍊掍簡鏁扮粍锛屽鏂规槸褰撳墠鏀诲嚮鐩爣(game_board_index === active_player_idx)
-                            // 閭ｄ箞鑷繁鐨勯槻瀹堟鐩樺疄闄呬笂鏄鏂逛笉闇€瑕佸紑鐏殑閭ｄ釜锛?1 - active_player_idx)
+                            // 
+                            // (game_board_index === active_player_idx)
+                            // 1 - active_player_idx)
                             const own_board_idx = (1 - active_player_idx);
 
                             if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move") && game_board_index === own_board_idx) {
-                                // 瀹夊叏璇诲彇灞炴€э細娣诲姞 cell 瀛樺湪鎬ф鏌ワ紝闃叉鎶ラ敊
+                                // 
                                 const ship_name = get_ship_name(cell);
                                 if (ship_name && Battleship.is_ship_here(cell) && !is_ship_sunk_by_name(game_board, ship_name)) {
                                     table_cell.className = "cell_with_ship"; 
                                     table_cell.classList.add("ghost-target");
                                     table_cell.style.cursor = "pointer";
                                     
-                                    // 绱壊楂樹寒杞粨閫変腑鐩爣
+                                    // 
                                     if (ghost_selected_ship && ship_name === ghost_selected_ship) {
                                         table_cell.classList.add("ghost-origin");
                                     }
@@ -976,10 +976,10 @@ const create_cell_in_row_to_shoot_ships = function (
                 return;
             }
 
-            // 寮€鐏拰澹板憪蹇呴』浣滅敤鍦ㄧ洰鏍囨鐩樹笂
+            // 
             if (next_player % 2 === game_board_index) {
                 
-                // 1. 鏍囧噯寮€鐏ā寮?
+                // 1. 
                 if (current_action_mode === "shoot" && td.className === "unshot" && !board_locked) {
                     board_locked = true;
                     document.body.classList.add("board-locked");
@@ -1146,7 +1146,7 @@ document.body.onkeydown = function (event) {
         }
     }
     
-    // 鎸?R 閿棆杞垬鑸?
+    // 
     if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
         const active_board_index = game_board_1.style.visibility === "hidden" ? 1 : 0;
         const selected_ship_object = multiplayer_ship_array[active_board_index].find((ship) => ship.name === selected_ship_name);
@@ -1681,7 +1681,7 @@ const update_battle_controls = function () {
 };
 
 // ==========================================
-// 5. 鍒濆鍖栫粦瀹氫笌鍚姩
+// 5. 
 // ==========================================
 create_rotate_button(button_container_1, 0);
 create_rotate_button(button_container_2, 1);
