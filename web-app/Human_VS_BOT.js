@@ -32,6 +32,7 @@ let table_cells = [null, null];
 let selected_ship_name = undefined;
 let repositioning = false;   // true while moving an already-placed ship
 let board_locked = false;
+let hovered_cell_info = null;  // last hovered placement cell for R-key preview refresh
 let phase = "difficulty";   // difficulty | placing | deploying | battle | over
 let turn = "player";        // player | bot
 
@@ -319,8 +320,14 @@ const create_place_cell = function (row_index, tr) {
     return function (column_index) {
         const td = document.createElement("td");
         td.tabIndex = 0;
-        td.onmouseenter = function () { show_preview(column_index, row_index); };
-        td.onfocus = function () { show_preview(column_index, row_index); };
+        td.onmouseenter = function () {
+            hovered_cell_info = { col: column_index, row: row_index };
+            show_preview(column_index, row_index);
+        };
+        td.onfocus = function () {
+            hovered_cell_info = { col: column_index, row: row_index };
+            show_preview(column_index, row_index);
+        };
         td.onclick = function () {
             if (selected_ship_name === undefined) return;
             const ship = player_fleet.find((s) => s.name === selected_ship_name);
@@ -405,14 +412,17 @@ const create_rotate_button = function () {
     button.addEventListener("click", function () {
         if (selected_ship_name === undefined) return;
         const ship = player_fleet.find((s) => s.name === selected_ship_name);
-        const dragging = document.getElementsByClassName("dragging")[0];
-        const img = dragging ? dragging.querySelector("img") : null;
+        const active_td = document.querySelector(".dragging, .is-repositioning");
+        const img = active_td ? active_td.querySelector("img") : null;
         if (ship.orientation === "horizontal") {
             ship.orientation = "vertical";
             if (img) img.style.transform = "rotate(90deg)";
         } else {
             ship.orientation = "horizontal";
             if (img) img.style.transform = "rotate(0deg)";
+        }
+        if (hovered_cell_info) {
+            show_preview(hovered_cell_info.col, hovered_cell_info.row);
         }
     });
     button_container_1.append(button);
@@ -445,6 +455,27 @@ const start_placement = function () {
 
     render_placement();
     update_deploy_controls();
+};
+
+// R key rotates the selected ship during placement and refreshes the preview.
+document.body.onkeydown = function (event) {
+    if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
+        const ship = player_fleet.find((s) => s.name === selected_ship_name);
+        if (!ship) return;
+        const active_td = document.querySelector(".dragging, .is-repositioning");
+        const img = active_td ? active_td.querySelector("img") : null;
+        if (ship.orientation === "horizontal") {
+            ship.orientation = "vertical";
+            if (img) img.style.transform = "rotate(90deg)";
+        } else {
+            ship.orientation = "horizontal";
+            if (img) img.style.transform = "rotate(0deg)";
+        }
+        if (hovered_cell_info) {
+            show_preview(hovered_cell_info.col, hovered_cell_info.row);
+        }
+        event.preventDefault();
+    }
 };
 
 // ==========================================================================

@@ -31,6 +31,17 @@ let game_state = [
 
 let multiplayer_ship_array = Battleship.multiplayer_ship_array;
 
+// Last board cell the cursor hovered over during placement (used to refresh
+// the ship preview when R is pressed to rotate mid-hover).
+let hovered_cell_info = null;
+
+// Battle-phase statistics for the victory screen.
+let battle_start_time = null;
+let standard_fire_shots = [0, 0];
+let standard_fire_hits  = [0, 0];
+let ships_sunk_count    = [0, 0];
+let game_over = false;
+
 // At first, the page is in "place_ship" mode.
 // The update_display function updates the display to show
 // where the ships have been placed
@@ -189,6 +200,102 @@ const show_message_overlay = function (
     document.body.append(overlay);
 };
 
+// Full-screen image overlay with a "GOT IT" button — used for the
+// "Hide your screen" and "Pass the screen" prompts between turns.
+const show_image_overlay = function (image_src, accent_class, on_confirm) {
+    remove_overlay();
+    const overlay = document.createElement("div");
+    overlay.className = "screen-overlay screen-image-overlay " + accent_class;
+
+    const bg_img = document.createElement("img");
+    bg_img.src = image_src;
+    bg_img.className = "screen-image-full";
+    overlay.append(bg_img);
+
+    const btn_holder = document.createElement("div");
+    btn_holder.className = "overlay-action-holder";
+
+    const btn = document.createElement("button");
+    btn.className = "overlay-ok-button";
+    btn.textContent = "GOT IT";
+    btn.onclick = function () {
+        remove_overlay();
+        if (on_confirm) on_confirm();
+    };
+    btn_holder.append(btn);
+    overlay.append(btn_holder);
+    document.body.append(overlay);
+};
+
+// Cinematic end-game overlay with the victory image and a battle report.
+const show_victory_screen = function (winner_player) {
+    const img_src = winner_player === 1
+        ? "./assets/player1 win pic.png"
+        : "./assets/player2 win pic.png";
+    const player_idx = winner_player - 1;
+
+    const elapsed_seconds = battle_start_time
+        ? Math.floor((Date.now() - battle_start_time) / 1000)
+        : 0;
+    const mins = Math.floor(elapsed_seconds / 60);
+    const secs = elapsed_seconds % 60;
+    const time_str = mins + ":" + String(secs).padStart(2, "0");
+
+    const accuracy = standard_fire_shots[player_idx] > 0
+        ? Math.round(standard_fire_hits[player_idx] / standard_fire_shots[player_idx] * 100)
+        : 0;
+
+    const total_ships = Battleship.ship_array.length;
+
+    const overlay = document.createElement("div");
+    overlay.className = "victory-overlay";
+
+    const bg_img = document.createElement("img");
+    bg_img.src = img_src;
+    bg_img.className = "victory-bg-img";
+    overlay.append(bg_img);
+
+    const report = document.createElement("div");
+    report.className = "victory-report";
+
+    const report_title = document.createElement("div");
+    report_title.className = "victory-report-title";
+    report_title.textContent = "BATTLE REPORT";
+    report.append(report_title);
+
+    const stats_row = document.createElement("div");
+    stats_row.className = "victory-stats-row";
+
+    const make_stat = function (label, value) {
+        const card = document.createElement("div");
+        card.className = "victory-stat-card";
+        const val = document.createElement("div");
+        val.className = "victory-stat-value";
+        val.textContent = value;
+        const lbl = document.createElement("div");
+        lbl.className = "victory-stat-label";
+        lbl.textContent = label;
+        card.append(val, lbl);
+        return card;
+    };
+
+    stats_row.append(
+        make_stat("ACCURACY",    accuracy + "%"),
+        make_stat("SHIPS SUNK",  ships_sunk_count[player_idx] + "/" + total_ships),
+        make_stat("BATTLE TIME", time_str)
+    );
+    report.append(stats_row);
+    overlay.append(report);
+
+    const return_btn = document.createElement("button");
+    return_btn.className = "victory-return-btn";
+    return_btn.textContent = "RETURN TO MENU";
+    return_btn.onclick = function () { window.location.href = "./index.html"; };
+    overlay.append(return_btn);
+
+    document.body.append(overlay);
+};
+
 // Plays a board-exchange animation before the battle begins: the orange
 // (Player 1) and blue (Player 2) boards slide across and swap sides, making it
 // clear that players now attack the opponent rather than their own board.
@@ -279,9 +386,8 @@ const show_countdown_overlay = function () {
         }
 
         clearInterval(timer);
-        show_message_overlay(
-            "Hide the screen from your friend and place your ships",
-            "OK",
+        show_image_overlay(
+            "./assets/Hide your screen pic.png",
             "overlay-orange",
             function () {
                 set_game_phase("placing-player-1");
@@ -306,9 +412,8 @@ const create_next_turn_button = function () {
     button.addEventListener("click", function () {
         // This button only works if all the ships of that board are placed
         if (is_player_ready_to_save(0)) {
-            show_message_overlay(
-                "Pass the screen to your friend and don't look",
-                "OK",
+            show_image_overlay(
+                "./assets/Pass the screen pic.png",
                 "overlay-blue",
                 function () {
                     // Hide game board 1
@@ -374,6 +479,7 @@ const create_play_button = function () {
             set_game_phase("battle-phase");
             set_battle_titles();
             reset_display_to_shoot();
+            battle_start_time = Date.now();
             
             // 
             // Centre control is in HTML — no dynamic panel needed
@@ -512,10 +618,14 @@ const create_play_button = function () {
                 });
 
                 if (Battleship.has_player_won(game_state[0])) {
-                    alert("Player 1 won!");
+                    game_over = true;
+                    show_victory_screen(1);
+                    return;
                 }
                 if (Battleship.has_player_won(game_state[1])) {
-                    alert("Player 2 won!");
+                    game_over = true;
+                    show_victory_screen(2);
+                    return;
                 }
 
                 // Update ship-status trackers
@@ -556,16 +666,19 @@ const create_rotate_button = function (button_container, game_board_index) {
             const selected_ship_object = multiplayer_ship_array[
                 game_board_index
             ].find((ship) => ship.name === selected_ship_name);
-            
-            const dragging_td = document.getElementsByClassName("dragging")[0];
-            const img = dragging_td ? dragging_td.querySelector("img") : null;
+
+            const active_td = document.querySelector(".dragging, .is-repositioning");
+            const img = active_td ? active_td.querySelector("img") : null;
 
             if (selected_ship_object.orientation === "horizontal") {
                 selected_ship_object.orientation = "vertical";
-                if (img) img.style.transform = "rotate(90deg)"; 
+                if (img) img.style.transform = "rotate(90deg)";
             } else if (selected_ship_object.orientation === "vertical") {
                 selected_ship_object.orientation = "horizontal";
-                if (img) img.style.transform = "rotate(0deg)"; 
+                if (img) img.style.transform = "rotate(0deg)";
+            }
+            if (hovered_cell_info && hovered_cell_info.board_index === game_board_index) {
+                show_preview(game_board_index, hovered_cell_info.col, hovered_cell_info.row);
             }
         }
     });
@@ -697,10 +810,13 @@ const create_cell_in_row_to_place_ships = function (
         td.tabIndex = 0;
 
         // Live preview: show where the selected ship would land on hover/focus.
+        // Also track the last hovered cell so R-key rotation can refresh the preview.
         td.onmouseenter = function () {
+            hovered_cell_info = { board_index: game_board_index, col: column_index, row: row_index };
             show_preview(game_board_index, column_index, row_index);
         };
         td.onfocus = function () {
+            hovered_cell_info = { board_index: game_board_index, col: column_index, row: row_index };
             show_preview(game_board_index, column_index, row_index);
         };
 
@@ -959,6 +1075,8 @@ const create_cell_in_row_to_shoot_ships = function (
         td.style.position = "relative";
 
         td.onclick = function () {
+            if (game_over) return;
+
             const active_player_idx = next_player % 2;
             const own_board_idx = 1 - active_player_idx;
 
@@ -997,6 +1115,13 @@ const create_cell_in_row_to_shoot_ships = function (
                         [column_index, row_index],
                         (game_board_index + 1) % 2
                     );
+
+                    // Track battle statistics for the victory screen
+                    standard_fire_shots[active_player_idx]++;
+                    if (target_had_ship) standard_fire_hits[active_player_idx]++;
+                    if (target_had_ship && new_cell_state === "sunken_ship") {
+                        ships_sunk_count[active_player_idx]++;
+                    }
 
                     // Show this cell's result immediately (turn switches after delay)
                     const shot_td = table_cells[game_board_index][row_index][column_index];
@@ -1135,6 +1260,22 @@ const create_row_in_table_to_shoot_ships = function (
 };
 
 document.body.onkeydown = function (event) {
+    // Ghost move direction via arrow keys — checked first so it takes priority
+    // over the generic cell-focus fallback below.
+    if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move")
+            && ghost_selected_ship) {
+        const dir_map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+        const dir = dir_map[event.key];
+        if (dir) {
+            ghost_preview_direction = dir;
+            current_action_mode = "ghost_move";
+            update_display();
+            update_battle_controls();
+            event.preventDefault();
+            return;
+        }
+    }
+
     if (
         event.key === "ArrowUp"
         || event.key === "ArrowDown"
@@ -1145,14 +1286,17 @@ document.body.onkeydown = function (event) {
             table_cells[0][0][0].focus();
         }
     }
-    
-    // 
+
+    // R key: rotate the currently selected/repositioning ship on either board.
     if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
         const active_board_index = game_board_1.style.visibility === "hidden" ? 1 : 0;
-        const selected_ship_object = multiplayer_ship_array[active_board_index].find((ship) => ship.name === selected_ship_name);
-        
-        const dragging_td = document.getElementsByClassName("dragging")[0];
-        const img = dragging_td ? dragging_td.querySelector("img") : null;
+        const selected_ship_object = multiplayer_ship_array[active_board_index].find(
+            (ship) => ship.name === selected_ship_name
+        );
+
+        // Works for fresh placement (.dragging) and repositioning (.is-repositioning)
+        const active_td = document.querySelector(".dragging, .is-repositioning");
+        const img = active_td ? active_td.querySelector("img") : null;
 
         if (selected_ship_object) {
             if (selected_ship_object.orientation === "horizontal") {
@@ -1162,7 +1306,12 @@ document.body.onkeydown = function (event) {
                 selected_ship_object.orientation = "horizontal";
                 if (img) img.style.transform = "rotate(0deg)";
             }
+            // Refresh the hover preview so the new orientation is shown immediately
+            if (hovered_cell_info && hovered_cell_info.board_index === active_board_index) {
+                show_preview(active_board_index, hovered_cell_info.col, hovered_cell_info.row);
+            }
         }
+        event.preventDefault();
     }
 };
 

@@ -11,108 +11,65 @@
 </head>
 <body>
 
-<!-- Reusable warship silhouette -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="ship-glyph" viewBox="0 0 200 64">
-        <path d="M8 42 H192 L182 53 H18 Z
-                 M40 42 V36 H54 V42 Z
-                 M70 42 V28 H116 V42 Z
-                 M86 28 V13 H99 V28 Z
-                 M91 13 V3 H94 V13 Z
-                 M120 42 V31 H130 V42 Z
-                 M150 42 V35 H166 V42 Z
-                 M172 42 V37 H183 V42 Z
-                 M57 42 V20 H59 V42 Z" />
-    </symbol>
-</svg>
-
-<!-- ============ Layered battlefield background ============ -->
-<div class="bg-layer bg-ocean" aria-hidden="true"></div>
-<div class="bg-layer bg-rings" aria-hidden="true"></div>
-<div class="bg-layer bg-radar" aria-hidden="true"></div>
-
-<div class="bg-fleet bg-fleet-left" aria-hidden="true">
-    <svg viewBox="0 0 200 64"><use href="#ship-glyph"/></svg>
-</div>
-<div class="bg-fleet bg-fleet-right" aria-hidden="true">
-    <svg viewBox="0 0 200 64"><use href="#ship-glyph"/></svg>
+<!-- ============ Cinematic naval battle background ============ -->
+<div class="bg-cinematic" aria-hidden="true">
+    <img src="./assets/background pic.png" alt="" class="bg-cinematic-img">
+    <!-- Deep vignette to anchor the UI onto the scene -->
+    <div class="bg-cinematic-vignette"></div>
 </div>
 
-<div class="bg-layer bg-fog fog-1" aria-hidden="true"></div>
-<div class="bg-layer bg-fog fog-2" aria-hidden="true"></div>
-<div class="bg-layer bg-water" aria-hidden="true"></div>
+<!-- ============ Atmospheric HUD layers ============ -->
+<div class="bg-scan-line" aria-hidden="true"></div>
 
+<!-- Floating ember particles (warm port-side sparks + cold starboard) -->
 <div class="bg-embers" aria-hidden="true">
     <span></span><span></span><span></span><span></span>
     <span></span><span></span><span></span><span></span>
 </div>
 
-<div class="bg-layer bg-scan" aria-hidden="true"></div>
-<div class="bg-layer bg-vignette" aria-hidden="true"></div>
-
 <!-- ============ Top HUD readout ============ -->
-<div class="hud-strip hud-top">
+<div class="hud-strip hud-top" role="banner">
     <span class="hud-tag">COMMAND INTERFACE · V.25.06</span>
     <span class="hud-tag">NAVAL BATTLE SYSTEM · <b class="hud-online">ONLINE</b></span>
 </div>
 
 <!-- ============ Main command interface ============ -->
 <main class="menu">
-    <header class="logo-block">
-        <div class="logo-crest" aria-hidden="true"></div>
-        <div class="logo-rule"><span class="logo-anchor">⚓</span></div>
-        <h1 class="game-logo" data-text="BATTLESHIP">BATTLESHIP</h1>
-        <p class="logo-sub">Tactical Naval Warfare</p>
-    </header>
 
-    <nav class="mode-select">
+    <!-- Title is baked into the cinematic background image.
+         The h1 stays in the DOM for accessibility / SEO, but is visually hidden. -->
+    <h1 class="sr-title">BATTLESHIP — Tactical Naval Warfare</h1>
+
+    <nav class="mode-select" aria-label="Game mode selection">
         <a href="./Human_VS_BOT.html" id="singleplayer" class="mode-panel panel-p1">
-            <span class="panel-frame"></span>
-            <span class="corner tl"></span><span class="corner tr"></span>
-            <span class="corner bl"></span><span class="corner br"></span>
-            <span class="panel-scan"></span>
-            <span class="panel-label">Single Player</span>
-            <span class="panel-icon">
-                <span class="icon-sonar"></span>
-                <span class="icon-ring"></span>
-                <svg class="icon-ship" viewBox="0 0 200 64"><use href="#ship-glyph"/></svg>
-            </span>
-            <span class="panel-desc">Fight an AI Opponent</span>
-            <span class="panel-sub">Choose a difficulty and sink its fleet</span>
-            <span class="panel-chevron">⌄</span>
+            <img src="./assets/Single Player mode selection pic.png"
+                 class="mode-img"
+                 alt="Single Player — Fight an AI Opponent. Choose a difficulty and sink its fleet.">
+            <span class="sweep-layer" aria-hidden="true"></span>
         </a>
 
         <a href="./Human_VS_Human.html" id="multiplayer" class="mode-panel panel-p2">
-            <span class="panel-frame"></span>
-            <span class="corner tl"></span><span class="corner tr"></span>
-            <span class="corner bl"></span><span class="corner br"></span>
-            <span class="panel-scan"></span>
-            <span class="panel-label">Two Players</span>
-            <span class="panel-icon">
-                <span class="icon-sonar"></span>
-                <span class="icon-ring"></span>
-                <svg class="icon-ship icon-ship-a" viewBox="0 0 200 64"><use href="#ship-glyph"/></svg>
-                <svg class="icon-ship icon-ship-b" viewBox="0 0 200 64"><use href="#ship-glyph"/></svg>
-            </span>
-            <span class="panel-desc">Play Against a Friend</span>
-            <span class="panel-sub">Two commanders, one device</span>
-            <span class="panel-chevron">⌄</span>
+            <img src="./assets/2 Player mode selection pic.png"
+                 class="mode-img"
+                 alt="Two Players — Play Against a Friend. Two commanders, one device.">
+            <span class="sweep-layer" aria-hidden="true"></span>
         </a>
     </nav>
 </main>
 
 <!-- ============ Bottom HUD readout ============ -->
-<footer class="hud-strip hud-bottom">
+<footer class="hud-strip hud-bottom" role="contentinfo">
     <span class="hud-tag">SYSTEM STATUS · ALL SYSTEMS NOMINAL</span>
     <span class="hud-motto">PREPARE YOUR FLEET · COMMAND THE OCEAN · <b>CLAIM VICTORY</b></span>
     <span class="hud-tag">TACTICAL GRID · READY</span>
 </footer>
 
+<!-- Flash overlay used by the mission-launch transition -->
 <div class="launch-overlay" aria-hidden="true"></div>
 
 <script>
-    // Selecting a mode feels like launching a mission; links still work
-    // normally (and with keyboard / no-JS) for accessibility + routing.
+    // Selecting a mode feels like launching a mission.
+    // Links still work normally (keyboard / no-JS) for accessibility + routing.
     document.querySelectorAll(".mode-panel").forEach(function (panel) {
         panel.addEventListener("click", function (event) {
             if (event.metaKey || event.ctrlKey || event.shiftKey) {

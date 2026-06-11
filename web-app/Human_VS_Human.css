@@ -2594,3 +2594,230 @@ body.placing-player-2 #game_board_2 td.place-origin {
         linear-gradient(135deg, rgba(247, 211, 122, 0.26), rgba(79, 227, 255, 0.12)) !important;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset, 0 0 24px rgba(247,211,122,0.3);
 }
+
+/* ═══════════════════════════════════════════════
+   FEATURE 3 — No board flash on initial load
+   Body starts with class="intro-phase"; boards stay
+   hidden until a real game phase is set by JS.
+   ═══════════════════════════════════════════════ */
+body.intro-phase aside,
+body.intro-phase main {
+    visibility: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   FEATURE 2 — Home / Menu navigation button
+   Fixed top-left on all game pages.
+   ═══════════════════════════════════════════════ */
+.nav-home-btn {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.9rem;
+    z-index: 110000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38em;
+    padding: 0.42em 0.9em;
+    border: 1px solid rgba(79, 227, 255, 0.32);
+    border-radius: 8px;
+    background: rgba(4, 8, 18, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--ink);
+    font-family: var(--body-font-family);
+    font-size: clamp(0.62rem, 1.3vmin, 0.82rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    transition: all 180ms ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.38);
+}
+
+.nav-home-btn:hover {
+    background: rgba(79, 227, 255, 0.12);
+    border-color: var(--radar);
+    color: var(--radar);
+    box-shadow: 0 0 16px rgba(79, 227, 255, 0.22), 0 2px 10px rgba(0,0,0,0.38);
+    transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════
+   FEATURE 5 — Image-based "Hide / Pass" overlays
+   Full-screen asset image with a "GOT IT" button.
+   ═══════════════════════════════════════════════ */
+.screen-image-overlay {
+    padding: 0 !important;
+    background: #000 !important;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.screen-image-full {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: center center;
+    filter: none !important;
+}
+
+.screen-image-overlay .overlay-action-holder {
+    z-index: 1;
+}
+
+.screen-image-overlay .overlay-ok-button {
+    letter-spacing: 0.14em;
+    font-weight: 900;
+    text-transform: uppercase;
+    background: #45ad59;
+    box-shadow: 0 0.45rem 0 #369147, 0 0 24px rgba(69, 173, 89, 0.4);
+    transition: all 200ms ease;
+}
+
+.screen-image-overlay .overlay-ok-button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-3px);
+    box-shadow: 0 0.45rem 0 #369147, 0 0 40px rgba(69, 173, 89, 0.65), 0 0 80px rgba(69, 173, 89, 0.25);
+}
+
+.screen-image-overlay .overlay-ok-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 0.15rem 0 #369147;
+}
+
+/* ═══════════════════════════════════════════════
+   FEATURE 4 — Cinematic victory screen
+   Full-screen victory image + battle report card.
+   ═══════════════════════════════════════════════ */
+.victory-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 3.5vh;
+    gap: 1.5vh;
+    background: #000;
+    animation: victory-fade-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    cursor: default;
+}
+
+.victory-bg-img {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: center center;
+    filter: none !important;
+}
+
+.victory-report {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 1rem 2rem 1.1rem;
+    border-radius: 14px;
+    background: rgba(3, 6, 14, 0.80);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(79, 227, 255, 0.28);
+    box-shadow:
+        0 0 40px rgba(0,0,0,0.6),
+        0 0 20px rgba(79, 227, 255, 0.10),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    min-width: min(88vw, 34rem);
+    animation: victory-report-up 0.5s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.victory-report-title {
+    font-size: clamp(0.68rem, 1.6vmin, 0.95rem);
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(79, 227, 255, 0.65);
+    text-shadow: 0 0 12px rgba(79, 227, 255, 0.35);
+}
+
+.victory-stats-row {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.victory-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    min-width: 5.5rem;
+}
+
+.victory-stat-value {
+    font-size: clamp(1.8rem, 5.5vmin, 3.4rem);
+    font-weight: 900;
+    color: var(--ink);
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.5);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.victory-stat-label {
+    font-size: clamp(0.58rem, 1.3vmin, 0.78rem);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+    opacity: 0.85;
+}
+
+.victory-return-btn {
+    position: relative;
+    z-index: 1;
+    min-width: min(74vw, 28rem);
+    min-height: clamp(3rem, 7.5vw, 4.8rem);
+    border: 1.5px solid rgba(79, 227, 255, 0.55) !important;
+    border-radius: 12px !important;
+    background: rgba(79, 227, 255, 0.10) !important;
+    backdrop-filter: blur(8px) !important;
+    color: var(--ink) !important;
+    font-family: var(--body-font-family);
+    font-size: clamp(1rem, 2.8vmin, 1.7rem) !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: all 220ms ease !important;
+    box-shadow:
+        0 0 22px rgba(79, 227, 255, 0.18),
+        0 4px 18px rgba(0,0,0,0.45) !important;
+    animation: victory-report-up 0.5s 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.victory-return-btn:hover {
+    background: rgba(79, 227, 255, 0.22) !important;
+    border-color: var(--radar) !important;
+    box-shadow:
+        0 0 50px rgba(79, 227, 255, 0.5),
+        0 0 100px rgba(79, 227, 255, 0.2),
+        0 4px 18px rgba(0,0,0,0.5) !important;
+    transform: translateY(-3px) !important;
+}
+
+@keyframes victory-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes victory-report-up {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
