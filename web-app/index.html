@@ -11,40 +11,38 @@
 </head>
 <body>
 
-<!-- ============ Cinematic naval battle background ============ -->
+<!-- ============ Cinematic background image ============ -->
 <div class="bg-cinematic" aria-hidden="true">
     <img src="./assets/background pic.png" alt="" class="bg-cinematic-img">
-    <!-- Deep vignette to anchor the UI onto the scene -->
     <div class="bg-cinematic-vignette"></div>
 </div>
 
-<!-- ============ Atmospheric HUD layers ============ -->
-<div class="bg-scan-line" aria-hidden="true"></div>
-
-<!-- Floating ember particles (warm port-side sparks + cold starboard) -->
 <div class="bg-embers" aria-hidden="true">
     <span></span><span></span><span></span><span></span>
     <span></span><span></span><span></span><span></span>
 </div>
 
 <!-- ============ Top HUD readout ============ -->
-<div class="hud-strip hud-top" role="banner">
+<div class="hud-strip hud-top">
     <span class="hud-tag">COMMAND INTERFACE · V.25.06</span>
     <span class="hud-tag">NAVAL BATTLE SYSTEM · <b class="hud-online">ONLINE</b></span>
 </div>
 
 <!-- ============ Main command interface ============ -->
 <main class="menu">
+    <header class="logo-block">
+        <div class="logo-crest" aria-hidden="true"></div>
+        <div class="logo-rule"><span class="logo-anchor">⚓</span></div>
+        <h1 class="game-logo" data-text="BATTLESHIP">BATTLESHIP</h1>
+        <p class="logo-sub">Tactical Naval Warfare</p>
+    </header>
 
-    <!-- Title is baked into the cinematic background image.
-         The h1 stays in the DOM for accessibility / SEO, but is visually hidden. -->
-    <h1 class="sr-title">BATTLESHIP — Tactical Naval Warfare</h1>
-
-    <nav class="mode-select" aria-label="Game mode selection">
+    <nav class="mode-select">
         <a href="./Human_VS_BOT.html" id="singleplayer" class="mode-panel panel-p1">
             <img src="./assets/Single Player mode selection pic.png"
                  class="mode-img"
                  alt="Single Player — Fight an AI Opponent. Choose a difficulty and sink its fleet.">
+            <span class="scan-border" aria-hidden="true"></span>
             <span class="sweep-layer" aria-hidden="true"></span>
         </a>
 
@@ -52,24 +50,24 @@
             <img src="./assets/2 Player mode selection pic.png"
                  class="mode-img"
                  alt="Two Players — Play Against a Friend. Two commanders, one device.">
+            <span class="scan-border" aria-hidden="true"></span>
             <span class="sweep-layer" aria-hidden="true"></span>
         </a>
     </nav>
 </main>
 
 <!-- ============ Bottom HUD readout ============ -->
-<footer class="hud-strip hud-bottom" role="contentinfo">
+<footer class="hud-strip hud-bottom">
     <span class="hud-tag">SYSTEM STATUS · ALL SYSTEMS NOMINAL</span>
     <span class="hud-motto">PREPARE YOUR FLEET · COMMAND THE OCEAN · <b>CLAIM VICTORY</b></span>
     <span class="hud-tag">TACTICAL GRID · READY</span>
 </footer>
 
-<!-- Flash overlay used by the mission-launch transition -->
 <div class="launch-overlay" aria-hidden="true"></div>
 
 <script>
-    // Selecting a mode feels like launching a mission.
-    // Links still work normally (keyboard / no-JS) for accessibility + routing.
+    // Selecting a mode feels like launching a mission; links still work
+    // normally (and with keyboard / no-JS) for accessibility + routing.
     document.querySelectorAll(".mode-panel").forEach(function (panel) {
         panel.addEventListener("click", function (event) {
             if (event.metaKey || event.ctrlKey || event.shiftKey) {

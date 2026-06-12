@@ -1209,6 +1209,10 @@ const create_cell_in_row_to_shoot_ships = function (
                 td.onclick();
                 return;
             }
+            // Ghost mode: skip cell-navigation so arrow keys reach document.body.onkeydown
+            if (current_action_mode === "ghost_select" || current_action_mode === "ghost_move") {
+                return;
+            }
             if (event.key === "ArrowRight") {
                 table_cells[game_board_index][row_index][
                     (column_index + 1) % width

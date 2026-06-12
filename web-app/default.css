@@ -1,24 +1,24 @@
 /* ============================================================
-   BATTLESHIP — Naval Combat Command System  (landing / home)
-   Cinematic game-launcher aesthetic.
-   AAA naval strategy game main menu.
-
-   Colour language (consistent across all screens):
-     orange  --p1  = Single Player / Player 1
-     blue    --p2  = Two Players  / Player 2
+   BATTLESHIP — Naval Combat Command System (landing page)
+   AAA-style game launcher built only with HTML / CSS / SVG.
+   Shares the in-game colour language so the menu feels like the
+   same universe the player is about to command.
    ============================================================ */
 
 :root {
-    --ink:      #edf8ff;
-    --muted:    #8fb0c4;
-    --radar:    #4fe3ff;
-    --fire:     #ff5a4f;
-    --splash:   #f7d37a;
-    --p1:       #e07840;   /* orange — single-player */
-    --p2:       #3aaee0;   /* blue   — two-player   */
+    --ink: #edf8ff;
+    --muted: #8fb0c4;
+    --radar: #4fe3ff;
+    --fire: #ff5a4f;
+    --splash: #f7d37a;
+    --p1: #e07840;   /* single player = warm orange */
+    --p2: #3aaee0;   /* two players  = cool blue   */
+    --sea-a: #03060d;
+    --sea-b: #071726;
+    --sea-c: #0a2030;
 
-    --logo-font: "Orbitron",      "Trebuchet MS", sans-serif;
-    --hud-font:  "Chakra Petch",  "Trebuchet MS", Arial, sans-serif;
+    --logo-font: "Orbitron", "Trebuchet MS", sans-serif;
+    --hud-font: "Chakra Petch", "Trebuchet MS", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -29,28 +29,11 @@ body {
     overflow: hidden;
     color: var(--ink);
     font-family: var(--hud-font);
-    background: #02040a;   /* fallback while image loads */
-}
-
-/* ============================================================
-   ACCESSIBILITY — screen-reader-only title
-   ============================================================ */
-.sr-title {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
-    white-space: nowrap;
-    border: 0;
+    background: #02040a;
 }
 
 /* ============================================================
    CINEMATIC BACKGROUND IMAGE
-   The prepared background art contains the full naval battle
-   scene: battleships, fire, ocean, atmospheric haze, and the
-   baked-in BATTLESHIP title / HUD strips.  It replaces every
-   CSS-only gradient layer used previously.
    ============================================================ */
 .bg-cinematic {
     position: fixed;
@@ -65,17 +48,10 @@ body {
     inset: 0;
     width: 100%;
     height: 100%;
-    /* cover: fills the screen; the image is landscape so on wide
-       desktop monitors nothing important is cropped  */
     object-fit: cover;
     object-position: center center;
-    /* Scale up slightly so the float animation never shows a gap */
-    transform-origin: center center;
-    animation: bg-float 18s ease-in-out infinite;
 }
 
-/* Subtle atmospheric vignette – darkens corners,
-   separates the UI from the raw photo */
 .bg-cinematic-vignette {
     position: absolute;
     inset: 0;
@@ -89,29 +65,7 @@ body {
             rgba(0,0,0,0.45) 100%);
 }
 
-/* ============================================================
-   ATMOSPHERIC HUD OVERLAYS
-   These sit above the image and reinforce the "command system"
-   aesthetic without obscuring the naval scene.
-   ============================================================ */
-
-/* Sweeping horizontal scan-line */
-.bg-scan-line {
-    position: fixed;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background: linear-gradient(180deg,
-        transparent,
-        rgba(79, 227, 255, 0.55),
-        transparent);
-    height: 2px;
-    top: 0;
-    opacity: 0.3;
-    animation: scan-down 9s linear infinite;
-}
-
-/* Rising embers — warm sparks (port) + cool sparks (starboard) */
+/* Rising embers */
 .bg-embers {
     position: fixed;
     inset: 0;
@@ -121,25 +75,25 @@ body {
 .bg-embers span {
     position: absolute;
     bottom: -2vh;
-    width: 3px;
-    height: 3px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: var(--p1);
-    box-shadow: 0 0 8px 2px rgba(224, 120, 64, 0.85);
+    box-shadow: 0 0 14px 2px rgba(224, 120, 64, 0.8);
     opacity: 0;
-    animation: ember-rise 10s linear infinite;
+    animation: ember-rise 9s linear infinite;
 }
-.bg-embers span:nth-child(1) { left:  7%; animation-delay: 0s;   }
-.bg-embers span:nth-child(2) { left: 14%; animation-delay: 2.3s; }
-.bg-embers span:nth-child(3) { left: 22%; animation-delay: 5.1s; background: var(--splash); box-shadow: 0 0 8px 2px rgba(247,211,122,.9); }
-.bg-embers span:nth-child(4) { left: 29%; animation-delay: 1.4s; }
-.bg-embers span:nth-child(5) { left: 77%; animation-delay: 3.2s; background: var(--p2); box-shadow: 0 0 8px 2px rgba(58,174,224,.85); }
-.bg-embers span:nth-child(6) { left: 84%; animation-delay: 5.8s; background: var(--p2); box-shadow: 0 0 8px 2px rgba(58,174,224,.85); }
-.bg-embers span:nth-child(7) { left: 91%; animation-delay: 1.9s; background: var(--radar); box-shadow: 0 0 8px 2px rgba(79,227,255,.85); }
-.bg-embers span:nth-child(8) { left:  4%; animation-delay: 7.0s; }
+.bg-embers span:nth-child(1) { left: 8%;  animation-delay: 0s;   }
+.bg-embers span:nth-child(2) { left: 15%; animation-delay: 2.1s; }
+.bg-embers span:nth-child(3) { left: 23%; animation-delay: 4.4s; }
+.bg-embers span:nth-child(4) { left: 30%; animation-delay: 1.2s; background: var(--splash); box-shadow: 0 0 14px 2px rgba(247,211,122,0.8); }
+.bg-embers span:nth-child(5) { left: 78%; animation-delay: 3.0s; background: var(--p2); box-shadow: 0 0 14px 2px rgba(58,174,224,0.8); }
+.bg-embers span:nth-child(6) { left: 85%; animation-delay: 5.2s; background: var(--p2); box-shadow: 0 0 14px 2px rgba(58,174,224,0.8); }
+.bg-embers span:nth-child(7) { left: 92%; animation-delay: 1.8s; background: var(--radar); box-shadow: 0 0 14px 2px rgba(79,227,255,0.8); }
+.bg-embers span:nth-child(8) { left: 5%;  animation-delay: 6.0s; }
 
 /* ============================================================
-   HUD STRIPS — top and bottom status bars
+   HUD STRIPS
    ============================================================ */
 .hud-strip {
     position: fixed;
@@ -157,42 +111,27 @@ body {
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--muted);
-    /* Subtle glass backing so text stays legible over the image */
-    background: linear-gradient(
-        180deg,
-        rgba(0,0,0,0.55),
-        rgba(0,0,0,0.18)
-    );
 }
-.hud-top    { top: 0; background-direction: to bottom; }
-.hud-bottom {
-    bottom: 0;
-    background: linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0.18));
-}
-.hud-tag     { white-space: nowrap; }
-.hud-online  { color: var(--radar); text-shadow: 0 0 10px rgba(79,227,255,0.7); }
-.hud-motto   { color: var(--muted); letter-spacing: 0.28em; text-align: center; }
+.hud-top { top: 0; }
+.hud-bottom { bottom: 0; }
+.hud-tag { white-space: nowrap; }
+.hud-online { color: var(--radar); text-shadow: 0 0 10px rgba(79, 227, 255, 0.7); }
+.hud-motto { color: var(--muted); letter-spacing: 0.32em; text-align: center; }
 .hud-motto b { color: var(--splash); }
 
-/* Hair-line accent on the inner edge of each HUD strip */
-.hud-strip::after {
+.hud-strip::before, .hud-strip::after {
     content: "";
     position: absolute;
-    left: 0; width: 100%; height: 1px;
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(79,227,255,0.3) 20%,
-        rgba(79,227,255,0.3) 80%,
-        transparent);
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(79,227,255,0.28) 18%, rgba(79,227,255,0.28) 82%, transparent);
 }
-.hud-top::after    { bottom: 0; }
-.hud-bottom::after { top: 0; }
+.hud-top::after { bottom: 0; }
+.hud-bottom::before { top: 0; }
 
 /* ============================================================
-   MAIN MENU CONTAINER
-   No title rendered here — it is part of the background image.
-   The menu flexes the mode-select panels into the visual "empty"
-   centre zone of the naval scene.
+   MAIN MENU
    ============================================================ */
 .menu {
     position: relative;
@@ -202,30 +141,109 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 5rem 1rem 4rem;
+    gap: clamp(1.5rem, 5vh, 4rem);
+    padding: 4.5rem 1rem;
 }
 
-/* ============================================================
-   MODE SELECTION PANELS — image-based cards
-   Each PNG has a transparent background; the card artwork
-   sits in the centre of a 6000×3375 canvas.
+/* ---- Title logo ---- */
+.logo-block {
+    position: relative;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+}
 
-   Measured card bounds (sampled from pixel data):
-     Img 1 (SP):  left=2350, top=1100, right=3550, bottom=2450  → 1200×1350 px
-     Img 2 (2P):  left=2450, top=1100, right=3600, bottom=2450  → 1150×1350 px
-   Card centre ≈ (50%, 52.6%) of the full canvas.
+.logo-crest {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    width: clamp(20rem, 46vw, 40rem);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    background:
+        radial-gradient(circle, transparent 38%, rgba(79, 227, 255, 0.10) 39% 40%, transparent 41%),
+        radial-gradient(circle, transparent 26%, rgba(79, 227, 255, 0.08) 27% 28%, transparent 29%);
+    opacity: 0.8;
+    z-index: -1;
+}
 
-   Approach: overflow:hidden container + img at 370% width so the
-   card fills ~74% of the panel.  left:50%/top:45% + translate(-50%,-50%)
-   centres the card in the panel.  filter:drop-shadow on the parent
-   follows the card's alpha channel after overflow clipping.
-   ============================================================ */
+.logo-rule {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: min(64vw, 36rem);
+    color: var(--radar);
+    opacity: 0.85;
+}
+.logo-rule::before, .logo-rule::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--radar));
+}
+.logo-rule::after { transform: scaleX(-1); }
+.logo-anchor { font-size: 1.3rem; text-shadow: 0 0 14px rgba(79, 227, 255, 0.8); }
+
+.game-logo {
+    position: relative;
+    margin: 0;
+    font-family: var(--logo-font);
+    font-weight: 900;
+    font-size: clamp(2.2rem, 11vw, 8rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    max-width: 96vw;
+    text-transform: uppercase;
+    background: linear-gradient(180deg,
+        #ffffff 0%, #d7ecfb 16%, #9cc0db 40%,
+        #5b7e96 50%, #c3def0 60%, #ffffff 72%, #86acc8 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(180, 212, 235, 0.18);
+    /* Extruded metallic bevel + cyan glow */
+    filter:
+        drop-shadow(0 1px 0 #38506180)
+        drop-shadow(0 2px 0 #22323f)
+        drop-shadow(0 4px 3px rgba(0, 0, 0, 0.7))
+        drop-shadow(0 0 34px rgba(79, 227, 255, 0.4));
+}
+.game-logo::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.92) 49%, transparent 58%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: logo-sweep 6.5s ease-in-out infinite;
+}
+
+.logo-sub {
+    margin: 0;
+    font-family: var(--hud-font);
+    font-weight: 600;
+    font-size: clamp(0.8rem, 2.3vw, 1.45rem);
+    letter-spacing: clamp(0.32em, 1.4vw, 0.72em);
+    text-transform: uppercase;
+    color: var(--radar);
+    text-shadow: 0 0 16px rgba(79, 227, 255, 0.55);
+    padding-left: 0.7em;
+}
+
+/* ---- Command panels (image-based) ---- */
 .mode-select {
     display: flex;
-    gap: clamp(2rem, 5vw, 5rem);
-    align-items: center;
-    justify-content: center;
+    gap: clamp(1.4rem, 4.5vw, 4rem);
+    align-items: stretch;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .mode-panel {
@@ -233,19 +251,15 @@ body {
     display: block;
     text-decoration: none;
     cursor: pointer;
-    /* Panel sized to match the card's ~8:9 aspect ratio */
-    width: clamp(15rem, 22vw, 20rem);
+    width: clamp(15.5rem, 26vw, 22rem);
     aspect-ratio: 8 / 9;
-    overflow: hidden;      /* clips the zoomed image to panel bounds */
+    overflow: hidden;
     outline: none;
     transition:
         transform 0.36s cubic-bezier(0.2, 0.7, 0.2, 1),
         filter    0.36s ease;
 }
 
-/* The artwork image is zoomed to 370% of the panel width so the
-   card (20% of the 6000 px canvas) fills ~74% of the panel.
-   left:50%/top:45% + translate centres the card in the panel. */
 .mode-img {
     position: absolute;
     width: 370%;
@@ -257,14 +271,11 @@ body {
     user-select: none;
 }
 
-/* ── Single Player — orange energy glow ── */
 .panel-p1 {
-    filter:
-        drop-shadow(0 0 22px rgba(224, 120, 64, 0.55))
-        drop-shadow(0 0 48px rgba(224, 120, 64, 0.28));
+    animation: glow-pump-p1 3.2s ease-in-out infinite;
 }
-.panel-p1:hover,
-.panel-p1:focus-visible {
+.panel-p1:hover, .panel-p1:focus-visible {
+    animation: none;
     transform: translateY(-10px) scale(1.06);
     filter:
         drop-shadow(0 0 55px rgba(224, 120, 64, 1.0))
@@ -272,14 +283,12 @@ body {
         brightness(1.2);
 }
 
-/* ── Two Players — blue neon glow ── */
 .panel-p2 {
-    filter:
-        drop-shadow(0 0 22px rgba(58, 174, 224, 0.52))
-        drop-shadow(0 0 48px rgba(58, 174, 224, 0.26));
+    animation: glow-pump-p2 3.2s ease-in-out infinite;
+    animation-delay: -1.6s;
 }
-.panel-p2:hover,
-.panel-p2:focus-visible {
+.panel-p2:hover, .panel-p2:focus-visible {
+    animation: none;
     transform: translateY(-10px) scale(1.06);
     filter:
         drop-shadow(0 0 55px rgba(58, 174, 224, 1.0))
@@ -287,15 +296,11 @@ body {
         brightness(1.2);
 }
 
-/* Press feedback */
 .mode-panel:active {
     transform: translateY(-2px) scale(0.975);
     transition-duration: 0.1s;
 }
 
-/* ── Light sweep overlay (slides diagonally on hover) ──
-   mix-blend-mode:screen means the sweep only brightens
-   opaque card pixels; transparent surroundings are unaffected. */
 .sweep-layer {
     position: absolute;
     inset: 0;
@@ -312,26 +317,71 @@ body {
     animation: sweep-slide 0.65s ease forwards;
 }
 .panel-p1 .sweep-layer {
-    background-image: linear-gradient(
-        125deg,
-        transparent 20%,
-        rgba(255, 180, 100, 0.32) 50%,
-        transparent 80%
-    );
+    background-image: linear-gradient(125deg, transparent 20%, rgba(255, 180, 100, 0.32) 50%, transparent 80%);
 }
 .panel-p2 .sweep-layer {
-    background-image: linear-gradient(
-        125deg,
-        transparent 20%,
-        rgba(100, 210, 255, 0.32) 50%,
-        transparent 80%
+    background-image: linear-gradient(125deg, transparent 20%, rgba(100, 210, 255, 0.32) 50%, transparent 80%);
+}
+
+/* ---- Holographic radar scan border ---- */
+@property --scan-p1 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+@property --scan-p2 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+.scan-border {
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    pointer-events: none;
+    z-index: 6;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.panel-p1 .scan-border {
+    background: conic-gradient(
+        from var(--scan-p1),
+        rgba(255, 190, 110, 1.0)  0deg,
+        rgba(240, 140,  50, 0.65) 12deg,
+        rgba(224, 100,  40, 0.28) 28deg,
+        rgba(200,  80,  20, 0.08) 44deg,
+        transparent               56deg,
+        transparent              360deg
     );
+    filter: blur(0.8px) brightness(1.5);
+    animation: scan-spin-p1 3.2s linear infinite;
+}
+
+.panel-p2 .scan-border {
+    background: conic-gradient(
+        from var(--scan-p2),
+        rgba(130, 225, 255, 1.0)  0deg,
+        rgba( 60, 180, 240, 0.65) 12deg,
+        rgba( 40, 140, 210, 0.28) 28deg,
+        rgba( 20, 100, 180, 0.08) 44deg,
+        transparent               56deg,
+        transparent              360deg
+    );
+    filter: blur(0.8px) brightness(1.5);
+    animation: scan-spin-p2 3.2s linear infinite;
+    animation-delay: -1.6s;
 }
 
 /* ============================================================
    MISSION-LAUNCH TRANSITION
-   Flash fills the screen with the panel's accent colour while
-   the menu shrinks away; then the browser navigates.
    ============================================================ */
 .launch-overlay {
     position: fixed;
@@ -339,85 +389,122 @@ body {
     z-index: 50;
     pointer-events: none;
     opacity: 0;
-    background: radial-gradient(
-        circle at 50% 55%,
-        var(--launch-color, var(--radar)),
-        rgba(3,6,12,0.97) 70%
-    );
+    background: radial-gradient(circle at 50% 55%, var(--launch-color, var(--radar)), rgba(3, 6, 12, 0.97) 70%);
 }
 body.launch-p1 { --launch-color: rgba(224, 120, 64, 0.95); }
-body.launch-p2 { --launch-color: rgba(58,  174, 224, 0.95); }
-
-body.launching .launch-overlay {
-    animation: launch-flash 0.7s cubic-bezier(0.5, 0, 0.2, 1) forwards;
-}
-body.launching .menu {
-    animation: menu-depart 0.7s ease forwards;
-}
-
-/* Launching panel — expands with a final energy burst */
+body.launch-p2 { --launch-color: rgba(58, 174, 224, 0.95); }
+body.launching .launch-overlay { animation: launch-flash 0.7s cubic-bezier(0.5, 0, 0.2, 1) forwards; }
+body.launching .menu { animation: menu-depart 0.7s ease forwards; }
 .mode-panel.is-launching {
     transform: scale(1.14) !important;
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
                 filter    0.5s ease !important;
 }
 .panel-p1.is-launching {
-    filter: drop-shadow(0 0 130px rgba(224,120,64,1)) brightness(1.7) !important;
+    filter: drop-shadow(0 0 130px rgba(224, 120, 64, 1)) brightness(1.7) !important;
 }
 .panel-p2.is-launching {
-    filter: drop-shadow(0 0 130px rgba(58,174,224,1)) brightness(1.7) !important;
+    filter: drop-shadow(0 0 130px rgba(58, 174, 224, 1)) brightness(1.7) !important;
 }
 
 /* ============================================================
    KEYFRAMES
    ============================================================ */
-
-/* Background image — slow vertical float, slight zoom for depth */
 @keyframes bg-float {
-    0%,100% { transform: scale(1.04) translateY(0);     }
-    50%      { transform: scale(1.04) translateY(-1.4%); }
+    0%,  100% { transform: scale(1.05)  translate(0%,     0%);    }
+    30%        { transform: scale(1.065) translate(-0.3%,  -0.9%); }
+    65%        { transform: scale(1.055) translate( 0.2%,  -1.5%); }
 }
 
-/* HUD scan-line sweeps from top to bottom */
-@keyframes scan-down {
-    0%   { transform: translateY(-10vh); opacity: 0;    }
-    8%   { opacity: 0.3; }
-    92%  { opacity: 0.3; }
-    100% { transform: translateY(102vh); opacity: 0;    }
-}
-
-/* Particles drift upward and fade */
-@keyframes ember-rise {
-    0%   { transform: translateY(0)     scale(1);   opacity: 0;   }
-    10%  { opacity: 0.9; }
-    85%  { opacity: 0.6; }
-    100% { transform: translateY(-65vh) scale(0.35); opacity: 0; }
-}
-
-/* Mode panel light sweep */
 @keyframes sweep-slide {
     from { background-position: 160% 160%; }
     to   { background-position: -60% -60%; }
 }
 
-/* Mission launch */
-@keyframes launch-flash {
-    0%   { opacity: 0; }
-    100% { opacity: 1; }
+@keyframes scan-spin-p1 { to { --scan-p1: 360deg; } }
+@keyframes scan-spin-p2 { to { --scan-p2: 360deg; } }
+
+@keyframes glow-pump-p1 {
+    0%, 100% {
+        filter:
+            drop-shadow(0 0 22px rgba(224, 120,  64, 0.55))
+            drop-shadow(0 0 48px rgba(224, 120,  64, 0.28));
+    }
+    50% {
+        filter:
+            drop-shadow(0 0 40px rgba(255, 150,  80, 0.90))
+            drop-shadow(0 0 80px rgba(224, 100,  40, 0.55));
+    }
 }
-@keyframes menu-depart {
-    0%   { opacity: 1; transform: scale(1);    }
-    100% { opacity: 0; transform: scale(1.06); }
+
+@keyframes glow-pump-p2 {
+    0%, 100% {
+        filter:
+            drop-shadow(0 0 22px rgba( 58, 174, 224, 0.52))
+            drop-shadow(0 0 48px rgba( 58, 174, 224, 0.26));
+    }
+    50% {
+        filter:
+            drop-shadow(0 0 40px rgba( 80, 190, 255, 0.88))
+            drop-shadow(0 0 80px rgba( 40, 140, 220, 0.50));
+    }
 }
+
+@keyframes radar-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes rings-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.85; } }
+
+@keyframes fleet-bob-a { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes fleet-bob-b { 0%,100% { transform: scaleX(-1) translateY(-7px); } 50% { transform: scaleX(-1) translateY(7px); } }
+
+@keyframes fog-drift-a { 0%,100% { transform: translateX(-6%); } 50% { transform: translateX(8%); } }
+@keyframes fog-drift-b { 0%,100% { transform: translateX(7%); } 50% { transform: translateX(-7%); } }
+
+@keyframes water-shimmer { to { background-position: 0 0, 320px 0; } }
+
+@keyframes ember-rise {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    12% { opacity: 0.9; }
+    80% { opacity: 0.7; }
+    100% { transform: translateY(-62vh) scale(0.4); opacity: 0; }
+}
+
+@keyframes scan-down {
+    0% { transform: translateY(-10vh); opacity: 0; }
+    10% { opacity: 0.35; }
+    90% { opacity: 0.35; }
+    100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes logo-sweep {
+    0% { background-position: 185% 0; opacity: 0; }
+    16% { opacity: 1; }
+    48% { background-position: -85% 0; opacity: 1; }
+    60% { opacity: 0; }
+    100% { background-position: -85% 0; opacity: 0; }
+}
+
+@keyframes edge-rotate { to { transform: rotate(360deg); } }
+@keyframes panel-scan { 0% { top: -45%; } 100% { top: 110%; } }
+@keyframes chevron-bob { 0%,100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(5px); opacity: 1; } }
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+@keyframes sonar-ping {
+    0% { transform: scale(0.55); opacity: 0.7; }
+    70% { opacity: 0; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes launch-flash { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes menu-depart { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.06); } }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 860px) {
-    .mode-select { flex-direction: column; gap: 1.8rem; }
-    .mode-panel  { width: min(78vw, 18rem); }
-    .hud-motto   { display: none; }
-    .hud-strip   {
+    .menu { gap: 2rem; padding: 4.5rem 1rem; }
+    .mode-select { flex-direction: column; align-items: center; }
+    .mode-panel { width: min(82vw, 21rem); aspect-ratio: 3 / 2.2; }
+    .hud-motto { display: none; }
+    .bg-fleet { opacity: 0.3; }
+    .hud-strip {
         font-size: 0.56rem;
         letter-spacing: 0.12em;
         gap: 0.6rem;
@@ -427,7 +514,7 @@ body.launching .menu {
 
 @media (prefers-reduced-motion: reduce) {
     .bg-cinematic-img,
-    .bg-scan-line,
-    .bg-embers span,
-    .sweep-layer { animation: none !important; }
+    .bg-embers span, .game-logo::after,
+    .sweep-layer, .scan-border,
+    .panel-p1, .panel-p2 { animation: none; }
 }

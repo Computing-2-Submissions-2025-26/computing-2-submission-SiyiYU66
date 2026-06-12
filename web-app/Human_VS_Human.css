@@ -2611,35 +2611,58 @@ body.intro-phase main {
    ═══════════════════════════════════════════════ */
 .nav-home-btn {
     position: fixed;
-    top: 0.75rem;
-    left: 0.9rem;
+    top: 1rem;
+    left: 1.2rem;
     z-index: 110000;
     display: inline-flex;
     align-items: center;
-    gap: 0.38em;
-    padding: 0.42em 0.9em;
-    border: 1px solid rgba(79, 227, 255, 0.32);
-    border-radius: 8px;
-    background: rgba(4, 8, 18, 0.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--ink);
-    font-family: var(--body-font-family);
-    font-size: clamp(0.62rem, 1.3vmin, 0.82rem);
-    font-weight: 700;
+    gap: 0.4em;
+    padding: 0.38em 0.85em;
+    border: 2px solid rgba(79, 227, 255, 0.55);
+    border-radius: 10px;
+    background: rgba(4, 8, 18, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--radar, #4fe3ff);
+    font-family: var(--logo-font, 'Orbitron', sans-serif);
+    font-size: clamp(1.8rem, 4vmin, 3.5rem);
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-decoration: none;
-    transition: all 180ms ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.38);
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.8);
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    animation: menu-btn-pulse 2.8s ease-in-out infinite;
 }
 
 .nav-home-btn:hover {
-    background: rgba(79, 227, 255, 0.12);
+    animation: none;
+    background: rgba(79, 227, 255, 0.14);
     border-color: var(--radar);
-    color: var(--radar);
-    box-shadow: 0 0 16px rgba(79, 227, 255, 0.22), 0 2px 10px rgba(0,0,0,0.38);
-    transform: translateY(-1px);
+    color: #fff;
+    text-shadow: 0 0 28px rgba(79, 227, 255, 1), 0 0 60px rgba(79, 227, 255, 0.5);
+    box-shadow:
+        0 0 30px rgba(79, 227, 255, 0.55),
+        0 0 70px rgba(79, 227, 255, 0.25),
+        inset 0 0 18px rgba(79, 227, 255, 0.08);
+    transform: translateY(-2px) scale(1.04);
+}
+
+@keyframes menu-btn-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 14px rgba(79, 227, 255, 0.35),
+            0 0 36px rgba(79, 227, 255, 0.15),
+            inset 0 0 8px rgba(79, 227, 255, 0.04);
+        border-color: rgba(79, 227, 255, 0.45);
+    }
+    50% {
+        box-shadow:
+            0 0 32px rgba(79, 227, 255, 0.75),
+            0 0 80px rgba(79, 227, 255, 0.35),
+            inset 0 0 18px rgba(79, 227, 255, 0.10);
+        border-color: rgba(79, 227, 255, 0.95);
+    }
 }
 
 /* ═══════════════════════════════════════════════
@@ -2665,26 +2688,140 @@ body.intro-phase main {
 
 .screen-image-overlay .overlay-action-holder {
     z-index: 1;
+    background: transparent;
+    padding: 0;
 }
 
-.screen-image-overlay .overlay-ok-button {
-    letter-spacing: 0.14em;
-    font-weight: 900;
+/* ── Shared shimmer animation for both button themes ── */
+@keyframes gotit-shimmer {
+    0%   { transform: translateX(-220%); }
+    100% { transform: translateX(220%);  }
+}
+
+/* ── Orange theme (Hide your screen) ── */
+@keyframes gotit-pulse-orange {
+    0%, 100% {
+        box-shadow:
+            0 0.45rem 0 rgba(140, 50, 8, 0.8),
+            0 0 18px  rgba(224, 100, 40, 0.45),
+            0 0 55px  rgba(224, 100, 40, 0.20);
+    }
+    50% {
+        box-shadow:
+            0 0.45rem 0 rgba(140, 50, 8, 0.9),
+            0 0 36px  rgba(255, 140, 60, 0.72),
+            0 0 90px  rgba(224, 100, 40, 0.38);
+    }
+}
+
+.screen-image-overlay.overlay-orange .overlay-ok-button {
+    position: relative;
+    overflow: hidden;
+    font-family: "Orbitron", "Trebuchet MS", sans-serif;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    background: #45ad59;
-    box-shadow: 0 0.45rem 0 #369147, 0 0 24px rgba(69, 173, 89, 0.4);
-    transition: all 200ms ease;
+    color: #fff;
+    background: linear-gradient(135deg, #b84f18 0%, #e07840 48%, #bf6228 100%);
+    border: 1px solid rgba(255, 160, 80, 0.45);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, filter 0.18s ease;
+    animation: gotit-pulse-orange 2.2s ease-in-out infinite;
 }
 
-.screen-image-overlay .overlay-ok-button:hover {
-    filter: brightness(1.1);
-    transform: translateY(-3px);
-    box-shadow: 0 0.45rem 0 #369147, 0 0 40px rgba(69, 173, 89, 0.65), 0 0 80px rgba(69, 173, 89, 0.25);
+.screen-image-overlay.overlay-orange .overlay-ok-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 25%,
+        rgba(255, 220, 180, 0.24) 50%,
+        transparent 75%
+    );
+    transform: translateX(-220%);
+    animation: gotit-shimmer 2.6s linear infinite;
+    pointer-events: none;
 }
 
-.screen-image-overlay .overlay-ok-button:active {
-    transform: translateY(2px);
-    box-shadow: 0 0.15rem 0 #369147;
+.screen-image-overlay.overlay-orange .overlay-ok-button:hover {
+    transform: translateY(-5px) scale(1.025);
+    filter: brightness(1.18);
+    box-shadow:
+        0 0.55rem 0 rgba(140, 50, 8, 0.8),
+        0 0 55px  rgba(255, 140, 60, 0.85),
+        0 0 110px rgba(224, 100, 40, 0.52),
+        0 0 200px rgba(224, 80,  20, 0.22);
+}
+
+.screen-image-overlay.overlay-orange .overlay-ok-button:active {
+    transform: translateY(2px) scale(0.98);
+    filter: brightness(0.92);
+}
+
+/* ── Blue theme (Pass the screen) ── */
+@keyframes gotit-pulse-blue {
+    0%, 100% {
+        box-shadow:
+            0 0.45rem 0 rgba(10, 55, 110, 0.8),
+            0 0 18px  rgba(58, 174, 224, 0.45),
+            0 0 55px  rgba(58, 174, 224, 0.20);
+    }
+    50% {
+        box-shadow:
+            0 0.45rem 0 rgba(10, 55, 110, 0.9),
+            0 0 36px  rgba(79, 227, 255, 0.72),
+            0 0 90px  rgba(58, 174, 224, 0.38);
+    }
+}
+
+.screen-image-overlay.overlay-blue .overlay-ok-button {
+    position: relative;
+    overflow: hidden;
+    font-family: "Orbitron", "Trebuchet MS", sans-serif;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, #1468a0 0%, #3aaee0 48%, #1c80c0 100%);
+    border: 1px solid rgba(79, 227, 255, 0.45);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, filter 0.18s ease;
+    animation: gotit-pulse-blue 2.2s ease-in-out infinite;
+}
+
+.screen-image-overlay.overlay-blue .overlay-ok-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 25%,
+        rgba(180, 240, 255, 0.24) 50%,
+        transparent 75%
+    );
+    transform: translateX(-220%);
+    animation: gotit-shimmer 2.6s linear infinite;
+    pointer-events: none;
+}
+
+.screen-image-overlay.overlay-blue .overlay-ok-button:hover {
+    transform: translateY(-5px) scale(1.025);
+    filter: brightness(1.18);
+    box-shadow:
+        0 0.55rem 0 rgba(10, 55, 110, 0.8),
+        0 0 55px  rgba(79, 227, 255, 0.85),
+        0 0 110px rgba(58, 174, 224, 0.52),
+        0 0 200px rgba(40, 130, 200, 0.22);
+}
+
+.screen-image-overlay.overlay-blue .overlay-ok-button:active {
+    transform: translateY(2px) scale(0.98);
+    filter: brightness(0.92);
 }
 
 /* ═══════════════════════════════════════════════
