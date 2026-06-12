@@ -98,7 +98,8 @@ const set_deploy_title = function () {
     const game_title = document.querySelector("header h1");
     const player_1_title = document.querySelector("aside h2");
     const player_2_title = document.querySelector("main h2");
-    if (game_title) game_title.textContent = "Deploy your ships";
+    // The "Fleet Deployment" subtitle is added by CSS (h1::after).
+    if (game_title) game_title.textContent = "Battleship";
     if (player_1_title) player_1_title.textContent = "Deploy your ships";
     if (player_2_title) player_2_title.textContent = "Deploy your ships";
 };
@@ -143,7 +144,32 @@ const is_player_ready_to_save = function (player_index) {
         is_ship_tray_empty(player_index);
 };
 
+// Visual-only: refreshes the side "Tactical Data" panel (fleet count, bar,
+// deployment status). Reads state, never mutates it.
+const update_tactical_panel = function (player_index) {
+    const section = player_index === 0
+        ? document.querySelector("aside")
+        : document.querySelector("main");
+    if (!section) return;
+    const panel = section.querySelector(".deploy-tactical");
+    if (!panel) return;
+    const fleet = multiplayer_ship_array[player_index];
+    const total = fleet.length;
+    const placed = fleet.filter((ship) => ship.placed).length;
+    const count_el = panel.querySelector(".tac-fleet-count");
+    if (count_el) count_el.textContent = placed + " / " + total;
+    const fill_el = panel.querySelector(".tac-bar-fill");
+    if (fill_el) fill_el.style.width = ((placed / total) * 100) + "%";
+    const status_el = panel.querySelector(".tac-deploy-status");
+    if (status_el) {
+        status_el.textContent = placed >= total ? "Ready" : "In Progress";
+        status_el.classList.toggle("is-ready", placed >= total);
+    }
+};
+
 const update_deploy_controls = function () {
+    update_tactical_panel(0);
+    update_tactical_panel(1);
     // The SAVE button stays hidden until every ship of that board is placed,
     // so beginners are not tempted to save an incomplete board.
     if (player_1_save_button) {
@@ -405,7 +431,7 @@ const show_countdown_overlay = function () {
 // their ships without seeing the other player's board
 const create_next_turn_button = function () {
     const button = document.createElement("button");
-    button.textContent = "Save";
+    button.textContent = "Confirm Deployment";
     button.className = "save-turn-button player-1-save";
     button.disabled = true;
     player_1_save_button = button;
@@ -469,7 +495,7 @@ const reset_display_to_shoot = function () {
 // player has won. It only works if all the ships of board 2 have been placed
 const create_play_button = function () {
     const play_button = document.createElement("button");
-    play_button.textContent = "Save";
+    play_button.textContent = "Confirm Deployment";
     play_button.className = "save-turn-button player-2-save";
     play_button.disabled = true;
     player_2_save_button = play_button;
@@ -878,6 +904,10 @@ const create_cell_in_row_to_place_ships = function (
                 selected_ship_name = undefined;
             }
             update_display();
+            if (ship.placed === true) {
+                // Energy-activation effect on the cells the ship landed on.
+                flash_landing(game_board_index, ship.name);
+            }
             update_deploy_controls();
         };
 
@@ -1286,6 +1316,31 @@ document.body.onkeydown = function (event) {
         || event.key === "ArrowLeft"
         || event.key === "ArrowRight"
     ) {
+        const is_placing = document.body.classList.contains("placing-player-1")
+            || document.body.classList.contains("placing-player-2");
+        if (is_placing) {
+            // Keyboard cursor: if focus is not yet on the active player's
+            // board, jump it there (to the last hovered cell, or A1). Once a
+            // cell has focus, the cell's own onkeydown moves the cursor and
+            // Enter places the ship.
+            const active_board_index =
+                game_board_1.style.visibility === "hidden" ? 1 : 0;
+            const board_el = active_board_index === 0
+                ? game_board_1
+                : game_board_2;
+            const focused = document.activeElement;
+            const on_board = focused && focused.tagName === "TD"
+                && board_el.contains(focused);
+            if (!on_board) {
+                const start = (hovered_cell_info
+                    && hovered_cell_info.board_index === active_board_index)
+                    ? hovered_cell_info
+                    : { col: 0, row: 0 };
+                table_cells[active_board_index][start.row][start.col].focus();
+                event.preventDefault();
+            }
+            return;
+        }
         if (!document.activeElement || document.activeElement.tagName !== "TD") {
             table_cells[0][0][0].focus();
         }
@@ -1854,6 +1909,28 @@ game_board_2.addEventListener("mouseleave", function () {
 
 create_ship_table(ships_1, 0);
 create_ship_table(ships_2, 1);
+
+// Visual-only: tactical coordinate strips (1-10 / A-J) around each board.
+// CSS shows them during the deploy phase only.
+const add_coordinate_labels = function (container) {
+    const cols = document.createElement("div");
+    cols.className = "board-coords board-coords-cols";
+    R.range(0, width).forEach(function (i) {
+        const label = document.createElement("span");
+        label.textContent = i + 1;
+        cols.append(label);
+    });
+    const rows = document.createElement("div");
+    rows.className = "board-coords board-coords-rows";
+    R.range(0, height).forEach(function (i) {
+        const label = document.createElement("span");
+        label.textContent = String.fromCharCode(65 + i);
+        rows.append(label);
+    });
+    container.append(cols, rows);
+};
+add_coordinate_labels(game_container_1);
+add_coordinate_labels(game_container_2);
 
 create_next_turn_button();
 create_play_button();

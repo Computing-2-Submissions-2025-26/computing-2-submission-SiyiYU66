@@ -328,6 +328,26 @@ const create_place_cell = function (row_index, tr) {
             hovered_cell_info = { col: column_index, row: row_index };
             show_preview(column_index, row_index);
         };
+        // Keyboard cursor: arrows move (with wrap-around), Enter/Space places.
+        td.onkeydown = function (event) {
+            if (event.key === "Enter" || event.key === " ") {
+                td.onclick();
+                event.preventDefault();
+                return;
+            }
+            const moves = {
+                ArrowRight: [(column_index + 1) % width, row_index],
+                ArrowLeft: [(column_index + width - 1) % width, row_index],
+                ArrowDown: [column_index, (row_index + 1) % height],
+                ArrowUp: [column_index, (row_index + height - 1) % height]
+            };
+            const move = moves[event.key];
+            if (move) {
+                table_cells[0][move[1]][move[0]].focus();
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        };
         td.onclick = function () {
             if (selected_ship_name === undefined) return;
             const ship = player_fleet.find((s) => s.name === selected_ship_name);
@@ -373,6 +393,10 @@ const create_place_cell = function (row_index, tr) {
                 selected_ship_name = undefined;
             }
             render_placement();
+            if (ship.placed === true) {
+                // Energy-activation effect on the cells the ship landed on.
+                flash_landing(ship.name);
+            }
             update_deploy_controls();
         };
         tr.append(td);
@@ -397,7 +421,26 @@ const render_placement = function () {
 
 let save_button = null;
 
+// Visual-only: refreshes the side "Tactical Data" panel (fleet count, bar,
+// deployment status). Reads state, never mutates it.
+const update_tactical_panel = function () {
+    const panel = document.querySelector("aside .deploy-tactical");
+    if (!panel) return;
+    const total = player_fleet.length;
+    const placed = player_fleet.filter((s) => s.placed).length;
+    const count_el = panel.querySelector(".tac-fleet-count");
+    if (count_el) count_el.textContent = placed + " / " + total;
+    const fill_el = panel.querySelector(".tac-bar-fill");
+    if (fill_el) fill_el.style.width = ((placed / total) * 100) + "%";
+    const status_el = panel.querySelector(".tac-deploy-status");
+    if (status_el) {
+        status_el.textContent = placed >= total ? "Ready" : "In Progress";
+        status_el.classList.toggle("is-ready", placed >= total);
+    }
+};
+
 const update_deploy_controls = function () {
+    update_tactical_panel();
     if (!save_button) return;
     const ready = player_fleet.every((s) => s.placed);
     save_button.disabled = !ready;
@@ -430,7 +473,7 @@ const create_rotate_button = function () {
 
 const create_save_button = function () {
     const button = document.createElement("button");
-    button.textContent = "Save";
+    button.textContent = "Confirm Deployment";
     button.className = "save-turn-button is-hidden";
     button.disabled = true;
     button.addEventListener("click", function () {
@@ -441,6 +484,27 @@ const create_save_button = function () {
     save_button = button;
 };
 
+// Visual-only: tactical coordinate strips (1-10 / A-J) around the board.
+// CSS shows them during the deploy phase only.
+const add_coordinate_labels = function (container) {
+    if (!container || container.querySelector(".board-coords")) return;
+    const cols = document.createElement("div");
+    cols.className = "board-coords board-coords-cols";
+    R.range(0, width).forEach(function (i) {
+        const label = document.createElement("span");
+        label.textContent = i + 1;
+        cols.append(label);
+    });
+    const rows = document.createElement("div");
+    rows.className = "board-coords board-coords-rows";
+    R.range(0, height).forEach(function (i) {
+        const label = document.createElement("span");
+        label.textContent = String.fromCharCode(65 + i);
+        rows.append(label);
+    });
+    container.append(cols, rows);
+};
+
 const start_placement = function () {
     phase = "placing";
     document.body.className = "placing-player-1";
@@ -448,6 +512,7 @@ const start_placement = function () {
     game_board_1.innerHTML = "";
     table_cells[0] = R.range(0, height).map(create_place_row);
     game_board_1.addEventListener("mouseleave", clear_preview);
+    add_coordinate_labels(document.getElementById("game_container_1"));
 
     create_ship_table();
     create_rotate_button();
@@ -458,7 +523,22 @@ const start_placement = function () {
 };
 
 // R key rotates the selected ship during placement and refreshes the preview.
+// Arrow keys jump the keyboard cursor onto the board if it is not there yet
+// (cell-level onkeydown then moves it and Enter places the ship).
 document.body.onkeydown = function (event) {
+    const is_arrow = event.key === "ArrowUp" || event.key === "ArrowDown"
+        || event.key === "ArrowLeft" || event.key === "ArrowRight";
+    if (is_arrow && phase === "placing" && table_cells[0]) {
+        const focused = document.activeElement;
+        const on_board = focused && focused.tagName === "TD"
+            && game_board_1.contains(focused);
+        if (!on_board) {
+            const start = hovered_cell_info || { col: 0, row: 0 };
+            table_cells[0][start.row][start.col].focus();
+            event.preventDefault();
+        }
+        return;
+    }
     if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
         const ship = player_fleet.find((s) => s.name === selected_ship_name);
         if (!ship) return;

@@ -1889,15 +1889,15 @@ body.board-locked #center_control {
 /* (3) Larger, easier-to-hit ROTATE / SAVE buttons during placement */
 body.placing-player-1 .button_container,
 body.placing-player-2 .button_container {
-    min-height: clamp(4rem, 8vh, 5.6rem);
+    min-height: clamp(2.8rem, 7vh, 5rem);
     gap: 1.5vmin;
 }
 
 body.placing-player-1 .button_container button,
 body.placing-player-2 .button_container button {
-    min-height: clamp(3.6rem, 7vh, 5rem);
-    padding: 0.85em 2.1em;
-    font-size: clamp(1.1rem, 3.2vw, 1.9rem);
+    min-height: clamp(2.5rem, 6vh, 4.4rem);
+    padding: 0.6em 1.4em;
+    font-size: clamp(0.85rem, 1.25vw, 1.5rem);
     border-radius: 14px;
     letter-spacing: 0.04em;
 }
@@ -1986,21 +1986,36 @@ body.placing-player-2 .ship-size-pip {
     box-shadow: 0 0 6px rgba(64, 184, 255, 0.6);
 }
 
-/* (1) Placement preview — green = valid, red = invalid */
+/* (1) Placement preview — faction energy glow = valid, red warning pulse = invalid */
 body.placing-player-1 #game_board_1 td.preview-valid,
 body.placing-player-2 #game_board_2 td.preview-valid {
-    background: rgba(80, 230, 140, 0.78) !important;
+    background:
+        linear-gradient(150deg, rgba(var(--fx), 0.62), rgba(var(--fx), 0.34) 70%) !important;
     box-shadow:
-        inset 0 0 0 3px rgba(150, 255, 190, 0.95),
-        0 0 16px rgba(80, 230, 140, 0.5) !important;
+        inset 0 0 0 2px rgba(var(--fx-bright), 0.95),
+        inset 0 0 16px rgba(var(--fx), 0.65),
+        0 0 22px rgba(var(--fx), 0.6) !important;
+    animation: preview-energy 1s ease-in-out infinite alternate;
 }
 
 body.placing-player-1 #game_board_1 td.preview-invalid,
 body.placing-player-2 #game_board_2 td.preview-invalid {
-    background: rgba(255, 70, 60, 0.72) !important;
+    background: rgba(255, 64, 54, 0.55) !important;
     box-shadow:
-        inset 0 0 0 3px rgba(255, 150, 140, 0.95),
-        0 0 16px rgba(255, 70, 60, 0.5) !important;
+        inset 0 0 0 2px rgba(255, 150, 140, 0.95),
+        inset 0 0 14px rgba(255, 70, 60, 0.55),
+        0 0 18px rgba(255, 70, 60, 0.55) !important;
+    animation: preview-warning 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes preview-energy {
+    from { filter: brightness(0.95); }
+    to   { filter: brightness(1.3); }
+}
+
+@keyframes preview-warning {
+    from { filter: brightness(0.8); }
+    to   { filter: brightness(1.45); }
 }
 
 /* (6) Remove the top mechanic bar in battle — the centre panel explains all */
@@ -2453,49 +2468,54 @@ body.battle-phase td {
 }
 
 /* ═══════════════════════════════════════════════
-   DEPLOY PHASE — horizontal tactical layout (desktop)
-   Left: vertical fleet panel · Right: dominant board.
+   DEPLOY PHASE — tactical command layout (desktop)
+   Left: fleet roster · Centre: dominant holographic
+   board · Right: tactical data panel.
    Mobile keeps the original stacked column layout.
    ═══════════════════════════════════════════════ */
 @media (min-width: 901px) {
     body.placing-player-1,
     body.placing-player-2 {
-        --deploy-header-height: clamp(6.5rem, 15vh, 9.5rem);
+        /* Scales with the window so small laptops keep the same proportions */
+        --deploy-header-height: clamp(4.5rem, 14vh, 9.5rem);
     }
 
     body.placing-player-1 aside,
     body.placing-player-2 main {
         display: grid;
-        grid-template-columns: minmax(17rem, 28vw) 1fr;
-        grid-template-rows: 1fr auto;
+        /* Fleet roster (left) is intentionally wider than tactical data (right) */
+        grid-template-columns: minmax(12rem, 23vw) minmax(0, 1fr) minmax(9rem, 14vw);
+        grid-template-rows: minmax(0, 1fr) auto auto;
         grid-template-areas:
-            "fleet board"
-            "controls board";
+            "fleet    board tactical"
+            "controls board tactical"
+            "keys     board tactical";
         align-items: center;
         justify-items: center;
-        gap: clamp(1rem, 2.5vw, 2.4rem);
-        padding: clamp(1rem, 2.4vh, 2rem) clamp(1.4rem, 4vw, 4rem);
+        gap: clamp(0.6rem, 1.4vw, 1.6rem);
+        padding: clamp(0.7rem, 1.8vh, 1.6rem) clamp(0.9rem, 2vw, 2.2rem);
     }
 
-    /* Left fleet panel — vertical list, ~1.5x larger, with a header */
+    /* Left fleet panel — vertical list filling its column */
     body.placing-player-1 .ship_container,
     body.placing-player-2 .ship_container {
         grid-area: fleet;
         align-self: stretch;
         width: 100%;
-        max-width: 34rem;
+        max-width: none;
         min-height: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: clamp(0.6rem, 1.4vh, 1.1rem);
+        gap: clamp(0.45rem, 1.2vh, 1rem);
         overflow-y: auto;
+        overflow-x: hidden;
     }
     body.placing-player-1 .ship_container::before,
     body.placing-player-2 .ship_container::before {
         content: "FLEET ROSTER";
         font-family: var(--title-font-family);
-        font-size: clamp(0.8rem, 1.3vw, 1.05rem);
+        font-size: clamp(0.66rem, 0.95vw, 1rem);
         font-weight: 800;
         letter-spacing: 0.18em;
         color: var(--radar);
@@ -2505,11 +2525,19 @@ body.battle-phase td {
         border-bottom: 1px solid var(--line);
     }
 
+    /* Beat the base "#ships_1 { width: min(42vw, 620px) }" ID rule so the
+       roster table can never overflow (it clipped the DEPLOYED badges). */
+    body.placing-player-1 .ship_container #ships_1,
+    body.placing-player-2 .ship_container #ships_2 {
+        width: 100%;
+        min-width: 0;
+    }
+
     body.placing-player-1 .ship_container table,
     body.placing-player-2 .ship_container table {
         flex-direction: column;
         width: 100%;
-        gap: clamp(0.5rem, 1.2vh, 1rem);
+        gap: clamp(0.4rem, 1vh, 0.9rem);
     }
     body.placing-player-1 .ship_container tr,
     body.placing-player-2 .ship_container tr {
@@ -2523,19 +2551,19 @@ body.battle-phase td {
         flex-direction: row;
         align-items: center;
         justify-content: flex-start;
-        gap: clamp(0.8rem, 1.6vw, 1.5rem);
+        gap: clamp(0.5rem, 1.1vw, 1.2rem);
         width: 100%;
-        padding: clamp(0.55rem, 1.3vh, 1rem) clamp(0.9rem, 1.6vw, 1.4rem);
+        padding: clamp(0.4rem, 1.1vh, 0.9rem) clamp(0.6rem, 1.1vw, 1.2rem);
         text-align: left;
     }
     body.placing-player-1 .ship_container img,
     body.placing-player-2 .ship_container img {
-        height: clamp(3.4rem, 5.4vw, 5.4rem);   /* ~1.5x the stacked size */
+        height: clamp(2.4rem, 4.2vw, 5rem);
         flex: 0 0 auto;
     }
     body.placing-player-1 .ship_container .ship-name,
     body.placing-player-2 .ship_container .ship-name {
-        font-size: clamp(0.85rem, 1.4vw, 1.2rem);
+        font-size: clamp(0.68rem, 1.05vw, 1.1rem);
     }
     body.placing-player-1 .ship_container .ship-size-strip,
     body.placing-player-2 .ship_container .ship-size-strip {
@@ -2547,21 +2575,48 @@ body.battle-phase td {
     body.placing-player-2 .button_container {
         grid-area: controls;
         width: 100%;
-        max-width: 34rem;
+        max-width: none;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: clamp(0.4rem, 1vh, 0.8rem);
     }
     body.placing-player-1 .button_container button,
     body.placing-player-2 .button_container button {
         width: 100%;
     }
 
-    /* Right side — the board is the dominant element, centred */
+    /* Centre — the board is the dominant element. Sized from the viewport
+       so every screen gets the same generous proportions. */
     body.placing-player-1 .game_board_container,
     body.placing-player-2 .game_board_container {
         grid-area: board;
-        width: min(54vw, calc(100vh - var(--deploy-header-height) - 4rem), 56rem);
+        width: min(42vw, calc((100vh - var(--deploy-header-height)) * 0.87), 64rem);
         max-width: 100%;
+    }
+
+    /* Right column — tactical data panel (visual only) */
+    body.placing-player-1 aside .deploy-tactical,
+    body.placing-player-2 main .deploy-tactical {
+        display: flex;
+        grid-area: tactical;
+        align-self: stretch;
+        width: 100%;
+        max-width: none;
+        min-height: 0;
+    }
+
+    /* Keyboard hints under the controls */
+    body.placing-player-1 aside .deploy-keys,
+    body.placing-player-2 main .deploy-keys {
+        display: flex;
+        grid-area: keys;
+        width: 100%;
+        max-width: none;
+    }
+
+    /* Coordinate strips only make sense on the roomy desktop layout */
+    body.placing-player-1 #game_container_1 .board-coords,
+    body.placing-player-2 #game_container_2 .board-coords {
+        display: flex;
     }
 }
 
@@ -2957,4 +3012,944 @@ body.intro-phase main {
 @keyframes victory-report-up {
     from { opacity: 0; transform: translateY(22px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEPLOY PHASE — AAA TACTICAL FLEET-DEPLOYMENT REDESIGN
+   Presentation only: same DOM hooks, same game logic.
+   Faction identity: Player 1 = orange, Player 2 = blue.
+   All deploy components read the faction from --fx tokens.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Faction colour tokens ─────────────────────────────────── */
+body {
+    /* Neutral fallback (cyan) for any non-deploy usage */
+    --fx: 79, 227, 255;
+    --fx-bright: 180, 240, 255;
+    --fx-deep: 30, 140, 190;
+}
+
+body.placing-player-1 {
+    --fx: 255, 144, 64;        /* warm orange — Player 1 fleet */
+    --fx-bright: 255, 206, 150;
+    --fx-deep: 200, 90, 24;
+}
+
+body.placing-player-2 {
+    --fx: 64, 184, 255;        /* cool blue — Player 2 fleet */
+    --fx-bright: 165, 224, 255;
+    --fx-deep: 24, 110, 190;
+}
+
+/* ── Cinematic battlefield environment (deploy phase only) ── */
+.battlefield-env {
+    display: none;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+body.placing-player-1 .battlefield-env,
+body.placing-player-2 .battlefield-env {
+    display: block;
+}
+
+.battlefield-env > * {
+    position: absolute;
+    inset: 0;
+}
+
+/* Deep ocean gradient + faint horizon glow */
+.env-ocean {
+    background:
+        radial-gradient(130% 60% at 50% 112%, rgba(var(--fx), 0.10), transparent 62%),
+        linear-gradient(180deg, transparent 0 33%, rgba(var(--fx), 0.05) 34.5%, transparent 36.5%),
+        linear-gradient(180deg, #04070e 0%, #060e1b 34%, #0a1726 52%, #050d1a 100%);
+}
+
+/* Slow-drifting water shimmer below the horizon */
+.env-ocean::after {
+    content: "";
+    position: absolute;
+    inset: 36% 0 0 0;
+    background:
+        repeating-linear-gradient(100deg, transparent 0 46px, rgba(150, 210, 255, 0.04) 46px 48px),
+        repeating-linear-gradient(82deg, transparent 0 72px, rgba(var(--fx), 0.035) 72px 75px);
+    animation: env-water-drift 30s linear infinite;
+}
+
+@keyframes env-water-drift {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 460px 0, -640px 0; }
+}
+
+/* Distant fleet silhouettes on the horizon (existing ship assets,
+   darkened to silhouettes) — two layers for a parallax feeling */
+.env-silhouette {
+    background-repeat: no-repeat;
+}
+
+.env-silhouette-far {
+    background-image:
+        url("./assets/player1/battleship.png"),
+        url("./assets/player1/cruiser.png");
+    background-size:
+        clamp(8rem, 15vw, 15rem) auto,
+        clamp(5.5rem, 9vw, 9.5rem) auto;
+    background-position: 14% 31%, 80% 32%;
+    filter: brightness(0.16) saturate(0.4);
+    opacity: 0.55;
+    animation: env-bob-far 16s ease-in-out infinite alternate;
+}
+
+.env-silhouette-near {
+    background-image: url("./assets/player1/carrier.png");
+    background-size: clamp(12rem, 22vw, 22rem) auto;
+    background-position: 52% 30%;
+    filter: brightness(0.11) saturate(0.3);
+    opacity: 0.65;
+    animation: env-bob-near 12s ease-in-out infinite alternate;
+}
+
+@keyframes env-bob-far {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-1.4vw, 0.5vh, 0); }
+}
+
+@keyframes env-bob-near {
+    from { transform: translate3d(0, 0.2vh, 0); }
+    to   { transform: translate3d(1.8vw, -0.5vh, 0); }
+}
+
+/* Two fog banks drifting at different speeds (parallax) */
+.env-fog {
+    background:
+        radial-gradient(42% 26% at 22% 44%, rgba(170, 205, 235, 0.06), transparent 70%),
+        radial-gradient(52% 24% at 72% 36%, rgba(150, 195, 235, 0.07), transparent 70%),
+        radial-gradient(36% 20% at 48% 54%, rgba(var(--fx), 0.05), transparent 70%);
+}
+
+.env-fog-a {
+    animation: env-fog-drift-a 52s ease-in-out infinite alternate;
+}
+
+.env-fog-b {
+    opacity: 0.7;
+    transform: scale(1.5);
+    animation: env-fog-drift-b 70s ease-in-out infinite alternate;
+}
+
+@keyframes env-fog-drift-a {
+    from { transform: translateX(-4vw); }
+    to   { transform: translateX(5vw); }
+}
+
+@keyframes env-fog-drift-b {
+    from { transform: translateX(5vw) scale(1.5); }
+    to   { transform: translateX(-6vw) scale(1.5); }
+}
+
+/* Slowly rising ember/spark particles, two parallax layers */
+.env-particles {
+    background-image:
+        radial-gradient(2px 2px at 18% 84%, rgba(var(--fx), 0.55), transparent 60%),
+        radial-gradient(1.5px 1.5px at 64% 62%, rgba(190, 235, 255, 0.40), transparent 60%),
+        radial-gradient(2.5px 2.5px at 38% 32%, rgba(var(--fx), 0.30), transparent 60%),
+        radial-gradient(1.5px 1.5px at 84% 18%, rgba(210, 240, 255, 0.35), transparent 60%),
+        radial-gradient(2px 2px at 92% 70%, rgba(var(--fx), 0.35), transparent 60%),
+        radial-gradient(1.5px 1.5px at 8% 40%, rgba(190, 235, 255, 0.28), transparent 60%);
+    background-size: 520px 520px;
+    background-repeat: repeat;
+    opacity: 0.7;
+    animation: env-particles-rise 44s linear infinite;
+}
+
+.env-particles::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: inherit;
+    background-size: 340px 340px;
+    background-repeat: repeat;
+    opacity: 0.5;
+    animation: env-particles-rise-b 28s linear infinite;
+}
+
+@keyframes env-particles-rise {
+    from { background-position: 0 0; }
+    to   { background-position: -80px -520px; }
+}
+
+@keyframes env-particles-rise-b {
+    from { background-position: 0 0; }
+    to   { background-position: 60px -340px; }
+}
+
+/* Faint tactical HUD grid over the whole scene */
+.env-hud {
+    background:
+        linear-gradient(rgba(var(--fx), 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--fx), 0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(85% 75% at 50% 48%, rgba(0, 0, 0, 0.9), transparent);
+    mask-image: radial-gradient(85% 75% at 50% 48%, rgba(0, 0, 0, 0.9), transparent);
+    animation: env-hud-drift 30s linear infinite alternate;
+}
+
+@keyframes env-hud-drift {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 32px 18px, 32px 18px; }
+}
+
+/* A soft scan band sweeping down the battlefield */
+.env-scanline::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 16vh;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(var(--fx), 0.04) 40%,
+        rgba(var(--fx), 0.10) 50%,
+        rgba(var(--fx), 0.04) 60%,
+        transparent
+    );
+    transform: translateY(-20vh);
+    animation: env-scan 8s linear infinite;
+}
+
+@keyframes env-scan {
+    from { transform: translateY(-20vh); }
+    to   { transform: translateY(115vh); }
+}
+
+/* Cinematic vignette */
+.env-vignette {
+    background: radial-gradient(125% 95% at 50% 44%, transparent 55%, rgba(2, 4, 9, 0.6) 100%);
+}
+
+/* ── Translucent battle-zone backdrops so the environment shows through ── */
+body.placing-player-1 aside {
+    background:
+        radial-gradient(110% 80% at 50% 112%, rgba(255, 120, 40, 0.10), transparent 60%),
+        linear-gradient(160deg, rgba(38, 17, 7, 0.78) 0%, rgba(26, 12, 6, 0.56) 55%, rgba(16, 8, 4, 0.80) 100%);
+}
+
+body.placing-player-2 main {
+    background:
+        radial-gradient(110% 80% at 50% 112%, rgba(40, 140, 255, 0.10), transparent 60%),
+        linear-gradient(160deg, rgba(6, 14, 30, 0.78) 0%, rgba(7, 17, 34, 0.56) 55%, rgba(4, 10, 22, 0.80) 100%);
+}
+
+/* ── Command-bridge header: title + faction subtitle + briefing line ── */
+body.placing-player-1 header,
+body.placing-player-2 header {
+    background:
+        linear-gradient(90deg, rgba(var(--fx), 0.07), transparent 28% 72%, rgba(var(--fx), 0.07)),
+        rgba(3, 6, 14, 0.88);
+    border-bottom: 1px solid rgba(var(--fx), 0.30);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 22px rgba(var(--fx), 0.10);
+}
+
+body.placing-player-1 h1,
+body.placing-player-2 h1 {
+    flex-wrap: wrap;
+    row-gap: 0.18em;
+    font-size: clamp(1.3rem, 2.7vw, 2.8rem);
+    letter-spacing: 0.14em;
+    text-shadow:
+        0 0 24px rgba(var(--fx), 0.45),
+        0 0 60px rgba(var(--fx), 0.18),
+        0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+body.placing-player-1 h1::after,
+body.placing-player-2 h1::after {
+    content: "· Fleet Deployment ·";
+    flex-basis: 100%;
+    font-size: clamp(0.52rem, 0.95vw, 0.88rem);
+    font-weight: 700;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    text-transform: uppercase;
+    color: rgb(var(--fx));
+    text-shadow: 0 0 16px rgba(var(--fx), 0.65);
+}
+
+body.placing-player-1 header::after,
+body.placing-player-2 header::after {
+    margin-top: clamp(0.3rem, 1.2vh, 0.8rem);
+    font-size: clamp(0.66rem, 1vw, 0.95rem);
+    letter-spacing: 0.06em;
+}
+
+/* ── Holographic tactical board ────────────────────────────── */
+body.placing-player-1 .game_board_container,
+body.placing-player-2 .game_board_container {
+    position: relative;
+    isolation: isolate;
+}
+
+/* Rotating radar sweep + range rings behind the glass grid */
+body.placing-player-1 .game_board_container::before,
+body.placing-player-2 .game_board_container::before {
+    content: "";
+    position: absolute;
+    inset: 5%;
+    z-index: -1;
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 17.5%, rgba(var(--fx), 0.07) 18% 18.6%),
+        conic-gradient(from 0deg, rgba(var(--fx), 0.20), rgba(var(--fx), 0.05) 14%, transparent 22% 100%);
+    opacity: 0.8;
+    animation: radar-rotate 8s linear infinite;
+}
+
+@keyframes radar-rotate {
+    to { transform: rotate(360deg); }
+}
+
+/* Pulsing HUD corner brackets framing the board */
+body.placing-player-1 .game_board_container::after,
+body.placing-player-2 .game_board_container::after {
+    content: "";
+    position: absolute;
+    inset: -0.55rem;
+    pointer-events: none;
+    --bk: rgba(var(--fx), 0.9);
+    background:
+        linear-gradient(var(--bk), var(--bk)) left 0 top 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) left 0 top 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) right 0 top 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) right 0 top 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) left 0 bottom 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) left 0 bottom 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) right 0 bottom 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) right 0 bottom 0 / 2px 1.6rem;
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 6px rgba(var(--fx), 0.55));
+    animation: bracket-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes bracket-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+}
+
+/* Glass plate behind the cells */
+body.placing-player-1 #game_board_1,
+body.placing-player-2 #game_board_2 {
+    padding: clamp(6px, 0.8vw, 10px);
+    border: 1px solid rgba(var(--fx), 0.22);
+    border-radius: 12px;
+    background:
+        linear-gradient(160deg, rgba(var(--fx), 0.05), transparent 45%),
+        rgba(4, 9, 18, 0.42);
+    box-shadow:
+        inset 0 0 44px rgba(var(--fx), 0.05),
+        0 24px 60px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+/* Holographic dark-glass cells with neon outline + inner glow */
+body.placing-player-1 #game_board_1 .unshot,
+body.placing-player-2 #game_board_2 .unshot {
+    background:
+        linear-gradient(150deg, rgba(var(--fx), 0.11), rgba(var(--fx), 0.02) 60%),
+        rgba(5, 12, 22, 0.6);
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx), 0.30),
+        inset 0 0 10px rgba(var(--fx), 0.08),
+        inset 0 -6px 10px rgba(0, 0, 0, 0.30);
+}
+
+/* Holo specular sheen replaces the default cell texture */
+body.placing-player-1 #game_board_1 td::before,
+body.placing-player-2 #game_board_2 td::before {
+    opacity: 0.5;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.10), transparent 40%),
+        radial-gradient(130% 100% at 50% 115%, rgba(var(--fx), 0.10), transparent 60%);
+}
+
+/* Hover: bright scanning highlight */
+body.placing-player-1 #game_board_1 .unshot:hover,
+body.placing-player-2 #game_board_2 .unshot:hover {
+    background:
+        linear-gradient(150deg, rgba(var(--fx), 0.34), rgba(var(--fx), 0.12) 65%),
+        rgba(8, 16, 28, 0.66);
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx-bright), 0.9),
+        inset 0 0 16px rgba(var(--fx), 0.35),
+        0 0 16px rgba(var(--fx), 0.40);
+}
+
+/* Deployed ship cells: energised faction plating */
+body.placing-player-1 #game_board_1 .cell_with_ship {
+    background: linear-gradient(135deg, #ffb265 0%, #ff8330 48%, #c84e0e 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 214, 160, 0.70),
+        inset 0 0 12px rgba(255, 240, 220, 0.22),
+        0 0 16px rgba(255, 131, 48, 0.45);
+}
+
+body.placing-player-2 #game_board_2 .cell_with_ship {
+    background: linear-gradient(135deg, #6cc6ff 0%, #2f9ae6 48%, #0e63b0 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(170, 226, 255, 0.70),
+        inset 0 0 12px rgba(225, 245, 255, 0.22),
+        0 0 16px rgba(47, 154, 230, 0.45);
+}
+
+body.placing-player-1 #game_board_1 .cell_with_ship:hover,
+body.placing-player-2 #game_board_2 .cell_with_ship:hover {
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx-bright), 0.9),
+        inset 0 0 12px rgba(255, 255, 255, 0.25),
+        0 0 22px rgba(var(--fx), 0.55);
+}
+
+/* Energy-activation effect when a ship's cells come online */
+body.placing-player-1 .place-landed,
+body.placing-player-2 .place-landed {
+    animation: place-activate 640ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes place-activate {
+    0%   { transform: scale(0.5); filter: brightness(2.4) saturate(0.5); }
+    45%  { transform: scale(1.12); filter: brightness(1.7); }
+    70%  { filter: brightness(1.2); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* ── Tactical coordinate strips (1-10 / A-J) ───────────────── */
+.board-coords {
+    display: none;
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    font-family: var(--title-font-family);
+    font-size: clamp(0.58rem, 1vw, 0.8rem);
+    font-weight: 700;
+    color: rgba(var(--fx), 0.8);
+    text-shadow: 0 0 8px rgba(var(--fx), 0.45);
+}
+
+.board-coords span {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.board-coords-cols {
+    top: -2em;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+}
+
+.board-coords-rows {
+    left: -2em;
+    top: 0;
+    bottom: 0;
+    flex-direction: column;
+}
+
+/* ── Fleet roster: military fleet database ─────────────────── */
+body.placing-player-1 .ship_container,
+body.placing-player-2 .ship_container {
+    position: relative;
+    border: 1px solid rgba(var(--fx), 0.30);
+    background:
+        linear-gradient(180deg, rgba(var(--fx), 0.07), transparent 30%),
+        rgba(4, 8, 18, 0.74);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.45),
+        0 0 24px rgba(var(--fx), 0.08),
+        inset 0 0 30px rgba(var(--fx), 0.04);
+}
+
+body.placing-player-1 .ship_container::before,
+body.placing-player-2 .ship_container::before {
+    color: rgb(var(--fx));
+    border-bottom-color: rgba(var(--fx), 0.35);
+    text-shadow: 0 0 12px rgba(var(--fx), 0.55);
+}
+
+/* Ship record cards */
+body.placing-player-1 .ship_container td,
+body.placing-player-2 .ship_container td {
+    position: relative;
+    border: 1px solid rgba(var(--fx), 0.22);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(var(--fx), 0.10), rgba(var(--fx), 0.02) 60%);
+    transition:
+        transform 200ms ease,
+        box-shadow 200ms ease,
+        opacity 300ms ease,
+        background 200ms ease,
+        border-color 200ms ease;
+}
+
+body.placing-player-1 .ship_container td.ship:hover,
+body.placing-player-2 .ship_container td.ship:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--fx), 0.55);
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.4),
+        0 0 18px rgba(var(--fx), 0.25);
+}
+
+/* Selected ship: full brightness, faction glow, slight lift */
+body.placing-player-1 .ship_container td.dragging,
+body.placing-player-2 .ship_container td.dragging {
+    transform: translateY(-3px) scale(1.02);
+    outline: none;
+    border-color: rgba(var(--fx-bright), 0.95);
+    background:
+        linear-gradient(135deg, rgba(var(--fx), 0.30), rgba(var(--fx), 0.08) 65%),
+        rgba(10, 14, 24, 0.55) !important;
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.5),
+        0 0 28px rgba(var(--fx), 0.45),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+
+/* Repositioning keeps its amber "active reference" identity */
+body.placing-player-1 .ship_container td.is-repositioning,
+body.placing-player-2 .ship_container td.is-repositioning {
+    outline: none;
+    border-color: rgba(247, 211, 122, 0.9);
+    background:
+        linear-gradient(135deg, rgba(247, 211, 122, 0.22), rgba(var(--fx), 0.10)) !important;
+    box-shadow: 0 0 22px rgba(247, 211, 122, 0.30);
+}
+
+/* Hologram glow on the active ship's image */
+body.placing-player-1 .ship_container td.dragging img,
+body.placing-player-2 .ship_container td.dragging img,
+body.placing-player-1 .ship_container td.is-repositioning img,
+body.placing-player-2 .ship_container td.is-repositioning img {
+    filter: drop-shadow(0 0 14px rgba(var(--fx), 0.7));
+}
+
+/* ── Rotate control module: ⟳ ROTATE SHIP [R] ──────────────── */
+body.placing-player-1 .rotate-ship-button,
+body.placing-player-2 .rotate-ship-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    border: 1px solid rgba(var(--fx), 0.55);
+    border-radius: 12px;
+    color: var(--ink);
+    background:
+        linear-gradient(180deg, rgba(var(--fx), 0.18), rgba(var(--fx), 0.05)),
+        rgba(5, 10, 20, 0.88);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 0 16px rgba(var(--fx), 0.15);
+    text-shadow: 0 0 10px rgba(var(--fx), 0.5);
+    animation: control-idle 3.2s ease-in-out infinite;
+}
+
+body.placing-player-1 .rotate-ship-button::before,
+body.placing-player-2 .rotate-ship-button::before {
+    content: "⟳";
+    font-size: 1.25em;
+    line-height: 1;
+}
+
+body.placing-player-1 .rotate-ship-button::after,
+body.placing-player-2 .rotate-ship-button::after {
+    content: "[ R ]";
+    padding: 0.3em 0.55em;
+    border: 1px solid rgba(var(--fx), 0.45);
+    border-radius: 6px;
+    background: rgba(var(--fx), 0.10);
+    color: rgb(var(--fx-bright));
+    font-size: 0.62em;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+body.placing-player-1 .rotate-ship-button:hover:not(:disabled),
+body.placing-player-2 .rotate-ship-button:hover:not(:disabled) {
+    border-color: rgb(var(--fx));
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 26px rgba(var(--fx), 0.40);
+}
+
+body.placing-player-1 .rotate-ship-button:hover:not(:disabled)::before,
+body.placing-player-2 .rotate-ship-button:hover:not(:disabled)::before {
+    animation: rotate-icon-spin 900ms ease;
+}
+
+body.placing-player-1 .rotate-ship-button:active:not(:disabled),
+body.placing-player-2 .rotate-ship-button:active:not(:disabled) {
+    transform: scale(0.97);
+    box-shadow:
+        inset 0 0 18px rgba(var(--fx), 0.25),
+        0 0 36px rgba(var(--fx), 0.65);
+}
+
+@keyframes rotate-icon-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes control-idle {
+    0%, 100% {
+        box-shadow:
+            inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+            0 0 12px rgba(var(--fx), 0.12);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+            0 0 24px rgba(var(--fx), 0.30);
+    }
+}
+
+/* Armed "Confirm Deployment" pulse once the fleet is complete */
+body.placing-player-1 .save-turn-button.is-ready,
+body.placing-player-2 .save-turn-button.is-ready {
+    letter-spacing: 0.08em;
+    animation: confirm-armed 1.6s ease-in-out infinite;
+}
+
+@keyframes confirm-armed {
+    0%, 100% { box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 16px rgba(78, 224, 138, 0.28); }
+    50%      { box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 34px rgba(78, 224, 138, 0.60); }
+}
+
+/* ── Right-side tactical data panel (visual only) ──────────── */
+.deploy-tactical {
+    display: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: clamp(0.6rem, 1.5vh, 1rem);
+    padding: clamp(0.7rem, 1.6vh, 1.1rem);
+    border: 1px solid rgba(var(--fx), 0.30);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(var(--fx), 0.07), transparent 32%),
+        rgba(4, 8, 18, 0.74);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.45),
+        0 0 24px rgba(var(--fx), 0.07),
+        inset 0 0 30px rgba(var(--fx), 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow-y: auto;
+}
+
+.tac-title {
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(var(--fx), 0.35);
+    font-family: var(--title-font-family);
+    font-size: clamp(0.66rem, 0.95vw, 1rem);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-align: center;
+    text-transform: uppercase;
+    color: rgb(var(--fx));
+    text-shadow: 0 0 12px rgba(var(--fx), 0.55);
+}
+
+.tac-block {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: clamp(0.45rem, 1vh, 0.75rem) clamp(0.5rem, 0.75vw, 0.85rem);
+    border: 1px solid rgba(var(--fx), 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.tac-label {
+    font-size: clamp(0.5rem, 0.75vw, 0.7rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+}
+
+.tac-value {
+    font-family: var(--title-font-family);
+    font-size: clamp(0.78rem, 1.15vw, 1.25rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-shadow: 0 0 14px rgba(var(--fx), 0.45);
+}
+
+.tac-fleet-count {
+    font-size: clamp(1.1rem, 1.9vw, 2.1rem);
+    color: rgb(var(--fx));
+}
+
+.tac-bar {
+    height: 0.45rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.tac-bar-fill {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(var(--fx), 0.65), rgb(var(--fx)));
+    box-shadow: 0 0 10px rgba(var(--fx), 0.6);
+    transition: width 400ms ease;
+}
+
+.tac-deploy-status {
+    color: #f7d37a;
+    text-shadow: 0 0 12px rgba(247, 211, 122, 0.45);
+    animation: tac-blink 1.6s ease-in-out infinite;
+}
+
+.tac-deploy-status.is-ready {
+    color: #4ee08a;
+    text-shadow: 0 0 12px rgba(78, 224, 138, 0.6);
+    animation: none;
+}
+
+.tac-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: clamp(0.68rem, 1.1vw, 0.85rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+}
+
+.tac-online {
+    color: #4ee08a;
+    text-shadow: 0 0 12px rgba(78, 224, 138, 0.6);
+}
+
+.tac-online::before {
+    content: "● ";
+    animation: tac-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes tac-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+
+/* Mini radar scope with rotating sweep */
+.tac-radar {
+    position: relative;
+    align-self: center;
+    width: clamp(4.2rem, 6.5vw, 6.2rem);
+    aspect-ratio: 1;
+    margin-top: 0.2rem;
+    border: 1px solid rgba(var(--fx), 0.4);
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 26%, rgba(var(--fx), 0.14) 27% 28%),
+        radial-gradient(circle, rgba(var(--fx), 0.07), transparent 70%);
+    overflow: hidden;
+}
+
+.tac-radar::before,
+.tac-radar::after {
+    content: "";
+    position: absolute;
+    background: rgba(var(--fx), 0.25);
+}
+
+.tac-radar::before {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.tac-radar::after {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+}
+
+.tac-radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(var(--fx), 0.55), transparent 28% 100%);
+    animation: radar-rotate 4s linear infinite;
+}
+
+/* ── Keyboard controls hint module ─────────────────────────── */
+.deploy-keys {
+    display: none;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid rgba(var(--fx), 0.18);
+    border-radius: 12px;
+    background: rgba(4, 8, 18, 0.62);
+}
+
+.dk-title {
+    font-size: clamp(0.56rem, 0.95vw, 0.7rem);
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(var(--fx), 0.8);
+}
+
+.dk-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: clamp(0.68rem, 1.05vw, 0.82rem);
+    color: var(--muted-ink);
+}
+
+.dk-key {
+    min-width: 3.2em;
+    padding: 0.15em 0.5em;
+    border: 1px solid rgba(var(--fx), 0.35);
+    border-radius: 6px;
+    background: rgba(var(--fx), 0.08);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    color: var(--ink);
+    font-size: 0.9em;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── Desktop-only roster extras: status badges + scan sweeps ── */
+@media (min-width: 901px) {
+    /* Status badge in the card's top-right corner */
+    body.placing-player-1 .ship_container td::before,
+    body.placing-player-2 .ship_container td::before {
+        content: "● STANDBY";
+        display: block;
+        position: absolute;
+        inset: 0.45rem 0.55rem auto auto;
+        width: auto;
+        height: auto;
+        max-width: calc(100% - 1.1rem);
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 1;
+        pointer-events: none;
+        background: none;
+        font-family: var(--title-font-family);
+        font-size: clamp(0.42rem, 0.55vw, 0.58rem);
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        color: rgba(var(--fx), 0.65);
+        text-shadow: 0 0 8px rgba(var(--fx), 0.4);
+    }
+
+    body.placing-player-1 .ship_container td.ship.is-placed::before,
+    body.placing-player-2 .ship_container td.ship.is-placed::before {
+        content: "✓ DEPLOYED";
+        color: rgb(var(--fx-bright));
+    }
+
+    body.placing-player-1 .ship_container td.dragging::before,
+    body.placing-player-2 .ship_container td.dragging::before,
+    body.placing-player-1 .ship_container td.is-repositioning::before,
+    body.placing-player-2 .ship_container td.is-repositioning::before {
+        content: "▶ SELECTED";
+        color: #fff;
+        text-shadow: 0 0 10px rgba(var(--fx), 1);
+        animation: tac-blink 1.1s ease-in-out infinite;
+    }
+
+    /* Periodic holographic scan sweep across each record card */
+    body.placing-player-1 .ship_container td::after,
+    body.placing-player-2 .ship_container td::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(105deg, transparent 35%, rgba(var(--fx), 0.14) 50%, transparent 65%);
+        transform: translateX(-160%);
+        animation: roster-scan 5.2s linear infinite;
+    }
+
+    body.placing-player-1 .ship_container tr:first-child td:nth-child(2)::after,
+    body.placing-player-2 .ship_container tr:first-child td:nth-child(2)::after {
+        animation-delay: 1.7s;
+    }
+
+    body.placing-player-1 .ship_container tr:first-child td:nth-child(3)::after,
+    body.placing-player-2 .ship_container tr:first-child td:nth-child(3)::after {
+        animation-delay: 3.4s;
+    }
+
+    body.placing-player-1 .ship_container tr:last-child td:nth-child(1)::after,
+    body.placing-player-2 .ship_container tr:last-child td:nth-child(1)::after {
+        animation-delay: 0.9s;
+    }
+
+    body.placing-player-1 .ship_container tr:last-child td:nth-child(2)::after,
+    body.placing-player-2 .ship_container tr:last-child td:nth-child(2)::after {
+        animation-delay: 2.6s;
+    }
+}
+
+@keyframes roster-scan {
+    0%       { transform: translateX(-160%); }
+    32%, 100% { transform: translateX(160%); }
+}
+
+/* ── Accessibility: respect reduced-motion preferences ─────── */
+@media (prefers-reduced-motion: reduce) {
+    .battlefield-env,
+    .battlefield-env *,
+    .battlefield-env *::before,
+    .battlefield-env *::after,
+    .env-ocean::after,
+    .env-scanline::before,
+    .tac-radar-sweep,
+    .tac-online::before,
+    .tac-deploy-status,
+    body.placing-player-1 .game_board_container::before,
+    body.placing-player-2 .game_board_container::before,
+    body.placing-player-1 .game_board_container::after,
+    body.placing-player-2 .game_board_container::after,
+    body.placing-player-1 .ship_container td::before,
+    body.placing-player-2 .ship_container td::before,
+    body.placing-player-1 .ship_container td::after,
+    body.placing-player-2 .ship_container td::after,
+    body.placing-player-1 .rotate-ship-button,
+    body.placing-player-2 .rotate-ship-button,
+    body.placing-player-1 .save-turn-button.is-ready,
+    body.placing-player-2 .save-turn-button.is-ready {
+        animation: none !important;
+    }
+}
+
+/* ── Keyboard cursor: always-visible focus ring on deploy board cells ──
+   Arrow keys move this cursor; Enter places the selected ship there. */
+body.placing-player-1 #game_board_1 td:focus,
+body.placing-player-2 #game_board_2 td:focus {
+    outline: 2px solid rgb(var(--fx-bright));
+    outline-offset: -2px;
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx-bright), 0.9),
+        inset 0 0 16px rgba(var(--fx), 0.35),
+        0 0 16px rgba(var(--fx), 0.45);
 }

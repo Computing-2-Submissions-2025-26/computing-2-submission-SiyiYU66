@@ -12,6 +12,19 @@
 
 <body>
 
+<!-- Cinematic deploy-phase battlefield backdrop (visual only, CSS-driven) -->
+<div class="battlefield-env" aria-hidden="true">
+    <div class="env-ocean"></div>
+    <div class="env-silhouette env-silhouette-far"></div>
+    <div class="env-silhouette env-silhouette-near"></div>
+    <div class="env-fog env-fog-a"></div>
+    <div class="env-fog env-fog-b"></div>
+    <div class="env-particles"></div>
+    <div class="env-hud"></div>
+    <div class="env-scanline"></div>
+    <div class="env-vignette"></div>
+</div>
+
 <a href="./index.html" class="nav-home-btn" title="Return to Menu">&larr; MENU</a>
 
 <header>
@@ -32,6 +45,36 @@
         <table id="ships_1"></table>
     </div>
     <div id="button_container_1" class="button_container"></div>
+    <div class="deploy-keys" aria-hidden="true">
+        <div class="dk-title">Keyboard Controls</div>
+        <div class="dk-row"><span class="dk-key">&larr; &uarr; &darr; &rarr;</span><span class="dk-desc">Move cursor</span></div>
+        <div class="dk-row"><span class="dk-key">R</span><span class="dk-desc">Rotate ship</span></div>
+        <div class="dk-row"><span class="dk-key">&crarr;</span><span class="dk-desc">Place ship</span></div>
+    </div>
+    <div class="deploy-tactical" aria-hidden="true">
+        <div class="tac-title">Tactical Data</div>
+        <div class="tac-block tac-block-fleet">
+            <div class="tac-label">Fleet</div>
+            <div class="tac-value tac-fleet-count">0 / 5</div>
+            <div class="tac-bar"><span class="tac-bar-fill"></span></div>
+        </div>
+        <div class="tac-block">
+            <div class="tac-label">Deployment</div>
+            <div class="tac-value tac-deploy-status">In Progress</div>
+        </div>
+        <div class="tac-block">
+            <div class="tac-label">Sea Conditions</div>
+            <div class="tac-lines">
+                <span>Wind: Low</span>
+                <span>Waves: Calm</span>
+            </div>
+        </div>
+        <div class="tac-block tac-block-scanner">
+            <div class="tac-label">Scanner Status</div>
+            <div class="tac-value tac-online">Online</div>
+            <div class="tac-radar"><span class="tac-radar-sweep"></span></div>
+        </div>
+    </div>
 </aside>
 
 <div id="center_control" class="center-control"></div>
