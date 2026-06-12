@@ -1,5 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
+import { run_battle_countdown } from "./countdown.js";
 import {
     playHitSound,
     playMissSound,
@@ -111,7 +112,13 @@ const setup_difficulty_select = function () {
     start_btn.onclick = function () {
         difficulty = DIFFICULTIES[index];
         overlay.classList.add("hidden");
-        start_placement();
+        // Same cinematic launch sequence as Two Player mode; the game UI
+        // stays hidden until the countdown hands over.
+        document.body.classList.add("battle-initializing");
+        run_battle_countdown(function () {
+            document.body.classList.remove("battle-initializing");
+            start_placement();
+        });
     };
 
     render();
@@ -344,6 +351,10 @@ const create_place_cell = function (row_index, tr) {
             const move = moves[event.key];
             if (move) {
                 table_cells[0][move[1]][move[0]].focus();
+                // Refresh the cursor preview directly too — focus events do
+                // not fire while the window is unfocused.
+                hovered_cell_info = { col: move[0], row: move[1] };
+                show_preview(move[0], move[1]);
                 event.stopPropagation();
                 event.preventDefault();
             }
@@ -513,6 +524,7 @@ const start_placement = function () {
     table_cells[0] = R.range(0, height).map(create_place_row);
     game_board_1.addEventListener("mouseleave", clear_preview);
     add_coordinate_labels(document.getElementById("game_container_1"));
+    add_coordinate_labels(document.getElementById("game_container_2"));
 
     create_ship_table();
     create_rotate_button();
@@ -535,6 +547,8 @@ document.body.onkeydown = function (event) {
         if (!on_board) {
             const start = hovered_cell_info || { col: 0, row: 0 };
             table_cells[0][start.row][start.col].focus();
+            hovered_cell_info = { col: start.col, row: start.row };
+            show_preview(start.col, start.row);
             event.preventDefault();
         }
         return;

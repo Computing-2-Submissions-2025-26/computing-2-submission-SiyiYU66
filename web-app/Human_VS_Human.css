@@ -234,7 +234,6 @@ main {
 .game_board_container {
     width: min(
         36vw,
-        620px,
         calc(100vh - var(--header-height) - var(--legend-height) - var(--ship-container-height) - var(--button-height) - 8rem)
     );
     max-width: 90%;
@@ -963,9 +962,10 @@ body.battle-phase .game_board_container {
     margin-bottom: clamp(0.5rem, 1.2vh, 0.9rem);
 }
 
-/* Boards fill ~35vw each → combined ~70vw */
+/* Boards fill ~35vw each → combined ~70vw; on very large screens the
+   cap grows with the viewport instead of stopping at a fixed pixel size */
 body.battle-phase .game_board_container {
-    width: min(calc(var(--side-w) - 0.8rem), 820px);
+    width: min(calc(var(--side-w) - 0.8rem), max(51rem, 52vh));
     max-width: 99%;
 }
 
@@ -1326,35 +1326,292 @@ body.battle-phase #center_control::before {
     box-shadow: 0 0.45rem 0 #369147;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   CINEMATIC BATTLE-LAUNCH COUNTDOWN (shared by both modes)
+   "Battle system initializing" — tactical backdrop, radar
+   sweep, target lock, holographic 3-2-1, BATTLE START finale.
+   ═══════════════════════════════════════════════════════════ */
+
+/* While the launch sequence runs, no game UI may render behind it */
+body.battle-initializing header,
+body.battle-initializing aside,
+body.battle-initializing main,
+body.battle-initializing #legend,
+body.battle-initializing #center_control,
+body.battle-initializing .nav-home-btn {
+    visibility: hidden !important;
+}
+
 .countdown-overlay {
-    background: #102237;
+    flex-direction: column;
+    gap: clamp(0.7rem, 2.2vh, 1.5rem);
     overflow: hidden;
+    background:
+        radial-gradient(120% 80% at 50% 115%, rgba(79, 227, 255, 0.08), transparent 60%),
+        linear-gradient(180deg, #04070e 0%, #071120 45%, #0a1726 70%, #050d1a 100%);
+    transition: opacity 650ms ease;
 }
 
-.countdown-board {
+.countdown-overlay.cd-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Backdrop layers reuse the battlefield env classes; this just hosts them */
+.cd-layer {
     position: absolute;
-    inset: 50% auto auto 50%;
-    display: grid;
-    width: min(82vmin, 44rem);
+    inset: 0;
+    pointer-events: none;
+}
+
+/* Large radar scope behind the numbers */
+.cd-radar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(74vmin, 46rem);
     aspect-ratio: 1;
-    grid-template-columns: repeat(10, 1fr);
-    gap: clamp(4px, 0.8vmin, 8px);
-    transform: translate(-50%, -50%) rotate(-3deg);
-    opacity: 0.5;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(79, 227, 255, 0.25);
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 18%, rgba(79, 227, 255, 0.06) 18.5% 19%),
+        radial-gradient(circle, rgba(79, 227, 255, 0.05), transparent 70%);
+    pointer-events: none;
 }
 
-.countdown-board div {
-    border-radius: 0.4rem;
-    background: rgba(101, 184, 212, 0.45);
+.cd-radar::before,
+.cd-radar::after {
+    content: "";
+    position: absolute;
+    background: rgba(79, 227, 255, 0.18);
 }
 
-.countdown-number {
-    z-index: 1;
-    color: white;
-    font-size: clamp(8rem, 32vw, 22rem);
+.cd-radar::before {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.cd-radar::after {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+}
+
+.cd-radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    background: conic-gradient(from 0deg, rgba(79, 227, 255, 0.30), transparent 24% 100%);
+    animation: radar-rotate 2.55s linear infinite;
+}
+
+/* Target-lock ring: contracts and flares on every tick */
+.cd-lock {
+    position: absolute;
+    inset: 18%;
+    border: 2px solid rgba(255, 144, 64, 0.0);
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.cd-lock.cd-lock-pulse {
+    animation: cd-lock-in 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cd-lock-in {
+    0% {
+        opacity: 0;
+        transform: scale(1.55);
+        border-color: rgba(255, 144, 64, 0.0);
+    }
+    30% {
+        opacity: 1;
+        border-color: rgba(255, 144, 64, 0.9);
+        box-shadow:
+            0 0 26px rgba(255, 144, 64, 0.55),
+            inset 0 0 22px rgba(64, 184, 255, 0.25);
+    }
+    60% {
+        transform: scale(1);
+        border-color: rgba(64, 184, 255, 0.8);
+    }
+    100% {
+        opacity: 0.35;
+        transform: scale(1);
+        border-color: rgba(64, 184, 255, 0.4);
+        box-shadow: 0 0 12px rgba(64, 184, 255, 0.25);
+    }
+}
+
+/* HUD typography above / below the number */
+.cd-title,
+.cd-sub {
+    position: relative;
+    z-index: 2;
+    font-family: var(--title-font-family);
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.cd-title {
+    font-size: clamp(0.85rem, 1.9vw, 1.5rem);
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    color: #aee6ff;
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.75);
+    animation: cd-flicker 2.4s linear infinite;
+}
+
+.cd-sub {
+    font-size: clamp(0.6rem, 1.2vw, 0.95rem);
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    color: rgba(255, 168, 100, 0.85);
+    text-shadow: 0 0 14px rgba(255, 144, 64, 0.55);
+}
+
+@keyframes cd-flicker {
+    0%, 100% { opacity: 1; }
+    92%      { opacity: 1; }
+    94%      { opacity: 0.55; }
+    96%      { opacity: 1; }
+    98%      { opacity: 0.7; }
+}
+
+/* The holographic 3-2-1: materialise → impact → scanner dissolve */
+.cd-number {
+    position: relative;
+    z-index: 2;
+    font-family: var(--title-font-family);
+    font-size: clamp(6.5rem, 26vmin, 17rem);
     font-weight: 900;
-    text-shadow: 0 0.4rem 0 rgba(0, 0, 0, 0.14);
-    animation: count-pop 850ms ease both;
+    line-height: 1;
+    color: #f4fbff;
+    text-shadow:
+        0 0 30px rgba(79, 227, 255, 0.85),
+        0 0 70px rgba(64, 184, 255, 0.45),
+        0 0 110px rgba(255, 144, 64, 0.35);
+}
+
+.cd-number.cd-tick {
+    animation: cd-number-cine 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cd-number-cine {
+    0% {
+        opacity: 0;
+        transform: scale(0.25);
+        filter: blur(14px) brightness(2.4);
+    }
+    22% {
+        opacity: 1;
+        transform: scale(1.18);
+        filter: blur(0) brightness(1.7);
+    }
+    30% { transform: scale(0.97) translateX(-3px); }
+    35% { transform: scale(1.02) translateX(3px); }
+    40% { transform: scale(1) translateX(0); filter: brightness(1.15); }
+    74% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.3);
+        filter: blur(10px) brightness(1.9);
+    }
+}
+
+/* Finale: white flash, expanding shockwave, BATTLE START */
+.cd-flash {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: #eafaff;
+    animation: cd-flash 750ms ease-out both;
+    pointer-events: none;
+}
+
+@keyframes cd-flash {
+    0%   { opacity: 0.95; }
+    100% { opacity: 0; }
+}
+
+.cd-shockwave {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    width: 12vmin;
+    aspect-ratio: 1;
+    border: 3px solid rgba(79, 227, 255, 0.85);
+    border-radius: 50%;
+    box-shadow:
+        0 0 40px rgba(255, 144, 64, 0.55),
+        inset 0 0 30px rgba(64, 184, 255, 0.45);
+    animation: cd-shock 950ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    pointer-events: none;
+}
+
+@keyframes cd-shock {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(14);
+        border-width: 1px;
+    }
+}
+
+.cd-battle-start {
+    position: relative;
+    z-index: 3;
+    font-family: var(--title-font-family);
+    font-size: clamp(2rem, 6.5vw, 5.2rem);
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow:
+        0 0 30px rgba(79, 227, 255, 0.9),
+        0 0 70px rgba(64, 184, 255, 0.5),
+        0 0 110px rgba(255, 144, 64, 0.45);
+    animation: cd-battle-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cd-battle-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.4);
+        filter: blur(12px);
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.12);
+        filter: blur(0);
+    }
+    45%  { transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cd-radar-sweep,
+    .cd-title,
+    .countdown-overlay .cd-layer,
+    .countdown-overlay .env-ocean::after,
+    .countdown-overlay .env-scanline::before {
+        animation: none !important;
+    }
 }
 
 .cell-effect {
@@ -1436,7 +1693,7 @@ body.battle-phase .ship-tracker {
     align-items: center;
     gap: 0.55rem;
     flex: 0 0 auto;
-    width: min(calc(var(--side-w) - 0.8rem), 820px);
+    width: min(calc(var(--side-w) - 0.8rem), max(51rem, 52vh));
     max-width: 99%;
     padding: 0.75rem 1rem;
     border-radius: 12px;
@@ -2416,46 +2673,45 @@ body.battle-phase .ghost-landed {
     outline: 1px solid rgba(140, 255, 190, 0.8);
 }
 
-/* (6) HUD corner brackets on the battle boards — premium tactical framing */
+/* (6) HUD framing on the battle boards — same radar sweep + pulsing corner
+   brackets as the deploy screen, in each side's faction colour (--fx is set
+   per side in the unified-combat section at the end of this file). */
 body.battle-phase .game_board_container {
     position: relative;
-}
-
-body.battle-phase .game_board_container::before,
-body.battle-phase .game_board_container::after {
-    content: "";
-    position: absolute;
-    width: clamp(16px, 2.4vmin, 28px);
-    height: clamp(16px, 2.4vmin, 28px);
-    pointer-events: none;
-    opacity: 0.8;
-    z-index: 2;
+    isolation: isolate;
 }
 
 body.battle-phase .game_board_container::before {
-    top: -7px;
-    left: -7px;
-    border-top: 2px solid;
-    border-left: 2px solid;
-    border-top-left-radius: 4px;
+    content: "";
+    position: absolute;
+    inset: 5%;
+    z-index: -1;
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 17.5%, rgba(var(--fx), 0.07) 18% 18.6%),
+        conic-gradient(from 0deg, rgba(var(--fx), 0.20), rgba(var(--fx), 0.05) 14%, transparent 22% 100%);
+    opacity: 0.8;
+    animation: radar-rotate 8s linear infinite;
 }
 
 body.battle-phase .game_board_container::after {
-    bottom: -7px;
-    right: -7px;
-    border-bottom: 2px solid;
-    border-right: 2px solid;
-    border-bottom-right-radius: 4px;
-}
-
-body.battle-phase aside .game_board_container::before,
-body.battle-phase aside .game_board_container::after {
-    border-color: rgba(224, 120, 64, 0.75);
-}
-
-body.battle-phase main .game_board_container::before,
-body.battle-phase main .game_board_container::after {
-    border-color: rgba(58, 174, 224, 0.75);
+    content: "";
+    position: absolute;
+    inset: -0.55rem;
+    pointer-events: none;
+    --bk: rgba(var(--fx), 0.9);
+    background:
+        linear-gradient(var(--bk), var(--bk)) left 0 top 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) left 0 top 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) right 0 top 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) right 0 top 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) left 0 bottom 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) left 0 bottom 0 / 2px 1.6rem,
+        linear-gradient(var(--bk), var(--bk)) right 0 bottom 0 / 1.6rem 2px,
+        linear-gradient(var(--bk), var(--bk)) right 0 bottom 0 / 2px 1.6rem;
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 6px rgba(var(--fx), 0.55));
+    animation: bracket-pulse 2.6s ease-in-out infinite;
 }
 
 /* (6) Smoother, springier cell feedback */
@@ -2680,7 +2936,8 @@ body.intro-phase main {
     -webkit-backdrop-filter: blur(12px);
     color: var(--radar, #4fe3ff);
     font-family: var(--logo-font, 'Orbitron', sans-serif);
-    font-size: clamp(1.8rem, 4vmin, 3.5rem);
+    /* ~0.4x the page title: small but the glow pulse keeps it findable */
+    font-size: clamp(0.85rem, 1.1vw, 1.25rem);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -3952,4 +4209,178 @@ body.placing-player-2 #game_board_2 td:focus {
         inset 0 0 0 1px rgba(var(--fx-bright), 0.9),
         inset 0 0 16px rgba(var(--fx), 0.35),
         0 0 16px rgba(var(--fx), 0.45);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BATTLE PHASE — UNIFIED COMBAT VISUAL LANGUAGE
+   The deployment interface "transforms into combat mode":
+   same glass grid, same faction tokens, same HUD framing,
+   same animation vocabulary as the placement screen.
+   Player 1 side = orange, Player 2 / enemy side = blue.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Per-side faction tokens (deploy sets these on <body>; in battle both
+   factions are on screen at once, so each battle zone carries its own). */
+body.battle-phase aside {
+    --fx: 255, 144, 64;
+    --fx-bright: 255, 206, 150;
+    --fx-deep: 200, 90, 24;
+}
+
+body.battle-phase main {
+    --fx: 64, 184, 255;
+    --fx-bright: 165, 224, 255;
+    --fx-deep: 24, 110, 190;
+}
+
+/* The cinematic battlefield stays on through combat (neutral ops cyan) */
+body.battle-phase .battlefield-env {
+    display: block;
+}
+
+/* Same glass board plate as deployment */
+body.battle-phase #game_board_1,
+body.battle-phase #game_board_2 {
+    border: 1px solid rgba(var(--fx), 0.22);
+    border-radius: 12px;
+    background:
+        linear-gradient(160deg, rgba(var(--fx), 0.05), transparent 45%),
+        rgba(4, 9, 18, 0.42);
+    box-shadow:
+        inset 0 0 44px rgba(var(--fx), 0.05),
+        0 24px 60px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+/* Same holographic dark-glass cells, tinted by each side's faction */
+body.battle-phase aside .unshot,
+body.battle-phase main .unshot {
+    background:
+        linear-gradient(150deg, rgba(var(--fx), 0.11), rgba(var(--fx), 0.02) 60%),
+        rgba(5, 12, 22, 0.6);
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx), 0.30),
+        inset 0 0 10px rgba(var(--fx), 0.08),
+        inset 0 -6px 10px rgba(0, 0, 0, 0.30);
+}
+
+/* Same holo specular sheen instead of the default cell texture */
+body.battle-phase #game_board_1 td::before,
+body.battle-phase #game_board_2 td::before {
+    opacity: 0.5;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.10), transparent 40%),
+        radial-gradient(130% 100% at 50% 115%, rgba(var(--fx), 0.10), transparent 60%);
+}
+
+/* Targeting scan: hovering an attackable cell reads as a weapons lock */
+body.battle-phase aside .unshot:hover,
+body.battle-phase main .unshot:hover {
+    cursor: crosshair;
+    background:
+        linear-gradient(150deg, rgba(var(--fx), 0.34), rgba(var(--fx), 0.12) 65%),
+        rgba(8, 16, 28, 0.66);
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--fx-bright), 0.9),
+        inset 0 0 16px rgba(var(--fx), 0.35),
+        0 0 16px rgba(var(--fx), 0.40);
+    animation: target-scan 1s ease-in-out infinite alternate;
+}
+
+@keyframes target-scan {
+    from { filter: brightness(1); }
+    to   { filter: brightness(1.4); }
+}
+
+/* Attack lock: pressing the cell snaps it tight before the shot resolves */
+body.battle-phase aside .unshot:active,
+body.battle-phase main .unshot:active {
+    transform: scale(0.9);
+    animation: none;
+    box-shadow:
+        inset 0 0 0 2px rgb(var(--fx-bright)),
+        inset 0 0 18px rgba(var(--fx), 0.5),
+        0 0 26px rgba(var(--fx), 0.85);
+    transition-duration: 60ms;
+}
+
+/* Miss ripple: a sonar ring expands from the splash, in faction colour */
+body.battle-phase .miss.shot-flash {
+    animation:
+        target-flash 480ms ease both,
+        miss-ripple 800ms ease-out both;
+}
+
+@keyframes miss-ripple {
+    0% {
+        box-shadow:
+            0 0 0 0 rgba(var(--fx), 0.55),
+            0 0 0 0 rgba(var(--fx), 0.30);
+    }
+    100% {
+        box-shadow:
+            0 0 0 14px rgba(var(--fx), 0),
+            0 0 0 28px rgba(var(--fx), 0);
+    }
+}
+
+/* Revealed own-fleet cells use the same energised plating as deployment */
+body.battle-phase aside .cell_with_ship {
+    background: linear-gradient(135deg, #ffb265 0%, #ff8330 48%, #c84e0e 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 214, 160, 0.70),
+        inset 0 0 12px rgba(255, 240, 220, 0.22),
+        0 0 16px rgba(255, 131, 48, 0.45);
+}
+
+body.battle-phase main .cell_with_ship {
+    background: linear-gradient(135deg, #6cc6ff 0%, #2f9ae6 48%, #0e63b0 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(170, 226, 255, 0.70),
+        inset 0 0 12px rgba(225, 245, 255, 0.22),
+        0 0 16px rgba(47, 154, 230, 0.45);
+}
+
+/* Centre command console: same panel chrome as the tactical data panel */
+body.battle-phase #center_control {
+    border: 1px solid rgba(79, 227, 255, 0.30);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(79, 227, 255, 0.06), transparent 32%),
+        rgba(4, 8, 18, 0.80);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.45),
+        0 0 24px rgba(79, 227, 255, 0.07),
+        inset 0 0 30px rgba(79, 227, 255, 0.04);
+}
+
+body.battle-phase #center_control::before {
+    background: linear-gradient(90deg, transparent, rgba(79, 227, 255, 0.8), transparent);
+    border-radius: 14px 14px 0 0;
+}
+
+.center-turn-label {
+    font-family: var(--title-font-family);
+    letter-spacing: 0.12em;
+}
+
+/* Coordinate strips stay on through battle (desktop layout only) */
+@media (min-width: 901px) {
+    body.battle-phase #game_container_1 .board-coords,
+    body.battle-phase #game_container_2 .board-coords {
+        display: flex;
+    }
+}
+
+/* Reduced motion: silence the combat ambience too */
+@media (prefers-reduced-motion: reduce) {
+    body.battle-phase .battlefield-env,
+    body.battle-phase .battlefield-env *,
+    body.battle-phase .game_board_container::before,
+    body.battle-phase .game_board_container::after,
+    body.battle-phase aside .unshot:hover,
+    body.battle-phase main .unshot:hover {
+        animation: none !important;
+    }
 }

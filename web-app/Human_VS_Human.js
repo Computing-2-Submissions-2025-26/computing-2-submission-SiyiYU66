@@ -1,5 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
+import { run_battle_countdown } from "./countdown.js";
 import {
     playHitSound,
     playMissSound,
@@ -382,36 +383,10 @@ const show_swap_animation = function (on_complete) {
 const show_countdown_overlay = function () {
     set_game_phase("intro-phase");
     remove_overlay();
-
-    const overlay = document.createElement("div");
-    overlay.className = "screen-overlay countdown-overlay";
-
-    const board = document.createElement("div");
-    board.className = "countdown-board";
-    for (let i = 0; i < 100; i++) {
-        const cell = document.createElement("div");
-        board.append(cell);
-    }
-    overlay.append(board);
-
-    const number = document.createElement("div");
-    number.className = "countdown-number";
-    number.textContent = "3";
-    overlay.append(number);
-    document.body.append(overlay);
-
-    let count = 3;
-    const timer = setInterval(function () {
-        count--;
-        if (count > 0) {
-            number.textContent = String(count);
-            number.classList.remove("count-pop");
-            void number.offsetWidth;
-            number.classList.add("count-pop");
-            return;
-        }
-
-        clearInterval(timer);
+    // body starts with .battle-initializing (set in the HTML) so no game UI
+    // can flash before the cinematic launch sequence finishes.
+    run_battle_countdown(function () {
+        document.body.classList.remove("battle-initializing");
         show_image_overlay(
             "./assets/Hide your screen pic.png",
             "overlay-orange",
@@ -421,7 +396,7 @@ const show_countdown_overlay = function () {
                 update_deploy_controls();
             }
         );
-    }, 850);
+    });
 };
 
 ////////////
@@ -914,35 +889,28 @@ const create_cell_in_row_to_place_ships = function (
         td.onkeydown = function (event) {
             if (event.key === "Enter" || event.key === " ") {
                 td.onclick();
+                event.preventDefault();
                 return;
             }
-            if (event.key === "ArrowRight") {
-                table_cells[game_board_index][row_index][
-                    (column_index + 1) % width
-                ].focus();
+            const moves = {
+                ArrowRight: [(column_index + 1) % width, row_index],
+                ArrowLeft: [(column_index + width - 1) % width, row_index],
+                ArrowDown: [column_index, (row_index + 1) % height],
+                ArrowUp: [column_index, (row_index + height - 1) % height]
+            };
+            const move = moves[event.key];
+            if (move) {
+                table_cells[game_board_index][move[1]][move[0]].focus();
+                // Refresh the cursor preview directly too — focus events do
+                // not fire while the window is unfocused.
+                hovered_cell_info = {
+                    board_index: game_board_index,
+                    col: move[0],
+                    row: move[1]
+                };
+                show_preview(game_board_index, move[0], move[1]);
                 event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowLeft") {
-                table_cells[game_board_index][row_index][
-                    (column_index + width - 1) % width
-                ].focus();
-                event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowUp") {
-                table_cells[game_board_index][
-                    (row_index + height - 1) % height
-                ][column_index].focus();
-                event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowDown") {
-                table_cells[game_board_index][
-                    (row_index + 1) % height
-                ][column_index].focus();
-                event.stopPropagation();
-                return;
+                event.preventDefault();
             }
         };
         tr.append(td);
@@ -1337,6 +1305,12 @@ document.body.onkeydown = function (event) {
                     ? hovered_cell_info
                     : { col: 0, row: 0 };
                 table_cells[active_board_index][start.row][start.col].focus();
+                hovered_cell_info = {
+                    board_index: active_board_index,
+                    col: start.col,
+                    row: start.row
+                };
+                show_preview(active_board_index, start.col, start.row);
                 event.preventDefault();
             }
             return;
