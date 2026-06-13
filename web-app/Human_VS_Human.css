@@ -1259,6 +1259,42 @@ body.battle-phase #center_control::before {
     box-shadow: 0 0 12px rgba(78, 224, 138, 0.3) !important;
 }
 
+/* Ghost-move distance selector (1 or 2 tiles) */
+#center_control .ghost-distance {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    width: 100%;
+    margin-top: 0.4rem;
+}
+
+#center_control .distance-btn {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid rgba(79, 227, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(79, 227, 255, 0.08);
+    color: var(--ink);
+    font-family: var(--body-font-family);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: clamp(0.7rem, 1.6vmin, 0.95rem);
+    cursor: pointer;
+    transition: background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+#center_control .distance-btn:hover:not(:disabled) {
+    background: rgba(79, 227, 255, 0.16);
+    box-shadow: 0 0 12px rgba(79, 227, 255, 0.25);
+}
+
+#center_control .distance-btn.is-active {
+    background: rgba(78, 224, 138, 0.22);
+    border-color: var(--success);
+    color: #c8ffdc;
+    box-shadow: 0 0 14px rgba(78, 224, 138, 0.35);
+}
+
 /* Divider line in centre */
 .center-divider {
     width: 80%;
@@ -4381,6 +4417,860 @@ body.battle-phase #center_control::before {
     body.battle-phase .game_board_container::after,
     body.battle-phase aside .unshot:hover,
     body.battle-phase main .unshot:hover {
+        animation: none !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANIMATED TURN-TRANSITION SCENES (no images)
+   Screen 1: HIDE YOUR SCREEN  — orange tactical shield (P1)
+   Screen 2: PASS THE SCREEN   — orange→blue data handoff (P2)
+   Built from HTML/CSS/SVG; transform + opacity animations.
+   ═══════════════════════════════════════════════════════════ */
+.transition-overlay {
+    --o: 255, 144, 64;
+    --o-bright: 255, 206, 150;
+    --b: 64, 184, 255;
+    --b-bright: 165, 224, 255;
+
+    inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1.4rem, 4vh, 3rem) clamp(1rem, 5vw, 4rem);
+    overflow: hidden;
+    background: #05080f;
+    animation: ts-enter 460ms ease both;
+}
+
+.transition-overlay.ts-exit {
+    animation: ts-leave 440ms ease both;
+}
+
+@keyframes ts-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ts-leave {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(1.03); }
+}
+
+/* ── Background layers ─────────────────────────────────────── */
+.ts-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.ts-bg-orange {
+    background:
+        radial-gradient(120% 90% at 50% 6%, rgba(var(--o), 0.16), transparent 55%),
+        radial-gradient(150% 100% at 50% 122%, rgba(var(--o), 0.10), transparent 60%),
+        linear-gradient(180deg, #070a10, #0c0a07 55%, #060708);
+}
+
+.ts-bg-split {
+    background:
+        radial-gradient(85% 120% at 0% 50%, rgba(var(--o), 0.16), transparent 56%),
+        radial-gradient(85% 120% at 100% 50%, rgba(var(--b), 0.16), transparent 56%),
+        linear-gradient(90deg, #0c0805 0%, #060708 50%, #05080f 100%);
+}
+
+.ts-grid {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 54px 54px;
+    -webkit-mask-image: radial-gradient(88% 78% at 50% 45%, #000, transparent);
+    mask-image: radial-gradient(88% 78% at 50% 45%, #000, transparent);
+    animation: ts-grid-drift 20s linear infinite alternate;
+}
+
+@keyframes ts-grid-drift {
+    from { transform: translateY(0); }
+    to   { transform: translateY(27px); }
+}
+
+.ts-scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 26vh;
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(var(--o), 0.06) 44%,
+        rgba(var(--o), 0.13) 50%,
+        rgba(var(--o), 0.06) 56%,
+        transparent);
+    transform: translateY(-30vh);
+    animation: ts-scan 7s linear infinite;
+}
+
+.ts-bg-split .ts-scanline {
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(150, 205, 255, 0.06) 44%,
+        rgba(170, 220, 255, 0.13) 50%,
+        rgba(150, 205, 255, 0.06) 56%,
+        transparent);
+}
+
+@keyframes ts-scan {
+    from { transform: translateY(-30vh); }
+    to   { transform: translateY(112vh); }
+}
+
+.ts-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(122% 95% at 50% 45%, transparent 55%, rgba(2, 4, 9, 0.72));
+}
+
+/* Split-screen centre seam */
+.ts-seam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(255, 190, 140, 0.5) 30%,
+        rgba(160, 220, 255, 0.5) 70%,
+        transparent);
+    box-shadow: 0 0 26px rgba(120, 200, 255, 0.4);
+    animation: ts-seam-pulse 3s ease-in-out infinite;
+}
+
+@keyframes ts-seam-pulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 0.9; }
+}
+
+/* ── Content scaffold + staggered entrance ─────────────────── */
+.ts-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    max-width: 1100px;
+    text-align: center;
+}
+
+.ts-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.3rem, 1vh, 0.7rem);
+    animation: ts-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ts-shield-stage,
+.ts-transfer-stage {
+    animation: ts-rise 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ts-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.9rem, 2.4vh, 1.6rem);
+    animation: ts-rise 620ms 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ts-rise {
+    from { opacity: 0; transform: translateY(26px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── HUD typography ────────────────────────────────────────── */
+.ts-eyebrow {
+    font-family: var(--title-font-family);
+    font-size: clamp(0.7rem, 1.5vw, 1.05rem);
+    font-weight: 700;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    text-transform: uppercase;
+    color: rgb(var(--o-bright));
+    text-shadow: 0 0 16px rgba(var(--o), 0.7);
+}
+
+.ts-eyebrow-blue {
+    color: rgb(var(--b-bright));
+    text-shadow: 0 0 16px rgba(var(--b), 0.7);
+}
+
+.ts-title {
+    margin: 0;
+    font-family: var(--title-font-family);
+    font-size: clamp(2.3rem, 7vw, 5.4rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow:
+        0 0 30px rgba(var(--o), 0.6),
+        0 0 70px rgba(var(--o), 0.3);
+}
+
+.ts-theme-split .ts-title {
+    background: linear-gradient(90deg, rgb(var(--o-bright)) 0%, #ffffff 50%, rgb(var(--b-bright)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 26px rgba(120, 180, 255, 0.4));
+}
+
+.ts-sub {
+    font-family: var(--body-font-family);
+    font-size: clamp(0.9rem, 2.2vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    text-transform: uppercase;
+    color: rgba(var(--o-bright), 0.9);
+}
+
+.ts-sub-blue { color: rgba(var(--b-bright), 0.9); }
+
+.ts-caption {
+    font-family: var(--title-font-family);
+    font-size: clamp(0.85rem, 1.9vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    text-transform: uppercase;
+    color: rgba(var(--o-bright), 0.92);
+    text-shadow: 0 0 16px rgba(var(--o), 0.55);
+    animation: ts-caption-flicker 3.2s linear infinite;
+}
+
+.ts-caption-blue {
+    color: rgba(var(--b-bright), 0.92);
+    text-shadow: 0 0 16px rgba(var(--b), 0.55);
+}
+
+@keyframes ts-caption-flicker {
+    0%, 92%, 100% { opacity: 1; }
+    94%           { opacity: 0.55; }
+    96%           { opacity: 1; }
+    98%           { opacity: 0.75; }
+}
+
+/* ── SCREEN 1: holographic shield (the main visual focus) ──── */
+.ts-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.9rem, 2.6vh, 1.8rem);
+}
+
+.ts-shield-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(19rem, 40vh, 30rem);
+    aspect-ratio: 1;
+    animation: ts-rise 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ts-shield-svg {
+    position: relative;
+    z-index: 3;
+    width: 54%;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 0 26px rgba(var(--o), 0.75));
+    animation: ts-shield-pulse 3.4s ease-in-out infinite;
+}
+
+/* Soft orange glow halo pulsing behind the shield */
+.ts-glow {
+    position: absolute;
+    z-index: 0;
+    width: 94%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--o), 0.32), rgba(var(--o), 0.07) 54%, transparent 72%);
+    animation: ts-glow-pulse 3.4s ease-in-out infinite;
+}
+
+@keyframes ts-glow-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.92); }
+    50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+/* Rotating radar rings around the shield */
+.ts-ring {
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 50%;
+}
+
+.ts-ring-outer {
+    z-index: 1;
+    width: 98%;
+    border: 1.5px dashed rgba(var(--o), 0.42);
+    animation: ts-spin 16s linear infinite;
+}
+
+.ts-ring-inner {
+    z-index: 1;
+    width: 70%;
+    border: 1.5px dotted rgba(var(--o-bright), 0.5);
+    animation: ts-spin-rev 10s linear infinite;
+}
+
+@keyframes ts-spin-rev { to { transform: rotate(-360deg); } }
+
+@keyframes ts-shield-pulse {
+    0%, 100% { transform: scale(1);     filter: drop-shadow(0 0 16px rgba(var(--o), 0.55)); }
+    50%      { transform: scale(1.045); filter: drop-shadow(0 0 30px rgba(var(--o), 0.9)); }
+}
+
+.ts-shield-body  { fill: rgba(var(--o), 0.10); }
+.ts-shield-edge  { fill: none; stroke: rgb(var(--o-bright)); stroke-width: 2.4; stroke-linejoin: round; }
+.ts-shield-ring  { fill: none; stroke: rgba(var(--o-bright), 0.85); stroke-width: 2; }
+.ts-shield-cross { stroke: rgba(var(--o-bright), 0.85); stroke-width: 2; }
+.ts-shield-dot   { fill: rgb(var(--o-bright)); }
+
+/* Rotating scanning circle */
+.ts-scan-ring {
+    position: absolute;
+    z-index: 2;
+    width: 84%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+        transparent 0 70%,
+        rgba(var(--o), 0.5) 86%,
+        rgba(var(--o-bright), 0.95) 92%,
+        transparent 96%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    animation: ts-spin 4.5s linear infinite;
+}
+
+@keyframes ts-spin { to { transform: rotate(360deg); } }
+
+/* Expanding radar waves */
+.ts-wave {
+    position: absolute;
+    z-index: 1;
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1.5px solid rgba(var(--o), 0.5);
+    opacity: 0;
+    animation: ts-wave 3.6s ease-out infinite;
+}
+
+.ts-wave:nth-child(2) { animation-delay: 1.2s; }
+.ts-wave:nth-child(3) { animation-delay: 2.4s; }
+
+@keyframes ts-wave {
+    0%   { opacity: 0.7; transform: scale(0.5); }
+    80%  { opacity: 0; }
+    100% { opacity: 0; transform: scale(1.7); }
+}
+
+/* Drifting particles */
+.ts-particles {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.ts-particle {
+    position: absolute;
+    bottom: 8%;
+    width: var(--size, 3px);
+    height: var(--size, 3px);
+    border-radius: 50%;
+    background: rgba(var(--o-bright), 0.9);
+    box-shadow: 0 0 8px rgba(var(--o), 0.8);
+    opacity: 0;
+    animation: ts-particle-rise var(--rise, 3.5s) linear infinite;
+    animation-delay: var(--delay, 0s);
+}
+
+@keyframes ts-particle-rise {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.6); }
+    20%  { opacity: 1; }
+    80%  { opacity: 0.8; }
+    100% { opacity: 0; transform: translate(var(--drift, 0), -150px) scale(1); }
+}
+
+/* ── SCREEN 2: data handoff ────────────────────────────────── */
+.ts-transfer-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    width: 100%;
+    max-width: 820px;
+}
+
+.ts-node {
+    position: relative;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: clamp(5.5rem, 12vw, 9rem);
+    aspect-ratio: 1;
+}
+
+.ts-node-orange { animation: ts-node-pulse 2.6s ease-in-out infinite; }
+.ts-node-blue   { animation: ts-node-pulse 2.6s ease-in-out 1.3s infinite; }
+
+@keyframes ts-node-pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+}
+
+.ts-node-svg { width: 100%; height: auto; overflow: visible; }
+.ts-node-orange .ts-node-svg { filter: drop-shadow(0 0 14px rgba(var(--o), 0.7)); }
+.ts-node-blue   .ts-node-svg { filter: drop-shadow(0 0 14px rgba(var(--b), 0.7)); }
+
+.ts-hex       { fill: rgba(255, 255, 255, 0.02); stroke-width: 2.4; stroke-linejoin: round; }
+.ts-hex-inner { fill: none; stroke-width: 1.6; }
+.ts-hex-dot   { stroke: none; }
+.ts-node-orange .ts-hex       { stroke: rgb(var(--o-bright)); }
+.ts-node-orange .ts-hex-inner { stroke: rgba(var(--o-bright), 0.7); }
+.ts-node-orange .ts-hex-dot   { fill: rgb(var(--o-bright)); }
+.ts-node-blue   .ts-hex       { stroke: rgb(var(--b-bright)); }
+.ts-node-blue   .ts-hex-inner { stroke: rgba(var(--b-bright), 0.7); }
+.ts-node-blue   .ts-hex-dot   { fill: rgb(var(--b-bright)); }
+
+.ts-node-label {
+    position: absolute;
+    bottom: -1.7em;
+    font-family: var(--title-font-family);
+    font-size: clamp(0.7rem, 1.4vw, 1rem);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+.ts-node-orange .ts-node-label { color: rgb(var(--o-bright)); }
+.ts-node-blue   .ts-node-label { color: rgb(var(--b-bright)); }
+
+.ts-stream {
+    position: relative;
+    flex: 1 1 auto;
+    height: clamp(3rem, 8vh, 5rem);
+    min-width: clamp(6rem, 22vw, 16rem);
+}
+
+.ts-stream-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, rgba(var(--o), 0.6), rgba(var(--b), 0.6));
+    opacity: 0.5;
+}
+
+.ts-chevron {
+    position: absolute;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    transform: translateY(-50%) rotate(45deg);
+    border-top: 2.5px solid rgba(var(--o-bright), 0.9);
+    border-right: 2.5px solid rgba(var(--o-bright), 0.9);
+    opacity: 0.22;
+    animation: ts-chevron-flow 1.4s ease-in-out infinite;
+}
+
+.ts-chevron:nth-of-type(1) { left: 28%; animation-delay: 0s; }
+.ts-chevron:nth-of-type(2) { left: 50%; animation-delay: 0.18s; border-color: #ffffff; }
+.ts-chevron:nth-of-type(3) { left: 72%; animation-delay: 0.36s; border-color: rgba(var(--b-bright), 0.9); }
+
+@keyframes ts-chevron-flow {
+    0%, 100% { opacity: 0.2; }
+    50%      { opacity: 1; }
+}
+
+/* Centre handoff core (pulsing panel) */
+.ts-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: clamp(1.6rem, 4vw, 2.6rem);
+    aspect-ratio: 1;
+    border: 2px solid rgba(var(--b-bright), 0.85);
+    background: linear-gradient(135deg, rgba(var(--o), 0.4), rgba(var(--b), 0.4));
+    box-shadow: 0 0 22px rgba(var(--b), 0.5);
+    animation: ts-core-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ts-core-pulse {
+    0%, 100% { transform: translate(-50%, -50%) rotate(45deg) scale(0.9);  opacity: 0.75; }
+    50%      { transform: translate(-50%, -50%) rotate(45deg) scale(1.12); opacity: 1; }
+}
+
+/* Data packets travelling left → right */
+.ts-packets { position: absolute; inset: 0; }
+
+.ts-packet {
+    position: absolute;
+    top: 50%;
+    width: clamp(0.5rem, 1.4vw, 0.85rem);
+    aspect-ratio: 1;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(90deg, rgb(var(--o-bright)), rgb(var(--b-bright)));
+    box-shadow: 0 0 12px rgba(var(--o), 0.7);
+    opacity: 0;
+    animation: ts-packet-travel 2.3s linear infinite;
+    animation-delay: var(--delay, 0s);
+}
+
+@keyframes ts-packet-travel {
+    0%   { left: 2%;  opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { left: 98%; opacity: 0; }
+}
+
+/* ── GOT IT button ─────────────────────────────────────────── */
+.ts-button {
+    position: relative;
+    overflow: hidden;
+    min-width: clamp(12rem, 26vw, 18rem);
+    min-height: clamp(3rem, 6.5vh, 4rem);
+    padding: 0 clamp(1.5rem, 4vw, 3rem);
+    border: 2px solid rgb(var(--o));
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(var(--o), 0.18), rgba(var(--o), 0.04));
+    color: #fff;
+    font-family: var(--title-font-family);
+    font-size: clamp(1.1rem, 2.6vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
+    text-transform: uppercase;
+    text-shadow: 0 0 14px rgba(var(--o), 0.7);
+    cursor: pointer;
+    box-shadow: 0 0 22px rgba(var(--o), 0.3), inset 0 0 18px rgba(var(--o), 0.12);
+    transition: transform 140ms ease, box-shadow 200ms ease, background 200ms ease;
+    animation: ts-btn-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ts-btn-pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(var(--o), 0.25), inset 0 0 14px rgba(var(--o), 0.10); }
+    50%      { box-shadow: 0 0 34px rgba(var(--o), 0.5),  inset 0 0 20px rgba(var(--o), 0.18); }
+}
+
+/* Hover light sweep */
+.ts-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+    transform: translateX(-180%);
+    transition: transform 650ms ease;
+    pointer-events: none;
+}
+
+.ts-button:hover::before { transform: translateX(180%); }
+
+.ts-button:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(var(--o), 0.3), rgba(var(--o), 0.08));
+    box-shadow: 0 0 46px rgba(var(--o), 0.6), inset 0 0 22px rgba(var(--o), 0.2);
+}
+
+.ts-button:active { transform: translateY(1px) scale(0.97); }
+
+/* Blue variant (Screen 2) */
+.ts-button-blue {
+    border-color: rgb(var(--b));
+    background: linear-gradient(180deg, rgba(var(--b), 0.18), rgba(var(--b), 0.04));
+    text-shadow: 0 0 14px rgba(var(--b), 0.7);
+    box-shadow: 0 0 22px rgba(var(--b), 0.3), inset 0 0 18px rgba(var(--b), 0.12);
+    animation: ts-btn-pulse-blue 2.4s ease-in-out infinite;
+}
+
+@keyframes ts-btn-pulse-blue {
+    0%, 100% { box-shadow: 0 0 18px rgba(var(--b), 0.25), inset 0 0 14px rgba(var(--b), 0.10); }
+    50%      { box-shadow: 0 0 34px rgba(var(--b), 0.5),  inset 0 0 20px rgba(var(--b), 0.18); }
+}
+
+.ts-button-blue:hover {
+    background: linear-gradient(180deg, rgba(var(--b), 0.3), rgba(var(--b), 0.08));
+    box-shadow: 0 0 46px rgba(var(--b), 0.6), inset 0 0 22px rgba(var(--b), 0.2);
+}
+
+/* ── Screen 1 status pill: "VISUAL LOCKDOWN ACTIVE" ────────── */
+.ts-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.5em 1.2em;
+    border: 1px solid rgba(var(--o), 0.4);
+    border-radius: 999px;
+    background: rgba(var(--o), 0.07);
+    font-family: var(--title-font-family);
+    font-size: clamp(0.68rem, 1.5vw, 1.02rem);
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-indent: 0.32em;
+    text-transform: uppercase;
+    color: rgba(var(--o-bright), 0.92);
+    text-shadow: 0 0 14px rgba(var(--o), 0.55);
+    animation: ts-rise 620ms 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ts-status-dot {
+    width: 0.62em;
+    height: 0.62em;
+    border-radius: 50%;
+    background: rgb(var(--o-bright));
+    box-shadow: 0 0 10px rgb(var(--o-bright));
+    animation: ts-dot-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes ts-dot-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+}
+
+/* ── Countdown finale: subtitle + tactical scan sweep ──────── */
+.cd-finale-sub {
+    position: relative;
+    z-index: 3;
+    margin-top: clamp(0.4rem, 1.4vh, 1rem);
+    font-family: var(--title-font-family);
+    font-size: clamp(0.9rem, 2.4vw, 1.7rem);
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255, 168, 100, 0.95);
+    text-shadow: 0 0 18px rgba(255, 144, 64, 0.7);
+    animation: cd-battle-in 900ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cd-finale-scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 38vh;
+    z-index: 1;
+    transform: translateY(-50%);
+    pointer-events: none;
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(255, 144, 64, 0.05) 44%,
+        rgba(255, 144, 64, 0.16) 50%,
+        rgba(255, 144, 64, 0.05) 56%,
+        transparent);
+    -webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    animation: cd-finale-scan 1.4s ease-out both;
+}
+
+@keyframes cd-finale-scan {
+    0%   { transform: translateY(-50%) scaleX(0.1); opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translateY(-50%) scaleX(1);   opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GHOST MOVE — tactical decision overlays (themed by --ga)
+   ═══════════════════════════════════════════════════════════ */
+.ghost-theme-orange { --ga: 255, 144, 64; --ga-bright: 255, 206, 150; }
+.ghost-theme-blue   { --ga: 64, 184, 255; --ga-bright: 165, 224, 255; }
+
+.ghost-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(120% 90% at 50% 8%, rgba(var(--ga), 0.16), transparent 55%),
+        radial-gradient(150% 100% at 50% 122%, rgba(var(--ga), 0.10), transparent 60%),
+        linear-gradient(180deg, #07090f, #0a0b10 55%, #06070b);
+}
+
+.ghost-scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 26vh;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(var(--ga), 0.06) 44%,
+        rgba(var(--ga), 0.14) 50%,
+        rgba(var(--ga), 0.06) 56%,
+        transparent);
+    transform: translateY(-30vh);
+    animation: ts-scan 6s linear infinite;
+}
+
+/* Re-tint the shared HUD pieces to the ghost accent */
+.ghost-overlay .ts-eyebrow {
+    color: rgb(var(--ga-bright));
+    text-shadow: 0 0 16px rgba(var(--ga), 0.7);
+}
+
+.ghost-overlay .ghost-title {
+    color: #fff;
+    text-shadow: 0 0 30px rgba(var(--ga), 0.6), 0 0 70px rgba(var(--ga), 0.3);
+    font-size: clamp(1.7rem, 5vw, 3.6rem);
+}
+
+.ghost-mid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1rem, 3vh, 2rem);
+    animation: ts-rise 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Central scanning reticle */
+.ghost-scope {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(8rem, 18vh, 12rem);
+    aspect-ratio: 1;
+}
+
+.ghost-scope-ring,
+.ghost-scope-ring2,
+.ghost-scope-core {
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 50%;
+}
+
+.ghost-scope-ring {
+    width: 100%;
+    border: 1.5px dashed rgba(var(--ga), 0.5);
+    animation: ts-spin 10s linear infinite;
+}
+
+.ghost-scope-ring2 {
+    width: 70%;
+    border: 1.5px dotted rgba(var(--ga-bright), 0.6);
+    animation: ts-spin-rev 7s linear infinite;
+}
+
+.ghost-scope-core {
+    width: 40%;
+    border: 2px solid rgba(var(--ga-bright), 0.85);
+    background: radial-gradient(circle, rgba(var(--ga), 0.5), transparent 70%);
+    animation: ts-glow-pulse 2.2s ease-in-out infinite;
+}
+
+.ghost-scope-glyph {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    filter: drop-shadow(0 0 12px rgba(var(--ga), 0.8));
+}
+
+.ghost-message-block {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.35rem, 1.1vh, 0.8rem);
+    max-width: 42ch;
+}
+
+.ghost-msg {
+    margin: 0;
+    font-family: var(--body-font-family);
+    font-size: clamp(0.95rem, 2vw, 1.35rem);
+    line-height: 1.45;
+    letter-spacing: 0.03em;
+    color: #eaf3ff;
+    text-shadow: 0 0 10px rgba(var(--ga), 0.25);
+}
+
+.ghost-msg.dim {
+    font-size: clamp(0.82rem, 1.7vw, 1.12rem);
+    color: rgba(196, 214, 232, 0.72);
+}
+
+.ts-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 3vw, 2rem);
+}
+
+/* Ghost buttons inherit the .ts-button shell but use the ghost accent */
+.ghost-overlay .ts-button {
+    border-color: rgb(var(--ga));
+    background: linear-gradient(180deg, rgba(var(--ga), 0.18), rgba(var(--ga), 0.04));
+    text-shadow: 0 0 14px rgba(var(--ga), 0.7);
+    box-shadow: 0 0 22px rgba(var(--ga), 0.3), inset 0 0 18px rgba(var(--ga), 0.12);
+    animation: none;
+}
+
+.ghost-overlay .ts-button.ghost-confirm:hover {
+    background: linear-gradient(180deg, rgba(var(--ga), 0.3), rgba(var(--ga), 0.08));
+    box-shadow: 0 0 46px rgba(var(--ga), 0.6), inset 0 0 22px rgba(var(--ga), 0.2);
+}
+
+/* CANCEL — neutral, recessed */
+.ghost-overlay .ts-button.ghost-cancel {
+    border-color: rgba(170, 188, 206, 0.45);
+    background: rgba(255, 255, 255, 0.04);
+    color: #cdd8e6;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+.ghost-overlay .ts-button.ghost-cancel:hover {
+    border-color: rgba(200, 215, 230, 0.8);
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 0 18px rgba(180, 200, 220, 0.18);
+}
+
+/* ── Ghost-move damage scar: vacated, previously-hit ocean cell ──
+   It must look IDENTICAL to a normal settled hit so the opponent can't
+   tell at a glance which ship relocated. Same red gradient + glow as
+   .hit, just without the one-time entrance pulse, and keeping the shared
+   cell sheen (td::before) so it is pixel-for-pixel a hit cell. */
+body.battle-phase .ghost-scar {
+    background:
+        linear-gradient(135deg, #ff9d85 0%, #ff5a4f 45%, #7a1810 100%);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+        0 0 22px rgba(255, 90, 79, 0.6),
+        0 0 44px rgba(255, 90, 79, 0.28);
+    animation: none;
+}
+
+body.battle-phase .ghost-scar::after { content: none; }
+
+/* Reduced motion: keep the scenes legible, drop the loops */
+@media (prefers-reduced-motion: reduce) {
+    .transition-overlay,
+    .transition-overlay *,
+    .cd-finale-scan,
+    .ts-status-dot {
         animation: none !important;
     }
 }

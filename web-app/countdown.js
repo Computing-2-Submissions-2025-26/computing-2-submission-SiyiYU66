@@ -1,13 +1,22 @@
-// Cinematic 3-2-1 battle-launch sequence, shared by Two Player and
-// Single Player modes so both feel like the same combat system booting up.
-// Pure presentation: builds an overlay, plays the sequence, then calls
-// on_complete. No game state is touched here.
+// Cinematic 3-2-1 launch sequence, shared by Two Player and Single Player
+// modes so both feel like the same naval system booting up. Pure
+// presentation: builds an overlay, plays the sequence, then calls on_complete.
+// No game state is touched here.
+//
+// options:
+//   finaleTitle {string} big finale word(s)        (default "GAME START")
+//   finaleSub   {string} optional subtitle line     (default none)
+//   hold        {number} extra ms to linger on the finale before the fade
 
 const TICK_MS = 850;
 const FINALE_MS = 1150;
 const FADE_MS = 650;
 
-export function run_battle_countdown(on_complete) {
+export function run_battle_countdown(on_complete, options) {
+    const opts = options || {};
+    const finale_title = opts.finaleTitle || "GAME START";
+    const finale_sub = opts.finaleSub || "";
+    const hold = opts.hold || 0;
     const overlay = document.createElement("div");
     overlay.className = "screen-overlay countdown-overlay";
 
@@ -68,7 +77,8 @@ export function run_battle_countdown(on_complete) {
         }
         clearInterval(timer);
 
-        // Finale: BATTLE START with flash + shockwave.
+        // Finale: configurable title (+ optional subtitle) with flash,
+        // shockwave and a tactical scanning sweep.
         number.remove();
         title.remove();
         sub.remove();
@@ -76,10 +86,18 @@ export function run_battle_countdown(on_complete) {
         flash.className = "cd-flash";
         const wave = document.createElement("div");
         wave.className = "cd-shockwave";
+        const scan = document.createElement("div");
+        scan.className = "cd-finale-scan";
         const start_text = document.createElement("div");
         start_text.className = "cd-battle-start";
-        start_text.textContent = "BATTLE START";
-        overlay.append(flash, wave, start_text);
+        start_text.textContent = finale_title;
+        overlay.append(flash, wave, scan, start_text);
+        if (finale_sub) {
+            const sub_text = document.createElement("div");
+            sub_text.className = "cd-finale-sub";
+            sub_text.textContent = finale_sub;
+            overlay.append(sub_text);
+        }
 
         setTimeout(function () {
             // Hand over while the overlay fades, so the next screen
@@ -91,6 +109,6 @@ export function run_battle_countdown(on_complete) {
             setTimeout(function () {
                 overlay.remove();
             }, FADE_MS);
-        }, FINALE_MS);
+        }, FINALE_MS + hold);
     }, TICK_MS);
 }

@@ -1,6 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
-import { run_battle_countdown } from "./countdown.js";
+import { run_battle_countdown } from "./countdown.js?v=7";
 import {
     playHitSound,
     playMissSound,
@@ -115,9 +115,15 @@ const setup_difficulty_select = function () {
         // Same cinematic launch sequence as Two Player mode; the game UI
         // stays hidden until the countdown hands over.
         document.body.classList.add("battle-initializing");
+        // After the countdown the player goes to ship placement (not combat),
+        // so the finale reads "FLEET DEPLOYMENT" and lingers ~1s.
         run_battle_countdown(function () {
             document.body.classList.remove("battle-initializing");
             start_placement();
+        }, {
+            finaleTitle: "FLEET DEPLOYMENT",
+            finaleSub: "PLACE YOUR SHIPS",
+            hold: 1000
         });
     };
 
