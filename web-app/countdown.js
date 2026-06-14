@@ -17,6 +17,7 @@ export function run_battle_countdown(on_complete, options) {
     const finale_title = opts.finaleTitle || "GAME START";
     const finale_sub = opts.finaleSub || "";
     const hold = opts.hold || 0;
+    const subtitle = opts.subtitle || "PREPARE FOR NAVAL ENGAGEMENT";
     const overlay = document.createElement("div");
     overlay.className = "screen-overlay countdown-overlay";
 
@@ -52,7 +53,7 @@ export function run_battle_countdown(on_complete, options) {
 
     const sub = document.createElement("div");
     sub.className = "cd-sub";
-    sub.textContent = "PREPARE FOR NAVAL ENGAGEMENT";
+    sub.textContent = subtitle;
     overlay.append(sub);
 
     document.body.append(overlay);

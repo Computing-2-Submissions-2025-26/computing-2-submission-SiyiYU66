@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="Human_VS_Human.css?v=8">
+<link rel="stylesheet" href="Human_VS_Human.css?v=12">
 <link rel="icon" href="./assets/favicon.png">
-<script type="module" src="Human_VS_Human.js?v=8"></script>
+<script type="module" src="Human_VS_Human.js?v=12"></script>
 
 <body class="intro-phase battle-initializing">
 
@@ -24,6 +24,36 @@
     <div class="env-hud"></div>
     <div class="env-scanline"></div>
     <div class="env-vignette"></div>
+</div>
+
+<!-- Multiplayer identity setup — both commanders name themselves first -->
+<div id="name_setup">
+    <div class="ns-panel">
+        <h1 class="ns-heading">FLEET COMMANDERS</h1>
+        <div class="ns-sub">Enter both call signs to begin deployment</div>
+        <div class="ns-cards">
+            <div class="ns-card ns-card-p1">
+                <div class="ns-faction">◤ ORANGE FACTION</div>
+                <label class="ns-card-role" for="ns_name_1">Player 1</label>
+                <div class="ns-input-wrap">
+                    <input id="ns_name_1" class="ns-input" type="text" maxlength="14"
+                           placeholder="Enter name…" autocomplete="off" spellcheck="false">
+                    <span class="ns-input-hint" aria-hidden="true">type here</span>
+                </div>
+            </div>
+            <div class="ns-versus">VS</div>
+            <div class="ns-card ns-card-p2">
+                <div class="ns-faction">BLUE FACTION ◥</div>
+                <label class="ns-card-role" for="ns_name_2">Player 2</label>
+                <div class="ns-input-wrap">
+                    <input id="ns_name_2" class="ns-input" type="text" maxlength="14"
+                           placeholder="Enter name…" autocomplete="off" spellcheck="false">
+                    <span class="ns-input-hint" aria-hidden="true">type here</span>
+                </div>
+            </div>
+        </div>
+        <button id="ns_begin" class="ns-begin" type="button">Begin Deployment</button>
+    </div>
 </div>
 
 <a href="./index.html" class="nav-home-btn" title="Return to Menu">&larr; MENU</a>
@@ -70,8 +100,7 @@
         <table id="ships_1">
         </table>
     </div>
-    <div id="button_container_1" class="button_container">
-    </div>
+    <div id="button_container_1" class="button_container"></div>
     <div class="deploy-keys" aria-hidden="true">
         <div class="dk-title">Keyboard Controls</div>
         <div class="dk-row"><span class="dk-key">&larr; &uarr; &darr; &rarr;</span><span class="dk-desc">Move cursor</span></div>
@@ -102,7 +131,6 @@
             <div class="tac-radar"><span class="tac-radar-sweep"></span></div>
         </div>
     </div>
-    <div id="player_1_battle_window" class="player-battle-window"></div>
 </aside>
 
 <div id="center_control" class="center-control"></div>
@@ -150,7 +178,6 @@
             <div class="tac-radar"><span class="tac-radar-sweep"></span></div>
         </div>
     </div>
-    <div id="player_2_battle_window" class="player-battle-window"></div>
 </main>
 
 <div id="legend">

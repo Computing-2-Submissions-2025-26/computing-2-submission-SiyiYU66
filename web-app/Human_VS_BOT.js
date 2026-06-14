@@ -1,6 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
-import { run_battle_countdown } from "./countdown.js?v=7";
+import { run_battle_countdown } from "./countdown.js?v=10";
 import {
     playHitSound,
     playMissSound,

@@ -1,6 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
-import { run_battle_countdown } from "./countdown.js?v=7";
+import { run_battle_countdown } from "./countdown.js?v=10";
 import {
     playHitSound,
     playMissSound,
@@ -31,6 +31,24 @@ let game_state = [
 ];
 
 let multiplayer_ship_array = Battleship.multiplayer_ship_array;
+
+// Multiplayer identity. Index 0 = Player 1 / ORANGE faction, index 1 =
+// Player 2 / BLUE faction. Set in the name-setup phase before the countdown;
+// these names then replace every "Player 1 / Player 2" label in the UI.
+let player_names = ["Player 1", "Player 2"];
+const player_name_of = function (idx) {
+    return player_names[idx] || (idx === 0 ? "Player 1" : "Player 2");
+};
+// Names are user input but only ever rendered via textContent, except inside
+// the few innerHTML overlay templates — escape there to stay injection-safe.
+const escape_html = function (text) {
+    return String(text).replace(/[&<>"']/g, function (ch) {
+        return {
+            "&": "&amp;", "<": "&lt;", ">": "&gt;",
+            "\"": "&quot;", "'": "&#39;"
+        }[ch];
+    });
+};
 
 // Last board cell the cursor hovered over during placement (used to refresh
 // the ship preview when R is pressed to rotate mid-hover).
@@ -109,9 +127,17 @@ const set_battle_titles = function () {
     const game_title = document.querySelector("header h1");
     const player_1_title = document.querySelector("aside h2");
     const player_2_title = document.querySelector("main h2");
+    // Each board is an attack view: it shows the ENEMY waters that side fires
+    // on. Colours stay fixed (left = orange Player 1, right = blue Player 2).
     if (game_title) game_title.textContent = "Battleship";
-    if (player_1_title) player_1_title.textContent = "Player 1";
-    if (player_2_title) player_2_title.textContent = "Player 2";
+    if (player_1_title) {
+        player_1_title.textContent =
+            player_name_of(0) + " attacking " + player_name_of(1) + "'s waters";
+    }
+    if (player_2_title) {
+        player_2_title.textContent =
+            player_name_of(1) + " attacking " + player_name_of(0) + "'s waters";
+    }
 };
 
 const total_ship_cell_count = Battleship.ship_array.reduce(function (total, ship) {
@@ -196,37 +222,6 @@ const remove_overlay = function () {
     }
 };
 
-const show_message_overlay = function (
-    message,
-    button_text,
-    accent_class,
-    on_confirm
-) {
-    remove_overlay();
-    const overlay = document.createElement("div");
-    overlay.className = `screen-overlay ${accent_class}`;
-
-    const text = document.createElement("div");
-    text.className = "overlay-message";
-    text.textContent = message;
-    overlay.append(text);
-
-    const action_holder = document.createElement("div");
-    action_holder.className = "overlay-action-holder";
-
-    const ok_button = document.createElement("button");
-    ok_button.className = "overlay-ok-button";
-    ok_button.textContent = button_text;
-    ok_button.onclick = function () {
-        remove_overlay();
-        if (on_confirm) on_confirm();
-    };
-    action_holder.append(ok_button);
-    overlay.append(action_holder);
-
-    document.body.append(overlay);
-};
-
 // ── Animated multiplayer transition scenes (no images) ──────────────
 // Two cinematic HUD overlays built entirely from HTML/CSS/SVG:
 //   • "Hide your screen"  — orange Player-1 tactical shield scene
@@ -281,7 +276,7 @@ const show_hide_screen_overlay = function (on_confirm) {
         </div>
         <div class="ts-content">
             <div class="ts-head">
-                <div class="ts-eyebrow">// PLAYER 1 TURN //</div>
+                <div class="ts-eyebrow">// ${escape_html(player_name_of(0))}'S TURN //</div>
                 <h1 class="ts-title">HIDE YOUR SCREEN</h1>
                 <div class="ts-sub">FROM YOUR FRIEND</div>
             </div>
@@ -337,12 +332,12 @@ const show_pass_screen_overlay = function (on_confirm) {
         </div>
         <div class="ts-content">
             <div class="ts-head">
-                <div class="ts-eyebrow ts-eyebrow-blue">// PLAYER 2 TURN //</div>
+                <div class="ts-eyebrow ts-eyebrow-blue">// ${escape_html(player_name_of(1))}'S TURN //</div>
                 <h1 class="ts-title">PASS THE SCREEN</h1>
-                <div class="ts-sub ts-sub-blue">TO YOUR FRIEND</div>
+                <div class="ts-sub ts-sub-blue">TO ${escape_html(player_name_of(1))}</div>
             </div>
             <div class="ts-transfer-stage" aria-hidden="true">
-                ${node("ts-node-orange", "P1")}
+                ${node("ts-node-orange", escape_html(player_name_of(0)))}
                 <div class="ts-stream">
                     <div class="ts-stream-track"></div>
                     <span class="ts-chevron"></span>
@@ -351,7 +346,7 @@ const show_pass_screen_overlay = function (on_confirm) {
                     <div class="ts-core"></div>
                     <div class="ts-packets"></div>
                 </div>
-                ${node("ts-node-blue", "P2")}
+                ${node("ts-node-blue", escape_html(player_name_of(1)))}
             </div>
             <div class="ts-foot">
                 <button class="ts-button ts-button-blue" type="button">GOT IT</button>
@@ -423,15 +418,15 @@ const dismiss_overlay = function (overlay, after) {
 
 // Step 1 — shown to the acting player.
 const show_ghost_confirm = function (active_idx, on_confirm, on_cancel) {
-    const player = active_idx === 0 ? "PLAYER 1" : "PLAYER 2";
+    const player = escape_html(player_name_of(active_idx));
     const scene = ghost_scene(
         active_idx,
         "// " + player + " · GHOST PROTOCOL //",
         "ACTIVATE GHOST MOVE?",
         [
-            "Your unsunken ships can relocate and recover.",
-            "But every decision leaves traces.",
-            "Your opponent may discover your movement."
+            "Intact ships slip away to any clear waters.",
+            "Damaged ships can only crawl 2 tiles to escape.",
+            "And every hit you took stays on the map."
         ],
         "👻",
         "<button class=\"ts-button ghost-confirm\" type=\"button\">CONFIRM</button>" +
@@ -499,9 +494,16 @@ const show_victory_screen = function (winner_player) {
     const report = document.createElement("div");
     report.className = "victory-report";
 
+    // Winner headline, in the winner's faction colour.
+    const winner_name = document.createElement("div");
+    winner_name.className = "victory-winner " +
+        (winner_player === 1 ? "is-p1" : "is-p2");
+    winner_name.textContent = player_name_of(winner_player - 1) + " WINS";
+    report.append(winner_name);
+
     const report_title = document.createElement("div");
     report_title.className = "victory-report-title";
-    report_title.textContent = "BATTLE REPORT";
+    report_title.textContent = player_name_of(winner_player - 1) + "'s Battle Report";
     report.append(report_title);
 
     const stats_row = document.createElement("div");
@@ -568,13 +570,13 @@ const show_swap_animation = function (on_complete) {
     };
 
     stage.append(
-        make_panel("swap-p1", "Player 1"),
-        make_panel("swap-p2", "Player 2")
+        make_panel("swap-p1", player_name_of(0)),
+        make_panel("swap-p2", player_name_of(1))
     );
 
     const caption = document.createElement("div");
     caption.className = "swap-caption";
-    caption.textContent = "Boards swapped — now attack your opponent!";
+    caption.textContent = "Boards locked — fire on your opponent's fleet!";
 
     overlay.append(stage, caption);
     document.body.append(overlay);
@@ -606,7 +608,10 @@ const show_countdown_overlay = function () {
             set_deploy_title();
             update_deploy_controls();
         });
-    }, { finaleTitle: "GAME START" });
+    }, {
+        finaleTitle: "GAME START",
+        subtitle: player_name_of(0) + "  ⚔  " + player_name_of(1)
+    });
 };
 
 ////////////
@@ -688,14 +693,19 @@ const create_play_button = function () {
             reset_display_to_shoot();
             battle_start_time = Date.now();
             
-            // 
             // Centre control is in HTML — no dynamic panel needed
 
             // Create ship-status trackers (one per side)
-            const create_ship_tracker = function (tracker_id, player_folder, parent_el) {
+            const create_ship_tracker = function (tracker_id, player_folder, parent_el, fleet_owner) {
                 const tracker = document.createElement("div");
                 tracker.id = "tracker_" + tracker_id;
                 tracker.className = "ship-tracker";
+
+                // Title names whose fleet's remaining health this panel shows.
+                const title = document.createElement("div");
+                title.className = "tracker-title";
+                title.textContent = fleet_owner + "'s Fleet Status";
+                tracker.append(title);
 
                 // Two rows: first 3 ships on top, last 2 on bottom
                 const row1 = document.createElement("div");
@@ -729,14 +739,16 @@ const create_play_button = function () {
                 tracker.append(row2);
                 parent_el.append(tracker);
             };
-            create_ship_tracker(0, "player2", document.querySelector("aside"));
-            create_ship_tracker(1, "player1", document.querySelector("main"));
+            // Left (aside): orange Player-1 attack view, but the tracker below
+            // shows the BLUE enemy fleet it is damaging → Player 2's fleet.
+            // Right (main): blue Player-2 attack view, tracker shows Player 1.
+            create_ship_tracker(0, "player2", document.querySelector("aside"), player_name_of(1));
+            create_ship_tracker(1, "player1", document.querySelector("main"), player_name_of(0));
 
             // Swap game states
             [game_state[0], game_state[1]] = [game_state[1], game_state[0]];
             Audio_Manager.start_ambient();
 
-            // 
             update_display = function () {
                 const active_player_idx = next_player % 2;
 
@@ -745,7 +757,23 @@ const create_play_button = function () {
                 const ghost_own_board_idx = 1 - active_player_idx;
                 const ghost_preview_keys = {};
                 let ghost_preview_blocked = false;
-                if (ghost_selected_ship && ghost_preview_direction &&
+                if (ghost_selected_ship && current_action_mode === "ghost_relocate"
+                        && ghost_relocate_anchor) {
+                    // Teleport: highlight the footprint under the cursor.
+                    const gboard = game_state[ghost_own_board_idx];
+                    const len = ghost_ship_cells(gboard, ghost_selected_ship).length;
+                    const cells = relocate_footprint(
+                        ghost_relocate_anchor, len, ghost_relocate_orientation
+                    );
+                    ghost_preview_blocked = !relocate_valid(
+                        gboard, cells, ghost_selected_ship
+                    );
+                    cells.forEach(function (cr) {
+                        if (cr[0] >= 0 && cr[0] < width && cr[1] >= 0 && cr[1] < height) {
+                            ghost_preview_keys[cr[0] + "," + cr[1]] = true;
+                        }
+                    });
+                } else if (ghost_selected_ship && ghost_preview_direction &&
                     (current_action_mode === "ghost_select" || current_action_mode === "ghost_move")) {
                     const gboard = game_state[ghost_own_board_idx];
                     const offsets = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
@@ -773,8 +801,7 @@ const create_play_button = function () {
                     game_board.forEach(function (row, row_index) {
                         row.forEach(function (cell, column_index) {
                             const table_cell = table_cells[game_board_index][row_index][column_index];
-                            
-                            // 
+
                             table_cell.className = Battleship.cell_state(
                                 game_board,
                                 cell,
@@ -790,20 +817,19 @@ const create_play_button = function () {
                                 "ghost-origin", "ghost-preview", "ghost-preview-invalid"
                             );
 
-                            // 
-                            // (game_board_index === active_player_idx)
-                            // 1 - active_player_idx)
+                            // The active player's own fleet sits on the opposite board.
                             const own_board_idx = (1 - active_player_idx);
 
-                            if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move") && game_board_index === own_board_idx) {
-                                // 
+                            if ((current_action_mode === "ghost_select"
+                                    || current_action_mode === "ghost_move"
+                                    || current_action_mode === "ghost_relocate")
+                                    && game_board_index === own_board_idx) {
                                 const ship_name = get_ship_name(cell);
                                 if (ship_name && Battleship.is_ship_here(cell) && !is_ship_sunk_by_name(game_board, ship_name)) {
-                                    table_cell.className = "cell_with_ship"; 
+                                    table_cell.className = "cell_with_ship";
                                     table_cell.classList.add("ghost-target");
                                     table_cell.style.cursor = "pointer";
-                                    
-                                    // 
+
                                     if (ghost_selected_ship && ship_name === ghost_selected_ship) {
                                         table_cell.classList.add("ghost-origin");
                                     }
@@ -1284,13 +1310,32 @@ const create_cell_in_row_to_shoot_ships = function (
         td.tabIndex = 0;
         td.style.position = "relative";
 
+        // Live footprint preview while teleporting an intact ship.
+        td.onmouseenter = function () {
+            if (current_action_mode === "ghost_relocate"
+                    && game_board_index === (1 - (next_player % 2))) {
+                ghost_relocate_anchor = [column_index, row_index];
+                update_display();
+            }
+        };
+
         td.onclick = function () {
             if (game_over) return;
 
             const active_player_idx = next_player % 2;
             const own_board_idx = 1 - active_player_idx;
 
-            if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move") && game_board_index === own_board_idx) {
+            if ((current_action_mode === "ghost_select"
+                    || current_action_mode === "ghost_move"
+                    || current_action_mode === "ghost_relocate")
+                    && game_board_index === own_board_idx) {
+                // In teleport mode a board click is a placement attempt, not a
+                // re-selection. Cancel (in the side panel) returns to picking.
+                if (current_action_mode === "ghost_relocate") {
+                    attempt_ghost_relocate(active_player_idx, column_index, row_index);
+                    return;
+                }
+
                 const cell = game_state[game_board_index][row_index][column_index];
                 const ship_name = get_ship_name(cell);
 
@@ -1298,17 +1343,25 @@ const create_cell_in_row_to_shoot_ships = function (
                     ghost_selected_ship = ship_name;
                     ghost_preview_direction = null;
                     ghost_preview_distance = 1;
-                    current_action_mode = "ghost_move";
+                    if (is_ship_damaged(game_state[game_board_index], ship_name)) {
+                        // Detected & damaged → emergency escape (orthogonal 1–2 tiles).
+                        current_action_mode = "ghost_move";
+                    } else {
+                        // Intact & undetected → stealth teleport anywhere pristine.
+                        ghost_relocate_orientation = infer_ship_orientation(
+                            ghost_ship_cells(game_state[game_board_index], ship_name)
+                        );
+                        ghost_relocate_anchor = null;
+                        current_action_mode = "ghost_relocate";
+                    }
                     update_display();
                     update_battle_controls();
                 }
                 return;
             }
 
-            // 
             if (next_player % 2 === game_board_index) {
                 
-                // 1. 
                 if (current_action_mode === "shoot" && td.className === "unshot" && !board_locked) {
                     board_locked = true;
                     document.body.classList.add("board-locked");
@@ -1421,7 +1474,9 @@ const create_cell_in_row_to_shoot_ships = function (
                 return;
             }
             // Ghost mode: skip cell-navigation so arrow keys reach document.body.onkeydown
-            if (current_action_mode === "ghost_select" || current_action_mode === "ghost_move") {
+            if (current_action_mode === "ghost_select"
+                    || current_action_mode === "ghost_move"
+                    || current_action_mode === "ghost_relocate") {
                 return;
             }
             if (event.key === "ArrowRight") {
@@ -1475,6 +1530,17 @@ const create_row_in_table_to_shoot_ships = function (
 };
 
 document.body.onkeydown = function (event) {
+    // Teleport mode: R rotates the footprint being placed.
+    if (current_action_mode === "ghost_relocate" && ghost_selected_ship
+            && (event.key === "r" || event.key === "R")) {
+        ghost_relocate_orientation =
+            ghost_relocate_orientation === "horizontal" ? "vertical" : "horizontal";
+        update_display();
+        update_battle_controls();
+        event.preventDefault();
+        return;
+    }
+
     // Ghost move direction via arrow keys — checked first so it takes priority
     // over the generic cell-focus fallback below.
     if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move")
@@ -1573,6 +1639,8 @@ let current_action_mode = "shoot";   // shoot, sonar, ghost_select, ghost_move
 let ghost_selected_ship = null;
 let ghost_preview_direction = null;  // pending preview direction (not yet confirmed)
 let ghost_preview_distance = 1;      // pending preview distance: 1 or 2 tiles
+let ghost_relocate_orientation = "horizontal"; // footprint orientation while teleporting an intact ship
+let ghost_relocate_anchor = null;    // hovered top-left anchor while teleporting (null = none)
 let board_locked = false;   // true while VFX plays; blocks new shots
 
 // Per-board "x,y" keys of cells a ghost-moved ship left behind as damage.
@@ -1602,6 +1670,8 @@ const end_current_turn = function () {
     ghost_selected_ship = null;
     ghost_preview_direction = null;
     ghost_preview_distance = 1;
+    ghost_relocate_anchor = null;
+    ghost_relocate_orientation = "horizontal";
     next_player += 1;
     update_display();
     update_battle_controls();
@@ -1622,6 +1692,109 @@ const can_ghost_move = function (player_idx, ship_name, direction, distance) {
         moved = next;
     }
     return true;
+};
+
+// ── Stealth teleport (intact ships) ─────────────────────────────────
+// A ship with zero hits is "undetected" and may relocate to any pristine
+// position; a ship with at least one hit is "damaged" and is limited to the
+// orthogonal 1–2 tile escape slide above.
+
+const ghost_ship_cells = function (board, ship_name) {
+    const cells = [];
+    for (let r = 0; r < height; r++) {
+        for (let c = 0; c < width; c++) {
+            if (Battleship.is_ship_here(board[r][c]) &&
+                get_ship_name(board[r][c]) === ship_name) {
+                cells.push([c, r]);
+            }
+        }
+    }
+    return cells;
+};
+
+const is_ship_damaged = function (board, ship_name) {
+    return ghost_ship_cells(board, ship_name).some(function (cr) {
+        return board[cr[1]][cr[0]].shot === true;
+    });
+};
+
+const infer_ship_orientation = function (cells) {
+    if (cells.length < 2) return "horizontal";
+    return cells[0][1] === cells[1][1] ? "horizontal" : "vertical";
+};
+
+const relocate_footprint = function (anchor, length, orientation) {
+    return R.range(0, length).map(function (i) {
+        return orientation === "vertical"
+            ? [anchor[0], anchor[1] + i]
+            : [anchor[0] + i, anchor[1]];
+    });
+};
+
+// Valid only on pristine ocean: in bounds, no other ship, and never on top of
+// an already-shot cell (so no hit/miss history is ever overwritten). The
+// moving ship's own (un-shot) cells count as free.
+const relocate_valid = function (board, cells, moving_name) {
+    return cells.every(function (cr) {
+        const c = cr[0];
+        const r = cr[1];
+        if (c < 0 || c >= width || r < 0 || r >= height) return false;
+        const cell = board[r][c];
+        if (get_ship_name(cell) === moving_name) return true;
+        return !Battleship.is_ship_here(cell) && cell.shot !== true;
+    });
+};
+
+// Lifts the ship off its old (un-shot) cells and rebuilds it, full health, on
+// the chosen footprint. History elsewhere is untouched.
+const apply_ghost_relocate = function (board_index, ship_name, cells) {
+    const board = game_state[board_index].map(function (row) {
+        return row.map(function (cell) { return Object.assign({}, cell); });
+    });
+    board.forEach(function (row) {
+        row.forEach(function (cell) {
+            if (get_ship_name(cell) === ship_name) {
+                cell.ship = false;
+                delete cell.shipName;
+            }
+        });
+    });
+    cells.forEach(function (cr) {
+        board[cr[1]][cr[0]] = Object.assign({}, board[cr[1]][cr[0]], {
+            ship: true,
+            shipName: ship_name,
+            shot: false
+        });
+    });
+    game_state[board_index] = board;
+};
+
+// Commits a teleport at the given anchor (no-op if the footprint is invalid).
+const attempt_ghost_relocate = function (active_player_idx, anchor_col, anchor_row) {
+    if (board_locked || !ghost_selected_ship) return;
+    const own_board_idx = 1 - active_player_idx;
+    const gboard = game_state[own_board_idx];
+    const len = ghost_ship_cells(gboard, ghost_selected_ship).length;
+    const cells = relocate_footprint(
+        [anchor_col, anchor_row], len, ghost_relocate_orientation
+    );
+    if (!relocate_valid(gboard, cells, ghost_selected_ship)) return;
+
+    apply_ghost_relocate(own_board_idx, ghost_selected_ship, cells);
+    ghost_moves_left[active_player_idx] -= 1;
+    const moved_ship = ghost_selected_ship;
+    ghost_relocate_anchor = null;
+
+    board_locked = true;
+    document.body.classList.add("board-locked");
+    update_display();
+    flash_ghost_landing(active_player_idx, moved_ship);
+    update_battle_controls();
+    setTimeout(function () {
+        board_locked = false;
+        document.body.classList.remove("board-locked");
+        end_current_turn();
+    }, 800);
 };
 
 // Briefly flash the ship's cells at its new position after a confirmed move.
@@ -1802,14 +1975,15 @@ const fill_action_button = function (button, icon, title, desc, count) {
 
 const update_battle_controls = function () {
     const active_player_idx = next_player % 2;
-    const player_name = active_player_idx === 0 ? "Player 1" : "Player 2";
-    const inactive_name = active_player_idx === 0 ? "Player 2" : "Player 1";
+    const player_name = player_name_of(active_player_idx);
+    const inactive_name = player_name_of(1 - active_player_idx);
 
     // Body classes drive CSS turn-dimming and ghost-accessible states
     document.body.classList.toggle("turn-p1", active_player_idx === 0);
     document.body.classList.toggle("turn-p2", active_player_idx === 1);
     const is_ghost_mode = current_action_mode === "ghost_select" ||
-                          current_action_mode === "ghost_move";
+                          current_action_mode === "ghost_move" ||
+                          current_action_mode === "ghost_relocate";
     document.body.classList.toggle("ghost-active", is_ghost_mode);
 
     const center = document.getElementById("center_control");
@@ -1831,6 +2005,29 @@ const update_battle_controls = function () {
     label_row.append(turn_label);
     center.append(label_row);
 
+    // ── Identity: who is firing, and whose fleet they are attacking ──
+    const make_id_block = function (label_text, name_text, faction_cls) {
+        const block = document.createElement("div");
+        block.className = "ci-block";
+        const lbl = document.createElement("div");
+        lbl.className = "ci-label";
+        lbl.textContent = label_text;
+        const chip = document.createElement("div");
+        chip.className = "ci-chip " + faction_cls;
+        chip.textContent = name_text;
+        block.append(lbl, chip);
+        return block;
+    };
+    const identity = document.createElement("div");
+    identity.className = "center-identity";
+    identity.append(
+        make_id_block("CURRENT PLAYER", player_name,
+            active_player_idx === 0 ? "ci-p1" : "ci-p2"),
+        make_id_block("ATTACKING", inactive_name + "'s Fleet",
+            active_player_idx === 0 ? "ci-p2" : "ci-p1")
+    );
+    center.append(identity);
+
     // (4) Score board — enemy ship cells each player has hit.
     const count_hits = function (board) {
         return board.reduce(function (sum, row) {
@@ -1843,8 +2040,8 @@ const update_battle_controls = function () {
         const wrap = document.createElement("div");
         wrap.className = "score-board";
         [
-            { cls: "score-p1", label: "Player 1", value: count_hits(game_state[0]), active: active_player_idx === 0 },
-            { cls: "score-p2", label: "Player 2", value: count_hits(game_state[1]), active: active_player_idx === 1 }
+            { cls: "score-p1", label: player_name_of(0), value: count_hits(game_state[0]), active: active_player_idx === 0 },
+            { cls: "score-p2", label: player_name_of(1), value: count_hits(game_state[1]), active: active_player_idx === 1 }
         ].forEach(function (s) {
             const side = document.createElement("div");
             side.className = "score-side " + s.cls + (s.active ? " is-active" : "");
@@ -1875,10 +2072,12 @@ const update_battle_controls = function () {
         status.textContent = "Ghost — click one of your ships.";
     } else if (current_action_mode === "ghost_move") {
         if (ghost_preview_direction) {
-            status.textContent = "Preview ready — confirm to move, or pick another direction.";
+            status.textContent = "Damaged ship — confirm the escape, or pick another direction.";
         } else {
-            status.textContent = ghost_selected_ship + " selected. Pick a direction to preview.";
+            status.textContent = ghost_selected_ship + " is damaged. Escape up to 2 tiles — pick a direction.";
         }
+    } else if (current_action_mode === "ghost_relocate") {
+        status.textContent = ghost_selected_ship + " is intact. Click any clear water to redeploy · R to rotate.";
     }
     center.append(status);
 
@@ -1930,20 +2129,24 @@ const update_battle_controls = function () {
     const ghost_btn = document.createElement("button");
     ghost_btn.className = "battle-action ghost-action" +
         ((current_action_mode === "ghost_select" ||
-          current_action_mode === "ghost_move") ? " is-active" : "");
+          current_action_mode === "ghost_move" ||
+          current_action_mode === "ghost_relocate") ? " is-active" : "");
     fill_action_button(
         ghost_btn,
         "👻",
         "Ghost Move",
-        "Shift an unsunk ship 1 tile",
+        "Intact ships teleport · damaged ships escape 2 tiles",
         ghost_moves_left[active_player_idx] + " left"
     );
     if (ghost_moves_left[active_player_idx] <= 0) ghost_btn.disabled = true;
     ghost_btn.onclick = function () {
         ghost_preview_direction = null;
         ghost_preview_distance = 1;
+        ghost_relocate_anchor = null;
         // Already in ghost mode → this is a toggle-off (no reveal involved).
-        if (current_action_mode === "ghost_select" || current_action_mode === "ghost_move") {
+        if (current_action_mode === "ghost_select"
+                || current_action_mode === "ghost_move"
+                || current_action_mode === "ghost_relocate") {
             current_action_mode = "shoot";
             ghost_selected_ship = null;
             update_display();
@@ -2075,6 +2278,38 @@ const update_battle_controls = function () {
         }
     }
 
+    // ── Teleport controls (ghost_relocate only) ─────────────────
+    // Intact ships place directly on the board (like deployment); this panel
+    // only offers Rotate and Cancel — the click itself commits the move.
+    if (current_action_mode === "ghost_relocate") {
+        const relocate_box = document.createElement("div");
+        relocate_box.className = "ghost-relocate-controls";
+
+        const rotate_btn = document.createElement("button");
+        rotate_btn.className = "ghost-rotate-btn";
+        rotate_btn.textContent = "⟳ Rotate  [R]";
+        rotate_btn.onclick = function () {
+            ghost_relocate_orientation =
+                ghost_relocate_orientation === "horizontal" ? "vertical" : "horizontal";
+            update_display();
+            update_battle_controls();
+        };
+
+        const relocate_cancel = document.createElement("button");
+        relocate_cancel.className = "ghost-cancel-btn";
+        relocate_cancel.textContent = "Choose another ship";
+        relocate_cancel.onclick = function () {
+            ghost_relocate_anchor = null;
+            ghost_selected_ship = null;
+            current_action_mode = "ghost_select";
+            update_display();
+            update_battle_controls();
+        };
+
+        relocate_box.append(rotate_btn, relocate_cancel);
+        center.append(relocate_box);
+    }
+
     center.append(Object.assign(document.createElement("div"), { className: "center-divider" }));
 
     // ── Waiting label ───────────────────────────────────────────
@@ -2082,12 +2317,6 @@ const update_battle_controls = function () {
     wait.className = "center-wait-label";
     wait.textContent = inactive_name + " is waiting...";
     center.append(wait);
-
-    // Clear player battle windows (not used in battle phase anymore)
-    ["player_1_battle_window", "player_2_battle_window"].forEach(function (id) {
-        const win = document.getElementById(id);
-        if (win) win.innerHTML = "";
-    });
 };
 
 // ==========================================
@@ -2147,4 +2376,37 @@ setInterval(function () {
         update_deploy_controls();
     }
 }, 250);
-show_countdown_overlay();
+// ── Name-setup phase ────────────────────────────────────────────────
+// Both commanders enter their call signs before anything else; the names
+// then drive every multiplayer label. Defaults to Siyi / Zipei if left blank.
+const start_with_names = function () {
+    const overlay = document.getElementById("name_setup");
+    const input_1 = document.getElementById("ns_name_1");
+    const input_2 = document.getElementById("ns_name_2");
+    const begin = document.getElementById("ns_begin");
+    if (!overlay || !input_1 || !input_2 || !begin) {
+        show_countdown_overlay();
+        return;
+    }
+    const commit = function () {
+        const n1 = input_1.value.trim();
+        const n2 = input_2.value.trim();
+        player_names[0] = (n1 || "Player 1").slice(0, 14);
+        player_names[1] = (n2 || "Player 2").slice(0, 14);
+        overlay.classList.add("ns-hide");
+        setTimeout(function () { overlay.remove(); }, 420);
+        show_countdown_overlay();
+    };
+    begin.addEventListener("click", commit);
+    [input_1, input_2].forEach(function (inp) {
+        inp.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commit();
+            }
+        });
+    });
+    input_1.focus();
+    input_1.select();
+};
+start_with_names();

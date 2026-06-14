@@ -588,14 +588,6 @@ button:disabled {
     text-transform: uppercase;
 }
 
-/* Old battle_panel — hidden; replaced by #center_control */
-#battle_panel {
-    display: none !important;
-}
-
-/* Player battle windows — hidden; centre control handles all battle UI */
-.player-battle-window { display: none; }
-
 .sonar-cell-overlay {
     position: absolute;
     inset: 0;
@@ -1674,17 +1666,6 @@ body.battle-initializing .nav-home-btn {
     animation: bubble-rise 900ms ease-out forwards;
 }
 
-.sunk-dust span {
-    width: clamp(0.38rem, 1.4vw, 0.8rem);
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: rgba(84, 84, 84, 0.76);
-    animation: dust-burst 1250ms ease-out forwards;
-}
-
-/* miss-ripple kept but unused (no VFX on miss now) */
-.miss-ripple span { display: none; }
-
 /* ── Sunk bombardment: fire + smoke particles ── */
 .sunk-explosion span {
     position: absolute;
@@ -1990,21 +1971,6 @@ body.board-locked #center_control {
     }
 }
 
-@keyframes count-pop {
-    0% {
-        opacity: 0;
-        transform: scale(0.65);
-    }
-    18% {
-        opacity: 1;
-        transform: scale(1.06);
-    }
-    100% {
-        opacity: 0.72;
-        transform: scale(1);
-    }
-}
-
 @keyframes bubble-rise {
     0% {
         opacity: 0;
@@ -2020,23 +1986,6 @@ body.board-locked #center_control {
             rotate(var(--angle))
             translateY(calc(-1 * var(--distance)))
             scale(1.25);
-    }
-}
-
-@keyframes dust-burst {
-    0% {
-        opacity: 0.9;
-        filter: blur(0);
-        transform: translate(-50%, -50%) scale(0.55);
-    }
-    100% {
-        opacity: 0;
-        filter: blur(4px);
-        transform:
-            translate(-50%, -50%)
-            rotate(var(--angle))
-            translateY(calc(-1 * var(--distance)))
-            scale(2.1);
     }
 }
 
@@ -2703,6 +2652,33 @@ body.battle-phase .ghost-landed {
     box-shadow: 0 0 14px rgba(255, 90, 79, 0.35) !important;
 }
 
+/* Teleport (stealth reposition) controls */
+#center_control .ghost-relocate-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    margin-top: 0.4rem;
+}
+
+#center_control .ghost-rotate-btn {
+    width: 100%;
+    background: rgba(184, 108, 255, 0.18) !important;
+    border-color: rgba(184, 108, 255, 0.6) !important;
+    color: #e6d2ff !important;
+    letter-spacing: 0.04em;
+}
+
+#center_control .ghost-rotate-btn:hover:not(:disabled) {
+    background: rgba(184, 108, 255, 0.3) !important;
+    box-shadow: 0 0 16px rgba(184, 108, 255, 0.4) !important;
+}
+
+#center_control .ghost-relocate-controls .ghost-cancel-btn {
+    width: 100%;
+    flex: none;
+}
+
 #center_control .direction-btn.is-active {
     background: rgba(78, 224, 138, 0.4) !important;
     box-shadow: 0 0 14px rgba(78, 224, 138, 0.45) !important;
@@ -3011,165 +2987,6 @@ body.intro-phase main {
             inset 0 0 18px rgba(79, 227, 255, 0.10);
         border-color: rgba(79, 227, 255, 0.95);
     }
-}
-
-/* ═══════════════════════════════════════════════
-   FEATURE 5 — Image-based "Hide / Pass" overlays
-   Full-screen asset image with a "GOT IT" button.
-   ═══════════════════════════════════════════════ */
-.screen-image-overlay {
-    padding: 0 !important;
-    background: #000 !important;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.screen-image-full {
-    position: absolute !important;
-    inset: 0;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-    object-position: center center;
-    filter: none !important;
-}
-
-.screen-image-overlay .overlay-action-holder {
-    z-index: 1;
-    background: transparent;
-    padding: 0;
-}
-
-/* ── Shared shimmer animation for both button themes ── */
-@keyframes gotit-shimmer {
-    0%   { transform: translateX(-220%); }
-    100% { transform: translateX(220%);  }
-}
-
-/* ── Orange theme (Hide your screen) ── */
-@keyframes gotit-pulse-orange {
-    0%, 100% {
-        box-shadow:
-            0 0.45rem 0 rgba(140, 50, 8, 0.8),
-            0 0 18px  rgba(224, 100, 40, 0.45),
-            0 0 55px  rgba(224, 100, 40, 0.20);
-    }
-    50% {
-        box-shadow:
-            0 0.45rem 0 rgba(140, 50, 8, 0.9),
-            0 0 36px  rgba(255, 140, 60, 0.72),
-            0 0 90px  rgba(224, 100, 40, 0.38);
-    }
-}
-
-.screen-image-overlay.overlay-orange .overlay-ok-button {
-    position: relative;
-    overflow: hidden;
-    font-family: "Orbitron", "Trebuchet MS", sans-serif;
-    font-size: clamp(1.3rem, 4vw, 2rem);
-    font-weight: 800;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #fff;
-    background: linear-gradient(135deg, #b84f18 0%, #e07840 48%, #bf6228 100%);
-    border: 1px solid rgba(255, 160, 80, 0.45);
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: transform 0.18s ease, filter 0.18s ease;
-    animation: gotit-pulse-orange 2.2s ease-in-out infinite;
-}
-
-.screen-image-overlay.overlay-orange .overlay-ok-button::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        105deg,
-        transparent 25%,
-        rgba(255, 220, 180, 0.24) 50%,
-        transparent 75%
-    );
-    transform: translateX(-220%);
-    animation: gotit-shimmer 2.6s linear infinite;
-    pointer-events: none;
-}
-
-.screen-image-overlay.overlay-orange .overlay-ok-button:hover {
-    transform: translateY(-5px) scale(1.025);
-    filter: brightness(1.18);
-    box-shadow:
-        0 0.55rem 0 rgba(140, 50, 8, 0.8),
-        0 0 55px  rgba(255, 140, 60, 0.85),
-        0 0 110px rgba(224, 100, 40, 0.52),
-        0 0 200px rgba(224, 80,  20, 0.22);
-}
-
-.screen-image-overlay.overlay-orange .overlay-ok-button:active {
-    transform: translateY(2px) scale(0.98);
-    filter: brightness(0.92);
-}
-
-/* ── Blue theme (Pass the screen) ── */
-@keyframes gotit-pulse-blue {
-    0%, 100% {
-        box-shadow:
-            0 0.45rem 0 rgba(10, 55, 110, 0.8),
-            0 0 18px  rgba(58, 174, 224, 0.45),
-            0 0 55px  rgba(58, 174, 224, 0.20);
-    }
-    50% {
-        box-shadow:
-            0 0.45rem 0 rgba(10, 55, 110, 0.9),
-            0 0 36px  rgba(79, 227, 255, 0.72),
-            0 0 90px  rgba(58, 174, 224, 0.38);
-    }
-}
-
-.screen-image-overlay.overlay-blue .overlay-ok-button {
-    position: relative;
-    overflow: hidden;
-    font-family: "Orbitron", "Trebuchet MS", sans-serif;
-    font-size: clamp(1.3rem, 4vw, 2rem);
-    font-weight: 800;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #fff;
-    background: linear-gradient(135deg, #1468a0 0%, #3aaee0 48%, #1c80c0 100%);
-    border: 1px solid rgba(79, 227, 255, 0.45);
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: transform 0.18s ease, filter 0.18s ease;
-    animation: gotit-pulse-blue 2.2s ease-in-out infinite;
-}
-
-.screen-image-overlay.overlay-blue .overlay-ok-button::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        105deg,
-        transparent 25%,
-        rgba(180, 240, 255, 0.24) 50%,
-        transparent 75%
-    );
-    transform: translateX(-220%);
-    animation: gotit-shimmer 2.6s linear infinite;
-    pointer-events: none;
-}
-
-.screen-image-overlay.overlay-blue .overlay-ok-button:hover {
-    transform: translateY(-5px) scale(1.025);
-    filter: brightness(1.18);
-    box-shadow:
-        0 0.55rem 0 rgba(10, 55, 110, 0.8),
-        0 0 55px  rgba(79, 227, 255, 0.85),
-        0 0 110px rgba(58, 174, 224, 0.52),
-        0 0 200px rgba(40, 130, 200, 0.22);
-}
-
-.screen-image-overlay.overlay-blue .overlay-ok-button:active {
-    transform: translateY(2px) scale(0.98);
-    filter: brightness(0.92);
 }
 
 /* ═══════════════════════════════════════════════
@@ -5274,3 +5091,367 @@ body.battle-phase .ghost-scar::after { content: none; }
         animation: none !important;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MULTIPLAYER IDENTITY SYSTEM
+   Name-setup phase, named battle HUD, fleet-status titles.
+   Faction colours are fixed: Player 1 = orange, Player 2 = blue.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Name setup overlay ─────────────────────────────────────── */
+#name_setup {
+    position: fixed;
+    inset: 0;
+    z-index: 120000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 4vh, 3rem);
+    background:
+        radial-gradient(90% 70% at 0% 50%, rgba(255, 144, 64, 0.10), transparent 55%),
+        radial-gradient(90% 70% at 100% 50%, rgba(64, 184, 255, 0.10), transparent 55%),
+        linear-gradient(180deg, #04070e, #07101d 55%, #050d1a);
+    animation: ns-fade-in 420ms ease both;
+}
+
+#name_setup.ns-hide {
+    animation: ns-fade-out 420ms ease both;
+    pointer-events: none;
+}
+
+@keyframes ns-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ns-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: scale(1.02); }
+}
+
+.ns-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.8rem, 2.4vh, 1.8rem);
+    width: min(94vw, 60rem);
+    text-align: center;
+}
+
+.ns-heading {
+    margin: 0;
+    font-family: var(--title-font-family);
+    font-size: clamp(1.8rem, 5vw, 3.6rem);
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 28px rgba(79, 227, 255, 0.4), 0 0 60px rgba(255, 144, 64, 0.2);
+}
+
+.ns-sub {
+    margin-top: -0.4rem;
+    color: var(--muted-ink);
+    font-size: clamp(0.85rem, 1.8vw, 1.2rem);
+    letter-spacing: 0.06em;
+}
+
+.ns-cards {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.8rem, 3vw, 2.4rem);
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.ns-card {
+    flex: 1 1 16rem;
+    max-width: 22rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: clamp(1rem, 2.4vh, 1.8rem) clamp(1rem, 2vw, 1.6rem);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(4, 8, 18, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ns-card-p1 {
+    --ns-accent: 255, 144, 64;
+    border-color: rgba(255, 144, 64, 0.5);
+    box-shadow: 0 0 30px rgba(255, 144, 64, 0.12), inset 0 0 30px rgba(255, 144, 64, 0.05);
+    animation: ns-card-in-left 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ns-card-p2 {
+    --ns-accent: 64, 184, 255;
+    border-color: rgba(64, 184, 255, 0.5);
+    box-shadow: 0 0 30px rgba(64, 184, 255, 0.12), inset 0 0 30px rgba(64, 184, 255, 0.05);
+    animation: ns-card-in-right 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ns-card-in-left {
+    from { opacity: 0; transform: translateX(-26px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ns-card-in-right {
+    from { opacity: 0; transform: translateX(26px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.ns-faction {
+    font-family: var(--title-font-family);
+    font-size: clamp(0.62rem, 1.2vw, 0.82rem);
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.ns-card-p1 .ns-faction { color: rgb(255, 206, 150); text-shadow: 0 0 12px rgba(255, 144, 64, 0.6); }
+.ns-card-p2 .ns-faction { color: rgb(165, 224, 255); text-shadow: 0 0 12px rgba(64, 184, 255, 0.6); }
+
+.ns-card-role {
+    font-size: clamp(0.66rem, 1.3vw, 0.9rem);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+}
+
+.ns-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.ns-input {
+    width: 100%;
+    padding: 0.7em 0.9em;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--ns-accent), 0.35);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    font-family: var(--title-font-family);
+    font-size: clamp(1.1rem, 2.6vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.ns-input::placeholder {
+    color: rgba(255, 255, 255, 0.32);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: none;
+}
+
+/* While still empty, the field pulses in its faction colour to invite typing.
+   The pulse stops the moment the player focuses or starts entering a name. */
+.ns-input:placeholder-shown {
+    animation: ns-input-invite 1.9s ease-in-out infinite;
+}
+
+.ns-input:focus,
+.ns-input:not(:placeholder-shown) {
+    animation: none;
+    border-color: rgb(var(--ns-accent));
+    background: rgba(var(--ns-accent), 0.08);
+    box-shadow: 0 0 22px rgba(var(--ns-accent), 0.3);
+}
+
+@keyframes ns-input-invite {
+    0%, 100% {
+        border-color: rgba(var(--ns-accent), 0.35);
+        box-shadow: inset 0 0 0 1px rgba(var(--ns-accent), 0.06);
+    }
+    50% {
+        border-color: rgba(var(--ns-accent), 0.95);
+        box-shadow:
+            inset 0 0 12px rgba(var(--ns-accent), 0.22),
+            0 0 22px rgba(var(--ns-accent), 0.4);
+    }
+}
+
+/* Animated "type here" tag — fades out once the field has focus or content. */
+.ns-input-hint {
+    position: absolute;
+    right: 0.55em;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.18em 0.55em;
+    border-radius: 6px;
+    background: rgba(var(--ns-accent), 0.16);
+    color: rgb(var(--ns-accent));
+    font-family: var(--body-font-family);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    animation: ns-hint-bob 1.9s ease-in-out infinite;
+}
+
+/* Only show the hint while the field is empty and not focused. */
+.ns-input:focus + .ns-input-hint,
+.ns-input:not(:placeholder-shown) + .ns-input-hint {
+    opacity: 0 !important;
+    animation: none;
+}
+
+@keyframes ns-hint-bob {
+    0%, 100% { opacity: 0.55; transform: translateY(-50%) translateX(0); }
+    50%      { opacity: 1;    transform: translateY(-50%) translateX(-3px); }
+}
+
+.ns-versus {
+    flex: 0 0 auto;
+    font-family: var(--title-font-family);
+    font-size: clamp(1.1rem, 3vw, 2rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #fff;
+    opacity: 0.8;
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.5);
+}
+
+.ns-begin {
+    min-width: clamp(14rem, 30vw, 20rem);
+    min-height: clamp(3rem, 6.5vh, 4rem);
+    padding: 0 2rem;
+    border: 2px solid rgba(79, 227, 255, 0.6);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(79, 227, 255, 0.2), rgba(79, 227, 255, 0.05));
+    color: #fff;
+    font-family: var(--title-font-family);
+    font-size: clamp(1rem, 2.4vw, 1.5rem);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 24px rgba(79, 227, 255, 0.25), inset 0 0 18px rgba(79, 227, 255, 0.1);
+    transition: transform 140ms ease, box-shadow 200ms ease, background 200ms ease;
+    animation: ns-begin-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ns-begin-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(79, 227, 255, 0.2), inset 0 0 14px rgba(79, 227, 255, 0.08); }
+    50%      { box-shadow: 0 0 36px rgba(79, 227, 255, 0.45), inset 0 0 20px rgba(79, 227, 255, 0.16); }
+}
+
+.ns-begin:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(79, 227, 255, 0.32), rgba(79, 227, 255, 0.1));
+    box-shadow: 0 0 46px rgba(79, 227, 255, 0.55), inset 0 0 22px rgba(79, 227, 255, 0.18);
+}
+
+.ns-begin:active { transform: translateY(1px) scale(0.98); }
+
+/* ── Battle HUD identity block (centre control) ─────────────── */
+.center-identity {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid rgba(79, 227, 255, 0.18);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.ci-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.18rem;
+}
+
+.ci-label {
+    font-size: clamp(0.52rem, 1.2vmin, 0.7rem);
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+}
+
+.ci-chip {
+    max-width: 100%;
+    padding: 0.22em 0.85em;
+    border-radius: 999px;
+    font-family: var(--title-font-family);
+    font-size: clamp(0.85rem, 2vmin, 1.25rem);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid transparent;
+}
+
+.ci-chip.ci-p1 {
+    color: #ffce96;
+    background: rgba(255, 144, 64, 0.14);
+    border-color: rgba(255, 144, 64, 0.5);
+    text-shadow: 0 0 14px rgba(255, 144, 64, 0.55);
+}
+
+.ci-chip.ci-p2 {
+    color: #a5e0ff;
+    background: rgba(64, 184, 255, 0.14);
+    border-color: rgba(64, 184, 255, 0.5);
+    text-shadow: 0 0 14px rgba(64, 184, 255, 0.55);
+}
+
+/* ── Fleet-status panel titles (below each board) ───────────── */
+.tracker-title {
+    width: 100%;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    font-family: var(--title-font-family);
+    font-size: clamp(0.66rem, 1.5vmin, 1rem);
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+/* Left board (orange Siyi attack view) → tracks the BLUE enemy fleet below */
+body.battle-phase aside .tracker-title {
+    color: #a5e0ff;
+    text-shadow: 0 0 12px rgba(64, 184, 255, 0.5);
+}
+
+/* Right board (blue Zipei attack view) → tracks the ORANGE enemy fleet below */
+body.battle-phase main .tracker-title {
+    color: #ffce96;
+    text-shadow: 0 0 12px rgba(255, 144, 64, 0.5);
+}
+
+/* ── Longer named board labels: shrink + wrap so they fit ───── */
+body.battle-phase aside h2,
+body.battle-phase main h2 {
+    font-size: clamp(0.95rem, 2.3vmin, 1.6rem);
+    line-height: 1.18;
+    letter-spacing: 0.04em;
+    max-width: 96%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ── Victory winner headline ────────────────────────────────── */
+.victory-winner {
+    font-family: var(--title-font-family);
+    font-size: clamp(1.6rem, 5vmin, 3rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.05;
+    margin-bottom: 0.2rem;
+}
+
+.victory-winner.is-p1 { color: #ffce96; text-shadow: 0 0 26px rgba(255, 144, 64, 0.7); }
+.victory-winner.is-p2 { color: #a5e0ff; text-shadow: 0 0 26px rgba(64, 184, 255, 0.7); }
