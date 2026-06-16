@@ -717,6 +717,7 @@ const create_play_button = function () {
                     const item = document.createElement("div");
                     item.className = "tracker-ship";
                     item.dataset.ship = ship.name;
+                    item.dataset.length = ship.length;
                     // Staggered cascade: each icon enters 130 ms after the previous
                     item.style.animationDelay = (ship_index * 130) + "ms";
 
@@ -761,11 +762,11 @@ const create_play_button = function () {
                         && ghost_relocate_anchor) {
                     // Teleport: highlight the footprint under the cursor.
                     const gboard = game_state[ghost_own_board_idx];
-                    const len = ghost_ship_cells(gboard, ghost_selected_ship).length;
-                    const cells = relocate_footprint(
+                    const len = Battleship.ship_cells_by_name(gboard, ghost_selected_ship).length;
+                    const cells = Battleship.relocate_footprint(
                         ghost_relocate_anchor, len, ghost_relocate_orientation
                     );
-                    ghost_preview_blocked = !relocate_valid(
+                    ghost_preview_blocked = !Battleship.relocate_valid(
                         gboard, cells, ghost_selected_ship
                     );
                     cells.forEach(function (cr) {
@@ -780,10 +781,10 @@ const create_play_button = function () {
                     const off = offsets[ghost_preview_direction];
                     const dist = ghost_preview_distance || 1;
                     // Whole slide validity (bounds + path) comes from the engine.
-                    ghost_preview_blocked = !can_ghost_move(
-                        active_player_idx, ghost_selected_ship,
+                    ghost_preview_blocked = Battleship.ghost_slide(
+                        game_state[ghost_own_board_idx], ghost_selected_ship,
                         ghost_preview_direction, dist
-                    );
+                    ) === game_state[ghost_own_board_idx];
                     // Highlight the would-be destination footprint (offset × distance).
                     for (let r = 0; r < height; r++) {
                         for (let c = 0; c < width; c++) {
@@ -825,7 +826,7 @@ const create_play_button = function () {
                                     || current_action_mode === "ghost_relocate")
                                     && game_board_index === own_board_idx) {
                                 const ship_name = get_ship_name(cell);
-                                if (ship_name && Battleship.is_ship_here(cell) && !is_ship_sunk_by_name(game_board, ship_name)) {
+                                if (ship_name && Battleship.is_ship_here(cell) && !Battleship.is_ship_sunk_by_name(game_board, ship_name)) {
                                     table_cell.className = "cell_with_ship";
                                     table_cell.classList.add("ghost-target");
                                     table_cell.style.cursor = "pointer";
@@ -874,7 +875,7 @@ const create_play_button = function () {
                     Battleship.ship_array.forEach(function (ship) {
                         const item = tracker.querySelector("[data-ship=\"" + ship.name + "\"]");
                         if (!item) return;
-                        item.classList.toggle("sunk", is_ship_sunk_by_name(game_state[board_idx], ship.name));
+                        item.classList.toggle("sunk", Battleship.is_ship_sunk_by_name(game_state[board_idx], ship.name));
                     });
                 });
             };
@@ -1339,17 +1340,17 @@ const create_cell_in_row_to_shoot_ships = function (
                 const cell = game_state[game_board_index][row_index][column_index];
                 const ship_name = get_ship_name(cell);
 
-                if (ship_name && Battleship.is_ship_here(cell) && !is_ship_sunk_by_name(game_state[game_board_index], ship_name)) {
+                if (ship_name && Battleship.is_ship_here(cell) && !Battleship.is_ship_sunk_by_name(game_state[game_board_index], ship_name)) {
                     ghost_selected_ship = ship_name;
                     ghost_preview_direction = null;
                     ghost_preview_distance = 1;
-                    if (is_ship_damaged(game_state[game_board_index], ship_name)) {
+                    if (Battleship.is_ship_damaged(game_state[game_board_index], ship_name)) {
                         // Detected & damaged → emergency escape (orthogonal 1–2 tiles).
                         current_action_mode = "ghost_move";
                     } else {
                         // Intact & undetected → stealth teleport anywhere pristine.
-                        ghost_relocate_orientation = infer_ship_orientation(
-                            ghost_ship_cells(game_state[game_board_index], ship_name)
+                        ghost_relocate_orientation = Battleship.infer_ship_orientation(
+                            Battleship.ship_cells_by_name(game_state[game_board_index], ship_name)
                         );
                         ghost_relocate_anchor = null;
                         current_action_mode = "ghost_relocate";
@@ -1422,17 +1423,16 @@ const create_cell_in_row_to_shoot_ships = function (
                     board_locked = true;
                     document.body.classList.add("board-locked");
 
-                    let count = 0;
                     const enemy_board = game_state[game_board_index];
                     const sonar_cells = [];
+
+                    const count = Battleship.count_ships_in_area(
+                        enemy_board, column_index, row_index
+                    );
 
                     for (let r = row_index - 1; r <= row_index + 1; r++) {
                         for (let c = column_index - 1; c <= column_index + 1; c++) {
                             if (r >= 0 && r < height && c >= 0 && c < width) {
-                                const cell = enemy_board[r][c];
-                                if (cell && Battleship.is_ship_here(cell)) {
-                                    count++;
-                                }
                                 sonar_cells.push({r, c});
                             }
                         }
@@ -1677,110 +1677,28 @@ const end_current_turn = function () {
     update_battle_controls();
 };
 
-// Pure validity check for a ghost move of `distance` tiles (1 or 2). The
-// slide is simulated one tile at a time on a throwaway board, so the engine
-// enforces bounds + blocking for every cell the ship sweeps through.
-const can_ghost_move = function (player_idx, ship_name, direction, distance) {
-    if (!ship_name || !direction) return false;
-    const steps = distance || 1;
-    const board = game_state[1 - player_idx];
-    if (is_ship_sunk_by_name(board, ship_name)) return false;
-    let moved = board;
-    for (let s = 0; s < steps; s++) {
-        const next = Battleship.move_ship(moved, ship_name, direction);
-        if (next === moved) return false;   // off-board or blocked this step
-        moved = next;
-    }
-    return true;
-};
-
 // ── Stealth teleport (intact ships) ─────────────────────────────────
 // A ship with zero hits is "undetected" and may relocate to any pristine
 // position; a ship with at least one hit is "damaged" and is limited to the
 // orthogonal 1–2 tile escape slide above.
-
-const ghost_ship_cells = function (board, ship_name) {
-    const cells = [];
-    for (let r = 0; r < height; r++) {
-        for (let c = 0; c < width; c++) {
-            if (Battleship.is_ship_here(board[r][c]) &&
-                get_ship_name(board[r][c]) === ship_name) {
-                cells.push([c, r]);
-            }
-        }
-    }
-    return cells;
-};
-
-const is_ship_damaged = function (board, ship_name) {
-    return ghost_ship_cells(board, ship_name).some(function (cr) {
-        return board[cr[1]][cr[0]].shot === true;
-    });
-};
-
-const infer_ship_orientation = function (cells) {
-    if (cells.length < 2) return "horizontal";
-    return cells[0][1] === cells[1][1] ? "horizontal" : "vertical";
-};
-
-const relocate_footprint = function (anchor, length, orientation) {
-    return R.range(0, length).map(function (i) {
-        return orientation === "vertical"
-            ? [anchor[0], anchor[1] + i]
-            : [anchor[0] + i, anchor[1]];
-    });
-};
-
-// Valid only on pristine ocean: in bounds, no other ship, and never on top of
-// an already-shot cell (so no hit/miss history is ever overwritten). The
-// moving ship's own (un-shot) cells count as free.
-const relocate_valid = function (board, cells, moving_name) {
-    return cells.every(function (cr) {
-        const c = cr[0];
-        const r = cr[1];
-        if (c < 0 || c >= width || r < 0 || r >= height) return false;
-        const cell = board[r][c];
-        if (get_ship_name(cell) === moving_name) return true;
-        return !Battleship.is_ship_here(cell) && cell.shot !== true;
-    });
-};
-
-// Lifts the ship off its old (un-shot) cells and rebuilds it, full health, on
-// the chosen footprint. History elsewhere is untouched.
-const apply_ghost_relocate = function (board_index, ship_name, cells) {
-    const board = game_state[board_index].map(function (row) {
-        return row.map(function (cell) { return Object.assign({}, cell); });
-    });
-    board.forEach(function (row) {
-        row.forEach(function (cell) {
-            if (get_ship_name(cell) === ship_name) {
-                cell.ship = false;
-                delete cell.shipName;
-            }
-        });
-    });
-    cells.forEach(function (cr) {
-        board[cr[1]][cr[0]] = Object.assign({}, board[cr[1]][cr[0]], {
-            ship: true,
-            shipName: ship_name,
-            shot: false
-        });
-    });
-    game_state[board_index] = board;
-};
+// Ghost move logic (ghost_slide, is_ship_damaged, is_ship_sunk_by_name,
+// relocate_footprint, relocate_valid, apply_ghost_relocate,
+// infer_ship_orientation, ship_cells_by_name) lives in BattleShip.js.
 
 // Commits a teleport at the given anchor (no-op if the footprint is invalid).
 const attempt_ghost_relocate = function (active_player_idx, anchor_col, anchor_row) {
     if (board_locked || !ghost_selected_ship) return;
     const own_board_idx = 1 - active_player_idx;
     const gboard = game_state[own_board_idx];
-    const len = ghost_ship_cells(gboard, ghost_selected_ship).length;
-    const cells = relocate_footprint(
+    const len = Battleship.ship_cells_by_name(gboard, ghost_selected_ship).length;
+    const cells = Battleship.relocate_footprint(
         [anchor_col, anchor_row], len, ghost_relocate_orientation
     );
-    if (!relocate_valid(gboard, cells, ghost_selected_ship)) return;
+    if (!Battleship.relocate_valid(gboard, cells, ghost_selected_ship)) return;
 
-    apply_ghost_relocate(own_board_idx, ghost_selected_ship, cells);
+    game_state[own_board_idx] = Battleship.apply_ghost_relocate(
+        game_state[own_board_idx], ghost_selected_ship, cells
+    );
     ghost_moves_left[active_player_idx] -= 1;
     const moved_ship = ghost_selected_ship;
     ghost_relocate_anchor = null;
@@ -1857,7 +1775,7 @@ const add_impact_strike = function (game_board_index, row_index, column_index) {
 const trigger_sunk_bombardment = function (game_board_index, hit_row, hit_col) {
     const board = game_state[game_board_index];
     const hit_cell = board[hit_row][hit_col];
-    const ship_name = get_ship_name ? get_ship_name(hit_cell) : (hit_cell && hit_cell.shipName);
+    const ship_name = get_ship_name(hit_cell);
 
     if (!ship_name) {
         add_cell_effect(game_board_index, hit_row, hit_col, "sunk-explosion");
@@ -1867,9 +1785,7 @@ const trigger_sunk_bombardment = function (game_board_index, hit_row, hit_col) {
     for (let r = 0; r < height; r++) {
         for (let c = 0; c < width; c++) {
             const cell = board[r][c];
-            if (cell && Battleship.is_ship_here(cell) &&
-                ((cell.shipName && cell.shipName === ship_name) ||
-                 (cell.ship_name && cell.ship_name === ship_name))) {
+            if (cell && Battleship.is_ship_here(cell) && cell.shipName === ship_name) {
                 add_cell_effect(game_board_index, r, c, "sunk-explosion");
             }
         }
@@ -1889,54 +1805,6 @@ const get_ship_name = function (cell) {
     return undefined;
 };
 
-const is_ship_sunk_by_name = function (game_board, ship_name) {
-    let foundShipCell = false;
-
-    for (let r = 0; r < height; r++) {
-        for (let c = 0; c < width; c++) {
-            const cell = game_board[r][c];
-            if (cell && Battleship.is_ship_here(cell) && get_ship_name(cell) === ship_name) {
-                foundShipCell = true;
-                if (!cell.shot) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return foundShipCell;
-};
-
-// Moves a ship `distance` tiles (1 or 2) by applying that many single-tile
-// engine moves. If any step is illegal the whole move is abandoned and the
-// board is left untouched, so a 2-tile slide is all-or-nothing.
-const try_move_single_ship = function (player_idx, ship_name, direction, distance) {
-    const own_board_idx = 1 - player_idx;
-    const steps = distance || 1;
-    const board = game_state[own_board_idx];
-
-    if (!ship_name) {
-        alert("Please choose one of your ships first.");
-        return false;
-    }
-    if (is_ship_sunk_by_name(board, ship_name)) {
-        alert("That ship is already sunk and cannot ghost move.");
-        return false;
-    }
-
-    let moved = board;
-    for (let s = 0; s < steps; s++) {
-        const next = Battleship.move_ship(moved, ship_name, direction);
-        if (next === moved) {
-            alert("Ghost move failed: the path is blocked or off the board.");
-            return false;
-        }
-        moved = next;
-    }
-
-    game_state[own_board_idx] = moved;
-    return true;
-};
 
 // ==========================================
 // 3. Centre control axis
@@ -2222,30 +2090,26 @@ const update_battle_controls = function () {
             const confirm_btn = document.createElement("button");
             confirm_btn.className = "ghost-confirm-btn";
             confirm_btn.textContent = "Confirm Move";
-            const valid = can_ghost_move(
-                active_player_idx, ghost_selected_ship,
+            const own_board_idx = 1 - active_player_idx;
+            const valid = Battleship.ghost_slide(
+                game_state[own_board_idx], ghost_selected_ship,
                 ghost_preview_direction, ghost_preview_distance
-            );
+            ) !== game_state[own_board_idx];
             confirm_btn.disabled = !valid;
             confirm_btn.onclick = function () {
-                if (!can_ghost_move(active_player_idx, ghost_selected_ship,
-                        ghost_preview_direction, ghost_preview_distance)) {
+                const new_board = Battleship.ghost_slide(
+                    game_state[own_board_idx], ghost_selected_ship,
+                    ghost_preview_direction, ghost_preview_distance
+                );
+                if (new_board === game_state[own_board_idx]) {
                     return;
                 }
                 // Tactical cost: record where this ship was already damaged so
                 // the vacated hits stay on the board as a "scar" trace. The
                 // engine restores the ship to full health at its new position;
                 // the old hits become permanent intel for the opponent.
-                const own_board_idx = 1 - active_player_idx;
                 record_ghost_scars(own_board_idx, ghost_selected_ship);
-
-                const moved = try_move_single_ship(
-                    active_player_idx, ghost_selected_ship,
-                    ghost_preview_direction, ghost_preview_distance
-                );
-                if (!moved) {
-                    return;
-                }
+                game_state[own_board_idx] = new_board;
                 ghost_moves_left[active_player_idx] -= 1;
                 const moved_ship = ghost_selected_ship;
                 ghost_preview_direction = null;
@@ -2317,6 +2181,26 @@ const update_battle_controls = function () {
     wait.className = "center-wait-label";
     wait.textContent = inactive_name + " is waiting...";
     center.append(wait);
+
+    // ── Embedded legend (replaces removed bottom bar) ────────────
+    const legend_row = document.createElement("div");
+    legend_row.className = "hud-legend";
+    [
+        { cls: "ship-label",         label: "Ship" },
+        { cls: "hit-label",          label: "Hit" },
+        { cls: "miss-label",         label: "Miss" },
+        { cls: "sunken-ship-label",  label: "Sunk" }
+    ].forEach(function (d) {
+        const item = document.createElement("div");
+        item.className = "hud-leg-item";
+        const box = document.createElement("div");
+        box.className = "colour-box " + d.cls;
+        const lbl = document.createElement("span");
+        lbl.textContent = d.label;
+        item.append(box, lbl);
+        legend_row.append(item);
+    });
+    center.append(legend_row);
 };
 
 // ==========================================

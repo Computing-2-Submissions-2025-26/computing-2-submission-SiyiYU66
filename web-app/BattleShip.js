@@ -46,11 +46,36 @@ const Battleship = Object.create(null);
  * @typedef {Battleship.Ship[]} ship_array
  */
 Battleship.ship_array = [
-    {"name": "carrier", "length": 5, "orientation": "horizontal", "placed": false},
-    {"name": "battleship", "length": 4, "orientation": "horizontal", "placed": false},
-    {"name": "cruiser", "length": 3, "orientation": "horizontal", "placed": false},
-    {"name": "submarine", "length": 3, "orientation": "horizontal", "placed": false},
-    {"name": "destroyer", "length": 2, "orientation": "horizontal", "placed": false}
+    {
+        "name": "carrier",
+        "length": 5,
+        "orientation": "horizontal",
+        "placed": false
+    },
+    {
+        "name": "battleship",
+        "length": 4,
+        "orientation": "horizontal",
+        "placed": false
+    },
+    {
+        "name": "cruiser",
+        "length": 3,
+        "orientation": "horizontal",
+        "placed": false
+    },
+    {
+        "name": "submarine",
+        "length": 3,
+        "orientation": "horizontal",
+        "placed": false
+    },
+    {
+        "name": "destroyer",
+        "length": 2,
+        "orientation": "horizontal",
+        "placed": false
+    }
 ];
 
 /**
@@ -114,8 +139,12 @@ const ship_footprint = function (ship, col, row) {
 };
 
 const is_in_bounds = function (board, coords) {
-    return coords[0] >= 0 && coords[0] < board[0].length &&
-        coords[1] >= 0 && coords[1] < board.length;
+    return (
+        coords[0] >= 0 &&
+        coords[0] < board[0].length &&
+        coords[1] >= 0 &&
+        coords[1] < board.length
+    );
 };
 
 const footprint_in_bounds = function (board, footprint) {
@@ -245,8 +274,8 @@ Battleship.move_ship = function (board, ship_name, direction) {
     });
     const is_blocked = new_coords.some(function (coords) {
         const cell = board[coords[1]][coords[0]];
-        return Battleship.is_ship_here(cell) &&
-            !R.includes(coords[0] + "," + coords[1], old_keys);
+        const key = coords[0] + "," + coords[1];
+        return Battleship.is_ship_here(cell) && !R.includes(key, old_keys);
     });
     if (is_blocked) {
         return board;
@@ -262,6 +291,36 @@ Battleship.move_ship = function (board, ship_name, direction) {
             "shot": false
         });
     }, cleared_board);
+};
+
+/**
+ * Slides the named ship {@link distance} tiles in one direction, applying one
+ * tile at a time via {@link Battleship.move_ship}. The slide is all-or-nothing:
+ * if any step is illegal (off the board, blocked by another ship, or the ship
+ * is already sunk) the original board is returned unchanged. Callers can
+ * detect failure by testing {@code result === board}.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {string} ship_name
+ * @param {("up"|"down"|"left"|"right")} direction
+ * @param {number} [distance=1] Number of tiles to slide (typically 1 or 2)
+ * @returns {Battleship.Board} Updated board, or the original board on failure
+ */
+Battleship.ghost_slide = function (board, ship_name, direction, distance) {
+    if (Battleship.is_ship_sunk_by_name(board, ship_name)) {
+        return board;
+    }
+    const step1 = Battleship.move_ship(board, ship_name, direction);
+    if (step1 === board || !distance || distance < 2) {
+        return step1;
+    }
+    const step2 = Battleship.move_ship(step1, ship_name, direction);
+    return (
+        step2 === step1
+        ? board
+        : step2
+    );
 };
 
 // ===========================================================================
@@ -363,6 +422,52 @@ Battleship.is_ship_placed = function (
     return ship.placed;
 };
 
+/**
+ * Returns all [col, row] coordinate pairs currently occupied by the named ship.
+ * Returns an empty array when the ship is not on the board.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {string} ship_name
+ * @returns {number[][]} Array of [col, row] pairs,
+ *     left-to-right or top-to-bottom
+ */
+Battleship.ship_cells_by_name = function (board, ship_name) {
+    return ship_cells_of(board, ship_name);
+};
+
+/**
+ * Returns true when every cell of the named ship has been shot.
+ * Returns false when the ship is not on the board or
+ * has at least one unshot cell.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {string} ship_name
+ * @returns {boolean}
+ */
+Battleship.is_ship_sunk_by_name = function (board, ship_name) {
+    const coords = ship_cells_of(board, ship_name);
+    return coords.length > 0 && coords.every(function (coord) {
+        return board[coord[1]][coord[0]].shot === true;
+    });
+};
+
+/**
+ * Returns true when the named ship has at least one shot cell.
+ * A ship that has not been placed or has no hit cells returns false.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {string} ship_name
+ * @returns {boolean}
+ */
+Battleship.is_ship_damaged = function (board, ship_name) {
+    return ship_cells_of(board, ship_name).some(function (coord) {
+        return board[coord[1]][coord[0]].shot === true;
+    });
+};
+
 // ===========================================================================
 // 9. RANDOM SETUP  (single-player convenience; not unit-tested as it is random)
 // ===========================================================================
@@ -392,6 +497,133 @@ Battleship.random_board = function () {
         }
         return next_board;
     }, Battleship.empty_board(10, 10));
+};
+
+// ===========================================================================
+// 10. SONAR SCAN
+// ===========================================================================
+
+/**
+ * Counts the number of ship cells within the 3×3 area centred on (col, row).
+ * Cells that fall outside the board boundary are silently ignored.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {number} col  Centre column (0-indexed)
+ * @param {number} row  Centre row (0-indexed)
+ * @returns {number} Number of ship cells in the scan area (0–9)
+ */
+Battleship.count_ships_in_area = function (board, col, row) {
+    const scan_rows = R.range(row - 1, row + 2);
+    const scan_cols = R.range(col - 1, col + 2);
+    return scan_rows.reduce(function (total, r) {
+        return total + scan_cols.reduce(function (sub, c) {
+            if (
+                r >= 0 && r < board.length &&
+                c >= 0 && c < board[0].length &&
+                Battleship.is_ship_here(board[r][c])
+            ) {
+                return sub + 1;
+            }
+            return sub;
+        }, 0);
+    }, 0);
+};
+
+// ===========================================================================
+// 11. GHOST TELEPORT
+// ===========================================================================
+
+/**
+ * Infers the orientation of a ship from its cell coordinate list.
+ * @memberof Battleship
+ * @function
+ * @param {number[][]} cells Array of [col, row] pairs (e.g. from
+ * {@link Battleship.ship_cells_by_name})
+ * @returns {("horizontal"|"vertical")}
+ */
+Battleship.infer_ship_orientation = function (cells) {
+    if (cells.length < 2) {
+        return "horizontal";
+    }
+    return (
+        cells[0][1] === cells[1][1]
+        ? "horizontal"
+        : "vertical"
+    );
+};
+
+/**
+ * Returns the [col, row] cell coordinates a ship of the given length would
+ * occupy when placed with its top-left corner at {@link anchor}.
+ * @memberof Battleship
+ * @function
+ * @param {number[]} anchor [col, row] of the top-left placement corner
+ * @param {number} length Ship length in cells
+ * @param {("horizontal"|"vertical")} orientation
+ * @returns {number[][]} Array of [col, row] pairs
+ */
+Battleship.relocate_footprint = function (anchor, length, orientation) {
+    return R.range(0, length).map(function (i) {
+        return (
+            orientation === "vertical"
+            ? [anchor[0], anchor[1] + i]
+            : [anchor[0] + i, anchor[1]]
+        );
+    });
+};
+
+/**
+ * Returns true when all proposed footprint cells are legal for a ghost
+ * teleport: within the board, not occupied by another ship, and not previously
+ * shot. The relocating ship's own un-shot cells are treated as free so the
+ * check is consistent with the placement it replaces.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {number[][]} cells Proposed [col, row] footprint
+ * @param {string} moving_name Name of the ship being relocated
+ * @returns {boolean}
+ */
+Battleship.relocate_valid = function (board, cells, moving_name) {
+    return cells.every(function (cr) {
+        const c = cr[0];
+        const r = cr[1];
+        if (c < 0 || c >= board[0].length || r < 0 || r >= board.length) {
+            return false;
+        }
+        const cell = board[r][c];
+        if (cell.shipName === moving_name) {
+            return true;
+        }
+        return !Battleship.is_ship_here(cell) && cell.shot !== true;
+    });
+};
+
+/**
+ * Lifts the named ship off the board and places it, at full health, on the
+ * given cells. The vacated cells retain their {@code shot} flag. All other
+ * cells are untouched. Callers should validate the footprint first with
+ * {@link Battleship.relocate_valid}.
+ * @memberof Battleship
+ * @function
+ * @param {Battleship.Board} board
+ * @param {string} ship_name
+ * @param {number[][]} cells New [col, row] footprint
+ * @returns {Battleship.Board} A new board with the ship at its new position
+ */
+Battleship.apply_ghost_relocate = function (board, ship_name, cells) {
+    const old_coords = ship_cells_of(board, ship_name);
+    const cleared = old_coords.reduce(function (acc, coord) {
+        return clear_ship_from_cell(acc, coord[0], coord[1]);
+    }, board);
+    return cells.reduce(function (acc, cr) {
+        return update_cell(acc, cr[0], cr[1], {
+            "ship": true,
+            "shipName": ship_name,
+            "shot": false
+        });
+    }, cleared);
 };
 
 export default Object.freeze(Battleship);

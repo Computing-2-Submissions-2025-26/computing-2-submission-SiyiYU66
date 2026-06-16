@@ -3,7 +3,7 @@
     --game-columns: 10;
 
     --header-height: clamp(7.6rem, 14vmin, 9.5rem);
-    --legend-height: clamp(4.4rem, 7vmin, 5.4rem);
+    --legend-height: 0px;
     --button-height: clamp(3.1rem, 5vh, 3.8rem);
     --ship-container-height: clamp(4.6rem, 8vh, 5.8rem);
 
@@ -916,7 +916,7 @@ body.battle-phase main {
     overflow-y: auto;
     overflow-x: hidden;
     transition: opacity 320ms ease;
-    justify-content: center;  /* group is vertically centred in the column */
+    justify-content: flex-start;  /* scroll always begins at top of content */
 }
 
 /* Player title colours match their battle-zone theme — bold and striking */
@@ -1737,25 +1737,27 @@ body.battle-phase .ship-tracker {
     transition: opacity 440ms ease;
 }
 
-/* Default tracker image — overridden per-row below */
+/* Default tracker image */
 .tracker-ship img {
     width: auto;
+    height: auto;
     object-fit: contain;
     filter: brightness(0.92) saturate(0.9);
     transition: filter 440ms ease;
 }
 
-/* Top row — 2 longest ships (carrier + battleship) → dominant display */
-body.battle-phase .tracker-row:first-child .tracker-ship img {
-    height: clamp(7.5rem, 16vmin, 13rem);
-    max-width: min(calc(var(--side-w) * 0.46), 380px);
+/* Proportional ship widths — row 1 (carrier-5 + battleship-4 = 9 cells) must
+   exactly fill the tracker inner width, so derive --ship-cell from --side-w.
+   5.6rem accounts for: tracker padding (1.7) + 2 card h-padding (2.2) + row gap (0.7) + border (0.1).
+   Card width = N×cell + 1.1rem (the card's own h-padding), image fills the card via object-fit. */
+body.battle-phase .ship-tracker {
+    --ship-cell: calc((var(--side-w) - 5.6rem) / 9);
 }
 
-/* Bottom row — 3 shorter ships → fit 3 across, still large */
-body.battle-phase .tracker-row:last-child .tracker-ship img {
-    height: clamp(6rem, 12.5vmin, 10rem);
-    max-width: min(calc(var(--side-w) * 0.3), 250px);
-}
+body.battle-phase .tracker-ship[data-length="5"] { width: calc(var(--ship-cell) * 5 + 1.1rem); }
+body.battle-phase .tracker-ship[data-length="4"] { width: calc(var(--ship-cell) * 4 + 1.1rem); }
+body.battle-phase .tracker-ship[data-length="3"] { width: calc(var(--ship-cell) * 3 + 1.1rem); }
+body.battle-phase .tracker-ship[data-length="2"] { width: calc(var(--ship-cell) * 2 + 1.1rem); }
 
 /* Player-themed tracker glow: P1 = amber, P2 = cyan */
 body.battle-phase aside .ship-tracker {
@@ -2003,7 +2005,7 @@ body.board-locked #center_control {
 @media (max-width: 780px) {
     :root {
         --header-height: 13vh;
-        --legend-height: 11vh;
+        --legend-height: 0px;
     }
 
     body {
@@ -2424,9 +2426,11 @@ body.battle-phase .tracker-row {
 }
 
 body.battle-phase .tracker-ship {
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 0.5rem 0.65rem;
+    display: grid;
+    grid-template-rows: 1fr auto;  /* image fills available space; pips always at bottom */
+    height: clamp(5rem, 9vw, 8rem);  /* all 5 cards identical height */
+    gap: 0.15rem;
+    padding: 0.45rem 0.55rem;
     border-radius: 13px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
@@ -2434,7 +2438,15 @@ body.battle-phase .tracker-ship {
     transition: filter 440ms ease, opacity 440ms ease, box-shadow 300ms ease;
 }
 
+/* Image fills the 1fr grid row; object-fit:contain scales it within bounds */
+body.battle-phase .tracker-ship img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
 body.battle-phase .tracker-ship .ship-size-strip {
+    justify-self: center;
     gap: 2px;
 }
 
@@ -4872,7 +4884,7 @@ body.battle-phase #center_control::before {
     z-index: 3;
     margin-top: clamp(0.4rem, 1.4vh, 1rem);
     font-family: var(--title-font-family);
-    font-size: clamp(0.9rem, 2.4vw, 1.7rem);
+    font-size: clamp(1.3rem, 3.6vw, 2.8rem);
     font-weight: 700;
     letter-spacing: 0.3em;
     text-indent: 0.3em;
@@ -5412,7 +5424,7 @@ body.battle-phase .ghost-scar::after { content: none; }
     margin-bottom: 0.2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     font-family: var(--title-font-family);
-    font-size: clamp(0.66rem, 1.5vmin, 1rem);
+    font-size: clamp(0.9rem, 2vmin, 1.4rem);
     font-weight: 800;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -5431,15 +5443,17 @@ body.battle-phase main .tracker-title {
     text-shadow: 0 0 12px rgba(255, 144, 64, 0.5);
 }
 
-/* ── Longer named board labels: shrink + wrap so they fit ───── */
+/* ── Longer named board labels: keep readable size, wrap gracefully ── */
 body.battle-phase aside h2,
 body.battle-phase main h2 {
-    font-size: clamp(0.95rem, 2.3vmin, 1.6rem);
-    line-height: 1.18;
+    font-size: clamp(1.15rem, 2.8vmin, 2rem);
+    line-height: 1.22;
     letter-spacing: 0.04em;
     max-width: 96%;
     margin-left: auto;
     margin-right: auto;
+    margin-top: clamp(0.8rem, 2vh, 1.6rem);
+    margin-bottom: clamp(1.4rem, 3vh, 2.4rem);
 }
 
 /* ── Victory winner headline ────────────────────────────────── */
@@ -5455,3 +5469,70 @@ body.battle-phase main h2 {
 
 .victory-winner.is-p1 { color: #ffce96; text-shadow: 0 0 26px rgba(255, 144, 64, 0.7); }
 .victory-winner.is-p2 { color: #a5e0ff; text-shadow: 0 0 26px rgba(64, 184, 255, 0.7); }
+
+/* Make "<name>'S TURN" big & unmistakable on the Hide / Pass handoff screens.
+   Scoped to those two themes only (ghost/other overlays keep the small size). */
+.ts-theme-orange .ts-eyebrow,
+.ts-theme-split .ts-eyebrow {
+    font-size: clamp(1.5rem, 4.2vw, 3rem);
+    font-weight: 900;
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+}
+
+/* The Pass screen renders while body is still .placing-player-1, so the deploy
+   header's h1 rules were leaking onto the overlay title — shrinking it and
+   appending "· Fleet Deployment ·". Pin the overlay title back to the Hide
+   screen's size and drop that injected subtitle (overlay titles only). */
+.ts-theme-orange .ts-title {
+    font-size: clamp(2.3rem, 7vw, 5.4rem);
+}
+.ts-theme-split .ts-title {
+    font-size: clamp(2rem, 4.8vw, 3.6rem);
+    white-space: nowrap;
+}
+.ts-theme-orange .ts-title::after,
+.ts-theme-split .ts-title::after {
+    content: none;
+}
+
+/* ── HUD legend (replaces removed bottom bar) ──────────────── */
+.hud-legend {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    padding: 0.35rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hud-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--body-font-family);
+    font-size: clamp(0.55rem, 1.1vmin, 0.72rem);
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+}
+
+.hud-leg-item .colour-box {
+    width: clamp(0.65rem, 1.4vmin, 0.9rem);
+    height: clamp(0.65rem, 1.4vmin, 0.9rem);
+    min-width: 9px;
+    min-height: 9px;
+    flex-shrink: 0;
+}
+
+/* Deploy-phase spacers have explicit min-heights — collapse them in battle so
+   they don't create a gap between the game grid and the fleet tracker. */
+body.battle-phase .ship_container,
+body.battle-phase .button_container {
+    display: none;
+}

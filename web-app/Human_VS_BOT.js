@@ -879,6 +879,25 @@ const render_hud = function () {
     wait.className = "center-wait-label";
     wait.textContent = "Difficulty: " + difficulty.toUpperCase();
     center_control.append(wait);
+
+    const legend_row = document.createElement("div");
+    legend_row.className = "hud-legend";
+    [
+        { cls: "ship-label",         label: "Ship" },
+        { cls: "hit-label",          label: "Hit" },
+        { cls: "miss-label",         label: "Miss" },
+        { cls: "sunken-ship-label",  label: "Sunk" }
+    ].forEach(function (d) {
+        const item = document.createElement("div");
+        item.className = "hud-leg-item";
+        const box = document.createElement("div");
+        box.className = "colour-box " + d.cls;
+        const lbl = document.createElement("span");
+        lbl.textContent = d.label;
+        item.append(box, lbl);
+        legend_row.append(item);
+    });
+    center_control.append(legend_row);
 };
 
 const start_battle = function () {
