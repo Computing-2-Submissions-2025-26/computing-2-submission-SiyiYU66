@@ -1,6 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
-import { run_battle_countdown } from "./countdown.js?v=10";
+import { run_battle_countdown } from "./countdown.js";
 import {
     playHitSound,
     playMissSound,
@@ -33,7 +33,7 @@ let table_cells = [null, null];
 let selected_ship_name = undefined;
 let repositioning = false;   // true while moving an already-placed ship
 let board_locked = false;
-let hovered_cell_info = null;  // last hovered placement cell for R-key preview refresh
+let hovered_cell_info = null;  // last hovered cell for R-key preview refresh
 let phase = "difficulty";   // difficulty | placing | deploying | battle | over
 let turn = "player";        // player | bot
 
@@ -102,7 +102,9 @@ const setup_difficulty_select = function () {
         drag_x = e.clientX;
     });
     window.addEventListener("pointerup", function (e) {
-        if (drag_x === null) return;
+        if (drag_x === null) {
+            return;
+        }
         const dx = e.clientX - drag_x;
         drag_x = null;
         if (dx < -40) go(index + 1);
@@ -214,8 +216,15 @@ const create_ship_cell = function (ship, tr) {
         // Restore whichever card was previously active.
         const prev = ships_1.querySelector(".dragging, .is-repositioning");
         if (prev && prev !== td) {
-            const prev_ship = player_fleet.find((s) => s.name === prev.dataset.ship);
-            prev.className = "ship" + (prev_ship && prev_ship.placed ? " is-placed" : "");
+            const prev_ship = player_fleet.find(
+                (s) => s.name === prev.dataset.ship
+            );
+            const placed_cls = (
+                prev_ship && prev_ship.placed
+                ? " is-placed"
+                : ""
+            );
+            prev.className = "ship" + placed_cls;
         }
 
         // A placed ship enters reposition mode — it STAYS on the board as a
@@ -366,8 +375,12 @@ const create_place_cell = function (row_index, tr) {
             }
         };
         td.onclick = function () {
-            if (selected_ship_name === undefined) return;
-            const ship = player_fleet.find((s) => s.name === selected_ship_name);
+            if (selected_ship_name === undefined) {
+                return;
+            }
+            const ship = player_fleet.find(
+                (s) => s.name === selected_ship_name
+            );
 
             // ── Repositioning an already-placed ship ──
             if (repositioning) {
@@ -470,9 +483,15 @@ const create_rotate_button = function () {
     button.textContent = "Rotate Ship";
     button.className = "rotate-ship-button";
     button.addEventListener("click", function () {
-        if (selected_ship_name === undefined) return;
-        const ship = player_fleet.find((s) => s.name === selected_ship_name);
-        const active_td = document.querySelector(".dragging, .is-repositioning");
+        if (selected_ship_name === undefined) {
+            return;
+        }
+        const ship = player_fleet.find(
+            (s) => s.name === selected_ship_name
+        );
+        const active_td = document.querySelector(
+            ".dragging, .is-repositioning"
+        );
         const img = active_td ? active_td.querySelector("img") : null;
         if (ship.orientation === "horizontal") {
             ship.orientation = "vertical";
@@ -559,10 +578,17 @@ document.body.onkeydown = function (event) {
         }
         return;
     }
-    if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
-        const ship = player_fleet.find((s) => s.name === selected_ship_name);
-        if (!ship) return;
-        const active_td = document.querySelector(".dragging, .is-repositioning");
+    const is_rotate = event.key === "r" || event.key === "R";
+    if (is_rotate && selected_ship_name !== undefined) {
+        const ship = player_fleet.find(
+            (s) => s.name === selected_ship_name
+        );
+        if (!ship) {
+            return;
+        }
+        const active_td = document.querySelector(
+            ".dragging, .is-repositioning"
+        );
         const img = active_td ? active_td.querySelector("img") : null;
         if (ship.orientation === "horizontal") {
             ship.orientation = "vertical";
@@ -622,7 +648,9 @@ const build_battle_boards = function () {
             td.tabIndex = 0;
             td.onclick = function () { player_shoot(c, r); };
             td.onkeydown = function (event) {
-                if (event.key === "Enter" || event.key === " ") player_shoot(c, r);
+                if (event.key === "Enter" || event.key === " ") {
+                    player_shoot(c, r);
+                }
             };
             tr.append(td);
             return td;
@@ -787,7 +815,9 @@ const render_player_board = function () {
         row.forEach(function (cell, c) {
             const td = table_cells[0][r][c];
             if (cell.shot) {
-                td.className = Battleship.cell_state(game_state[0], cell, [c, r], 0);
+                td.className = Battleship.cell_state(
+                    game_state[0], cell, [c, r], 0
+                );
             } else if (Battleship.is_ship_here(cell)) {
                 td.className = "cell_with_ship";
             } else {
@@ -818,7 +848,8 @@ const count_hits = function (board) {
 const set_turn = function (who) {
     turn = who;
     // Player attacks the bot board (main) → keep main bright (turn-p2 layout).
-    // Bot attacks the player board (aside) → keep aside bright (turn-p1 layout).
+    // Bot attacks the player board (aside)
+    // → keep aside bright (turn-p1 layout).
     document.body.classList.toggle("turn-p2", who === "player");
     document.body.classList.toggle("turn-p1", who === "bot");
 };
@@ -827,12 +858,22 @@ const render_hud = function () {
     center_control.innerHTML = "";
 
     const label_row = document.createElement("div");
-    label_row.style.cssText =
-        "display:flex;align-items:center;gap:0.5rem;justify-content:center;width:100%;";
+    label_row.style.cssText = (
+        "display:flex;align-items:center;gap:0.5rem;" +
+        "justify-content:center;width:100%;"
+    );
     const dot = document.createElement("div");
-    dot.className = "center-player-dot " + (turn === "player" ? "dot-p1" : "dot-p2");
+    dot.className = "center-player-dot " + (
+        turn === "player"
+        ? "dot-p1"
+        : "dot-p2"
+    );
     const turn_label = document.createElement("div");
-    turn_label.className = "center-turn-label " + (turn === "player" ? "is-p1" : "is-p2");
+    turn_label.className = "center-turn-label " + (
+        turn === "player"
+        ? "is-p1"
+        : "is-p2"
+    );
     turn_label.textContent = turn === "player" ? "YOUR TURN" : "BOT'S TURN";
     label_row.append(dot, turn_label);
     center_control.append(label_row);
@@ -852,8 +893,18 @@ const render_hud = function () {
     const score = document.createElement("div");
     score.className = "score-board";
     [
-        { cls: "score-p1", label: "You", value: count_hits(game_state[1]), active: turn === "player" },
-        { cls: "score-p2", label: "Bot", value: count_hits(game_state[0]), active: turn === "bot" }
+        {
+            "cls": "score-p1",
+            "label": "You",
+            "value": count_hits(game_state[1]),
+            "active": turn === "player"
+        },
+        {
+            "cls": "score-p2",
+            "label": "Bot",
+            "value": count_hits(game_state[0]),
+            "active": turn === "bot"
+        }
     ].forEach(function (s) {
         const side = document.createElement("div");
         side.className = "score-side " + s.cls + (s.active ? " is-active" : "");
@@ -930,9 +981,11 @@ const add_cell_effect = function (board_index, r, c, effect_type) {
     const delay_step = effect_type === "sunk-explosion" ? 18 : 22;
     R.range(0, particle_count).forEach(function (p) {
         const particle = document.createElement("span");
-        particle.style.setProperty("--angle", ((360 / particle_count) * p) + "deg");
+        const angle_val = ((360 / particle_count) * p) + "deg";
+        const dist_val = (base_dist + (p % 5) * step_dist) + "px";
+        particle.style.setProperty("--angle", angle_val);
         particle.style.setProperty("--delay", (p * delay_step) + "ms");
-        particle.style.setProperty("--distance", (base_dist + (p % 5) * step_dist) + "px");
+        particle.style.setProperty("--distance", dist_val);
         effect.append(particle);
     });
     td.append(effect);
@@ -962,7 +1015,9 @@ const bump_score = function () {
 
 // ── Resolve one shot, return the resulting cell state + delay ──
 const resolve_shot = function (board_index, c, r) {
-    game_state[board_index] = Battleship.shoot_cell(game_state[board_index], [c, r]);
+    game_state[board_index] = Battleship.shoot_cell(
+        game_state[board_index], [c, r]
+    );
     const state = Battleship.cell_state(
         game_state[board_index],
         game_state[board_index][r][c],
@@ -1054,8 +1109,11 @@ const ai_learn = function (c, r, state) {
         if (difficulty === "hard" && ai_hits.length >= 2) {
             const same_row = ai_hits.every((h) => h[1] === ai_hits[0][1]);
             const same_col = ai_hits.every((h) => h[0] === ai_hits[0][0]);
-            if (same_row) neighbours = neighbours.filter((n) => n[1] === r);
-            else if (same_col) neighbours = neighbours.filter((n) => n[0] === c);
+            if (same_row) {
+                neighbours = neighbours.filter((n) => n[1] === r);
+            } else if (same_col) {
+                neighbours = neighbours.filter((n) => n[0] === c);
+            }
         }
         neighbours.forEach(function (n) {
             if (untried(n[0], n[1])) ai_queue.unshift(n);

@@ -1,6 +1,6 @@
 import R from "./ramda.js";
 import Battleship from "./BattleShip.js";
-import { run_battle_countdown } from "./countdown.js?v=10";
+import { run_battle_countdown } from "./countdown.js";
 import {
     playHitSound,
     playMissSound,
@@ -42,11 +42,15 @@ const player_name_of = function (idx) {
 // Names are user input but only ever rendered via textContent, except inside
 // the few innerHTML overlay templates — escape there to stay injection-safe.
 const escape_html = function (text) {
+    const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+    };
     return String(text).replace(/[&<>"']/g, function (ch) {
-        return {
-            "&": "&amp;", "<": "&lt;", ">": "&gt;",
-            "\"": "&quot;", "'": "&#39;"
-        }[ch];
+        return map[ch];
     });
 };
 
@@ -118,9 +122,9 @@ const set_deploy_title = function () {
     const player_1_title = document.querySelector("aside h2");
     const player_2_title = document.querySelector("main h2");
     // The "Fleet Deployment" subtitle is added by CSS (h1::after).
-    if (game_title) game_title.textContent = "Battleship";
-    if (player_1_title) player_1_title.textContent = "Deploy your ships";
-    if (player_2_title) player_2_title.textContent = "Deploy your ships";
+    if (game_title) { game_title.textContent = "Battleship"; }
+    if (player_1_title) { player_1_title.textContent = "Deploy your ships"; }
+    if (player_2_title) { player_2_title.textContent = "Deploy your ships"; }
 };
 
 const set_battle_titles = function () {
@@ -129,7 +133,7 @@ const set_battle_titles = function () {
     const player_2_title = document.querySelector("main h2");
     // Each board is an attack view: it shows the ENEMY waters that side fires
     // on. Colours stay fixed (left = orange Player 1, right = blue Player 2).
-    if (game_title) game_title.textContent = "Battleship";
+    if (game_title) { game_title.textContent = "Battleship"; }
     if (player_1_title) {
         player_1_title.textContent =
             player_name_of(0) + " attacking " + player_name_of(1) + "'s waters";
@@ -140,9 +144,12 @@ const set_battle_titles = function () {
     }
 };
 
-const total_ship_cell_count = Battleship.ship_array.reduce(function (total, ship) {
-    return total + ship.length;
-}, 0);
+const total_ship_cell_count = Battleship.ship_array.reduce(
+    function (total, ship) {
+        return total + ship.length;
+    },
+    0
+);
 
 const count_ship_cells_on_board = function (player_index) {
     return game_state[player_index].reduce(function (total, row) {
@@ -222,7 +229,7 @@ const remove_overlay = function () {
     }
 };
 
-// ── Animated multiplayer transition scenes (no images) ──────────────
+// ── Animated multiplayer transition scenes (no images) ──────────
 // Two cinematic HUD overlays built entirely from HTML/CSS/SVG:
 //   • "Hide your screen"  — orange Player-1 tactical shield scene
 //   • "Pass the screen"   — orange→blue data-handoff scene
@@ -258,102 +265,132 @@ const sprinkle_particles = function (container, count) {
         const p = document.createElement("span");
         p.className = "ts-particle";
         p.style.left = (6 + Math.random() * 88) + "%";
-        p.style.setProperty("--rise", (2.8 + Math.random() * 2.6).toFixed(2) + "s");
-        p.style.setProperty("--delay", (-Math.random() * 4).toFixed(2) + "s");
-        p.style.setProperty("--drift", (Math.random() * 26 - 13).toFixed(0) + "px");
-        p.style.setProperty("--size", (2 + Math.random() * 3).toFixed(1) + "px");
+        p.style.setProperty(
+            "--rise",
+            (2.8 + Math.random() * 2.6).toFixed(2) + "s"
+        );
+        p.style.setProperty(
+            "--delay",
+            (-Math.random() * 4).toFixed(2) + "s"
+        );
+        p.style.setProperty(
+            "--drift",
+            (Math.random() * 26 - 13).toFixed(0) + "px"
+        );
+        p.style.setProperty(
+            "--size",
+            (2 + Math.random() * 3).toFixed(1) + "px"
+        );
         container.append(p);
     });
 };
 
 // SCREEN 1 — Player 1, "HIDE YOUR SCREEN": holographic tactical shield.
 const show_hide_screen_overlay = function (on_confirm) {
-    const scene = `
-        <div class="ts-bg ts-bg-orange">
-            <div class="ts-grid"></div>
-            <div class="ts-scanline"></div>
-            <div class="ts-vignette"></div>
-        </div>
-        <div class="ts-content">
-            <div class="ts-head">
-                <div class="ts-eyebrow">// ${escape_html(player_name_of(0))}'S TURN //</div>
-                <h1 class="ts-title">HIDE YOUR SCREEN</h1>
-                <div class="ts-sub">FROM YOUR FRIEND</div>
-            </div>
-            <div class="ts-center">
-                <div class="ts-shield-stage" aria-hidden="true">
-                    <div class="ts-glow"></div>
-                    <span class="ts-wave"></span>
-                    <span class="ts-wave"></span>
-                    <span class="ts-wave"></span>
-                    <div class="ts-ring ts-ring-outer"></div>
-                    <div class="ts-ring ts-ring-inner"></div>
-                    <div class="ts-scan-ring"></div>
-                    <svg class="ts-shield-svg" viewBox="0 0 120 132">
-                        <path class="ts-shield-body" d="M60 7 L105 25 L105 64 C105 97 60 125 60 125 C60 125 15 97 15 64 L15 25 Z"/>
-                        <path class="ts-shield-edge" d="M60 7 L105 25 L105 64 C105 97 60 125 60 125 C60 125 15 97 15 64 L15 25 Z"/>
-                        <circle class="ts-shield-ring" cx="60" cy="62" r="20"/>
-                        <line class="ts-shield-cross" x1="60" y1="40" x2="60" y2="84"/>
-                        <line class="ts-shield-cross" x1="38" y1="62" x2="82" y2="62"/>
-                        <circle class="ts-shield-dot" cx="60" cy="62" r="3.5"/>
-                    </svg>
-                    <div class="ts-particles"></div>
-                </div>
-                <div class="ts-status"><span class="ts-status-dot"></span>VISUAL LOCKDOWN ACTIVE</div>
-            </div>
-            <div class="ts-foot">
-                <button class="ts-button" type="button">GOT IT</button>
-                <div class="ts-caption">KEEP YOUR FLEET SAFE</div>
-            </div>
-        </div>`;
-    const overlay = build_transition_overlay("ts-theme-orange", scene, on_confirm);
+    const shield_d = "M60 7 L105 25 L105 64 C105 97 60 125 60 125"
+        + " C60 125 15 97 15 64 L15 25 Z";
+    const eyebrow = "// "
+        + escape_html(player_name_of(0)) + "'S TURN //";
+    const scene = "<div class=\"ts-bg ts-bg-orange\">"
+        + "<div class=\"ts-grid\"></div>"
+        + "<div class=\"ts-scanline\"></div>"
+        + "<div class=\"ts-vignette\"></div>"
+        + "</div>"
+        + "<div class=\"ts-content\">"
+        + "<div class=\"ts-head\">"
+        + "<div class=\"ts-eyebrow\">" + eyebrow + "</div>"
+        + "<h1 class=\"ts-title\">HIDE YOUR SCREEN</h1>"
+        + "<div class=\"ts-sub\">FROM YOUR FRIEND</div>"
+        + "</div>"
+        + "<div class=\"ts-center\">"
+        + "<div class=\"ts-shield-stage\" aria-hidden=\"true\">"
+        + "<div class=\"ts-glow\"></div>"
+        + "<span class=\"ts-wave\"></span>"
+        + "<span class=\"ts-wave\"></span>"
+        + "<span class=\"ts-wave\"></span>"
+        + "<div class=\"ts-ring ts-ring-outer\"></div>"
+        + "<div class=\"ts-ring ts-ring-inner\"></div>"
+        + "<div class=\"ts-scan-ring\"></div>"
+        + "<svg class=\"ts-shield-svg\" viewBox=\"0 0 120 132\">"
+        + "<path class=\"ts-shield-body\" d=\"" + shield_d + "\"/>"
+        + "<path class=\"ts-shield-edge\" d=\"" + shield_d + "\"/>"
+        + "<circle class=\"ts-shield-ring\" cx=\"60\" cy=\"62\" r=\"20\"/>"
+        + "<line class=\"ts-shield-cross\""
+        + " x1=\"60\" y1=\"40\" x2=\"60\" y2=\"84\"/>"
+        + "<line class=\"ts-shield-cross\""
+        + " x1=\"38\" y1=\"62\" x2=\"82\" y2=\"62\"/>"
+        + "<circle class=\"ts-shield-dot\" cx=\"60\" cy=\"62\" r=\"3.5\"/>"
+        + "</svg>"
+        + "<div class=\"ts-particles\"></div>"
+        + "</div>"
+        + "<div class=\"ts-status\">"
+        + "<span class=\"ts-status-dot\"></span>"
+        + "VISUAL LOCKDOWN ACTIVE"
+        + "</div>"
+        + "</div>"
+        + "<div class=\"ts-foot\">"
+        + "<button class=\"ts-button\" type=\"button\">GOT IT</button>"
+        + "<div class=\"ts-caption\">KEEP YOUR FLEET SAFE</div>"
+        + "</div>"
+        + "</div>";
+    const overlay = build_transition_overlay(
+        "ts-theme-orange", scene, on_confirm
+    );
     sprinkle_particles(overlay.querySelector(".ts-particles"), 10);
 };
 
 // SCREEN 2 — Player 2, "PASS THE SCREEN": orange→blue data handoff.
 const show_pass_screen_overlay = function (on_confirm) {
     const node = function (cls, label) {
-        return `
-            <div class="ts-node ${cls}">
-                <svg class="ts-node-svg" viewBox="0 0 88 88">
-                    <polygon class="ts-hex" points="26,6 62,6 84,44 62,82 26,82 4,44"/>
-                    <polygon class="ts-hex-inner" points="33,18 55,18 70,44 55,70 33,70 18,44"/>
-                    <circle class="ts-hex-dot" cx="44" cy="44" r="5"/>
-                </svg>
-                <span class="ts-node-label">${label}</span>
-            </div>`;
+        const hex_pts = "26,6 62,6 84,44 62,82 26,82 4,44";
+        const hex_inner = "33,18 55,18 70,44 55,70 33,70 18,44";
+        return "<div class=\"ts-node " + cls + "\">"
+            + "<svg class=\"ts-node-svg\" viewBox=\"0 0 88 88\">"
+            + "<polygon class=\"ts-hex\" points=\"" + hex_pts + "\"/>"
+            + "<polygon class=\"ts-hex-inner\""
+            + " points=\"" + hex_inner + "\"/>"
+            + "<circle class=\"ts-hex-dot\" cx=\"44\" cy=\"44\" r=\"5\"/>"
+            + "</svg>"
+            + "<span class=\"ts-node-label\">" + label + "</span>"
+            + "</div>";
     };
-    const scene = `
-        <div class="ts-bg ts-bg-split">
-            <div class="ts-grid"></div>
-            <div class="ts-seam"></div>
-            <div class="ts-scanline"></div>
-            <div class="ts-vignette"></div>
-        </div>
-        <div class="ts-content">
-            <div class="ts-head">
-                <div class="ts-eyebrow ts-eyebrow-blue">// ${escape_html(player_name_of(1))}'S TURN //</div>
-                <h1 class="ts-title">PASS THE SCREEN</h1>
-                <div class="ts-sub ts-sub-blue">TO ${escape_html(player_name_of(1))}</div>
-            </div>
-            <div class="ts-transfer-stage" aria-hidden="true">
-                ${node("ts-node-orange", escape_html(player_name_of(0)))}
-                <div class="ts-stream">
-                    <div class="ts-stream-track"></div>
-                    <span class="ts-chevron"></span>
-                    <span class="ts-chevron"></span>
-                    <span class="ts-chevron"></span>
-                    <div class="ts-core"></div>
-                    <div class="ts-packets"></div>
-                </div>
-                ${node("ts-node-blue", escape_html(player_name_of(1)))}
-            </div>
-            <div class="ts-foot">
-                <button class="ts-button ts-button-blue" type="button">GOT IT</button>
-                <div class="ts-caption ts-caption-blue">DON'T LOOK!</div>
-            </div>
-        </div>`;
-    const overlay = build_transition_overlay("ts-theme-split", scene, on_confirm);
+    const eyebrow2 = "// "
+        + escape_html(player_name_of(1)) + "'S TURN //";
+    const sub2 = "TO " + escape_html(player_name_of(1));
+    const scene = "<div class=\"ts-bg ts-bg-split\">"
+        + "<div class=\"ts-grid\"></div>"
+        + "<div class=\"ts-seam\"></div>"
+        + "<div class=\"ts-scanline\"></div>"
+        + "<div class=\"ts-vignette\"></div>"
+        + "</div>"
+        + "<div class=\"ts-content\">"
+        + "<div class=\"ts-head\">"
+        + "<div class=\"ts-eyebrow ts-eyebrow-blue\">"
+        + eyebrow2 + "</div>"
+        + "<h1 class=\"ts-title\">PASS THE SCREEN</h1>"
+        + "<div class=\"ts-sub ts-sub-blue\">" + sub2 + "</div>"
+        + "</div>"
+        + "<div class=\"ts-transfer-stage\" aria-hidden=\"true\">"
+        + node("ts-node-orange", escape_html(player_name_of(0)))
+        + "<div class=\"ts-stream\">"
+        + "<div class=\"ts-stream-track\"></div>"
+        + "<span class=\"ts-chevron\"></span>"
+        + "<span class=\"ts-chevron\"></span>"
+        + "<span class=\"ts-chevron\"></span>"
+        + "<div class=\"ts-core\"></div>"
+        + "<div class=\"ts-packets\"></div>"
+        + "</div>"
+        + node("ts-node-blue", escape_html(player_name_of(1)))
+        + "</div>"
+        + "<div class=\"ts-foot\">"
+        + "<button class=\"ts-button ts-button-blue\""
+        + " type=\"button\">GOT IT</button>"
+        + "<div class=\"ts-caption ts-caption-blue\">DON'T LOOK!</div>"
+        + "</div>"
+        + "</div>";
+    const overlay = build_transition_overlay(
+        "ts-theme-split", scene, on_confirm
+    );
     const packets = overlay.querySelector(".ts-packets");
     if (packets) {
         R.range(0, 5).forEach(function (i) {
@@ -365,44 +402,47 @@ const show_pass_screen_overlay = function (on_confirm) {
     }
 };
 
-// ── Ghost Move tactical decision overlays ───────────────────────────
+// ── Ghost Move tactical decision overlays ───────────────────────
 // A two-step gate that replaces the old "click → ships instantly revealed"
 // behaviour. Step 1 asks the acting player to confirm; step 2 warns the
 // opponent to look away. Only after both does ghost-select mode begin.
 
 // Shared animated backdrop + reticle for the ghost screens (themed by --ga).
-const ghost_scene = function (accent, eyebrow, title, message_lines, glyph, buttons_html) {
+const ghost_scene = function (
+    accent, eyebrow, title, message_lines, glyph, buttons_html
+) {
     const msgs = message_lines.map(function (line, i) {
-        return `<p class="ghost-msg${i === 0 ? "" : " dim"}">${line}</p>`;
+        const cls = (i === 0 ? "ghost-msg" : "ghost-msg dim");
+        return "<p class=\"" + cls + "\">" + line + "</p>";
     }).join("");
-    return `
-        <div class="ghost-bg"></div>
-        <div class="ts-grid"></div>
-        <div class="ghost-scanline"></div>
-        <div class="ts-vignette"></div>
-        <div class="ts-content">
-            <div class="ts-head">
-                <div class="ts-eyebrow">${eyebrow}</div>
-                <h1 class="ts-title ghost-title">${title}</h1>
-            </div>
-            <div class="ghost-mid">
-                <div class="ghost-scope" aria-hidden="true">
-                    <div class="ghost-scope-ring"></div>
-                    <div class="ghost-scope-ring2"></div>
-                    <div class="ghost-scope-core"></div>
-                    <span class="ghost-scope-glyph">${glyph}</span>
-                </div>
-                <div class="ghost-message-block">${msgs}</div>
-            </div>
-            <div class="ts-btn-row">${buttons_html}</div>
-        </div>`;
+    return "<div class=\"ghost-bg\"></div>"
+        + "<div class=\"ts-grid\"></div>"
+        + "<div class=\"ghost-scanline\"></div>"
+        + "<div class=\"ts-vignette\"></div>"
+        + "<div class=\"ts-content\">"
+        + "<div class=\"ts-head\">"
+        + "<div class=\"ts-eyebrow\">" + eyebrow + "</div>"
+        + "<h1 class=\"ts-title ghost-title\">" + title + "</h1>"
+        + "</div>"
+        + "<div class=\"ghost-mid\">"
+        + "<div class=\"ghost-scope\" aria-hidden=\"true\">"
+        + "<div class=\"ghost-scope-ring\"></div>"
+        + "<div class=\"ghost-scope-ring2\"></div>"
+        + "<div class=\"ghost-scope-core\"></div>"
+        + "<span class=\"ghost-scope-glyph\">" + glyph + "</span>"
+        + "</div>"
+        + "<div class=\"ghost-message-block\">" + msgs + "</div>"
+        + "</div>"
+        + "<div class=\"ts-btn-row\">" + buttons_html + "</div>"
+        + "</div>";
 };
 
 const build_ghost_overlay = function (accent_idx, scene_html) {
     remove_overlay();
     const theme = accent_idx === 0 ? "ghost-theme-orange" : "ghost-theme-blue";
     const overlay = document.createElement("div");
-    overlay.className = "screen-overlay transition-overlay ghost-overlay " + theme;
+    overlay.className = "screen-overlay transition-overlay ghost-overlay "
+        + theme;
     overlay.innerHTML = scene_html;
     document.body.append(overlay);
     return overlay;
@@ -429,16 +469,20 @@ const show_ghost_confirm = function (active_idx, on_confirm, on_cancel) {
             "And every hit you took stays on the map."
         ],
         "👻",
-        "<button class=\"ts-button ghost-confirm\" type=\"button\">CONFIRM</button>" +
-        "<button class=\"ts-button ghost-cancel\" type=\"button\">CANCEL</button>"
+        "<button class=\"ts-button ghost-confirm\""
+        + " type=\"button\">CONFIRM</button>"
+        + "<button class=\"ts-button ghost-cancel\""
+        + " type=\"button\">CANCEL</button>"
     );
     const overlay = build_ghost_overlay(active_idx, scene);
-    overlay.querySelector(".ghost-confirm").addEventListener("click", function () {
-        dismiss_overlay(overlay, on_confirm);
-    });
-    overlay.querySelector(".ghost-cancel").addEventListener("click", function () {
-        dismiss_overlay(overlay, on_cancel);
-    });
+    overlay.querySelector(".ghost-confirm").addEventListener(
+        "click",
+        function () { dismiss_overlay(overlay, on_confirm); }
+    );
+    overlay.querySelector(".ghost-cancel").addEventListener(
+        "click",
+        function () { dismiss_overlay(overlay, on_cancel); }
+    );
 };
 
 // Step 2 — addressed to the opponent (themed in the opponent's colour).
@@ -455,12 +499,14 @@ const show_ghost_handoff = function (active_idx, on_proceed) {
             "Analyse the battlefield carefully."
         ],
         "⚠",
-        "<button class=\"ts-button ghost-confirm\" type=\"button\">PROCEED</button>"
+        "<button class=\"ts-button ghost-confirm\""
+        + " type=\"button\">PROCEED</button>"
     );
     const overlay = build_ghost_overlay(opponent_idx, scene);
-    overlay.querySelector(".ghost-confirm").addEventListener("click", function () {
-        dismiss_overlay(overlay, on_proceed);
-    });
+    overlay.querySelector(".ghost-confirm").addEventListener(
+        "click",
+        function () { dismiss_overlay(overlay, on_proceed); }
+    );
 };
 
 // Cinematic end-game overlay with the victory image and a battle report.
@@ -477,9 +523,14 @@ const show_victory_screen = function (winner_player) {
     const secs = elapsed_seconds % 60;
     const time_str = mins + ":" + String(secs).padStart(2, "0");
 
-    const accuracy = standard_fire_shots[player_idx] > 0
-        ? Math.round(standard_fire_hits[player_idx] / standard_fire_shots[player_idx] * 100)
-        : 0;
+    const accuracy = (
+        standard_fire_shots[player_idx] > 0
+        ? Math.round(
+            standard_fire_hits[player_idx]
+            / standard_fire_shots[player_idx] * 100
+        )
+        : 0
+    );
 
     const total_ships = Battleship.ship_array.length;
 
@@ -503,7 +554,9 @@ const show_victory_screen = function (winner_player) {
 
     const report_title = document.createElement("div");
     report_title.className = "victory-report-title";
-    report_title.textContent = player_name_of(winner_player - 1) + "'s Battle Report";
+    report_title.textContent = (
+        player_name_of(winner_player - 1) + "'s Battle Report"
+    );
     report.append(report_title);
 
     const stats_row = document.createElement("div");
@@ -524,7 +577,10 @@ const show_victory_screen = function (winner_player) {
 
     stats_row.append(
         make_stat("ACCURACY",    accuracy + "%"),
-        make_stat("SHIPS SUNK",  ships_sunk_count[player_idx] + "/" + total_ships),
+        make_stat(
+            "SHIPS SUNK",
+            ships_sunk_count[player_idx] + "/" + total_ships
+        ),
         make_stat("BATTLE TIME", time_str)
     );
     report.append(stats_row);
@@ -664,12 +720,12 @@ const reset_display_to_shoot = function () {
 
     // Creates new tables
     game_board_1 = document.createElement("table");
-    game_board_1.index = 0;
+    game_board_1.dataset.index = "0";
     game_board_1.id = "game_board_1";
     game_container_1.append(game_board_1);
     game_board_2 = document.createElement("table");
     game_container_2.append(game_board_2);
-    game_board_2.index = 0;
+    game_board_2.dataset.index = "0";
     game_board_2.id = "game_board_2";
     // Resets the visibility of board 2 which was previously hidden by default
     game_board_2.style.visibility = "visible";
@@ -692,11 +748,13 @@ const create_play_button = function () {
             set_battle_titles();
             reset_display_to_shoot();
             battle_start_time = Date.now();
-            
+
             // Centre control is in HTML — no dynamic panel needed
 
             // Create ship-status trackers (one per side)
-            const create_ship_tracker = function (tracker_id, player_folder, parent_el, fleet_owner) {
+            const create_ship_tracker = function (
+                tracker_id, player_folder, parent_el, fleet_owner
+            ) {
                 const tracker = document.createElement("div");
                 tracker.id = "tracker_" + tracker_id;
                 tracker.className = "ship-tracker";
@@ -718,17 +776,18 @@ const create_play_button = function () {
                     item.className = "tracker-ship";
                     item.dataset.ship = ship.name;
                     item.dataset.length = ship.length;
-                    // Staggered cascade: each icon enters 130 ms after the previous
+                    // Staggered cascade: each icon enters 130 ms after previous
                     item.style.animationDelay = (ship_index * 130) + "ms";
 
                     const img = document.createElement("img");
-                    img.src = "./assets/" + player_folder + "/" + ship.name + ".png";
+                    img.src = "./assets/" + player_folder + "/"
+                        + ship.name + ".png";
                     img.alt = ship.name;
                     item.append(img);
                     item.append(create_ship_size_strip(ship));
 
                     // Top row: 2 longest ships (carrier-5, battleship-4)
-                    // Bottom row: 3 shorter ships (cruiser-3, submarine-3, destroyer-2)
+                    // Bottom: 3 shorter ships (cruiser-3, sub-3, destroyer-2)
                     if (ship_index < 2) {
                         row1.append(item);
                     } else {
@@ -743,26 +802,35 @@ const create_play_button = function () {
             // Left (aside): orange Player-1 attack view, but the tracker below
             // shows the BLUE enemy fleet it is damaging → Player 2's fleet.
             // Right (main): blue Player-2 attack view, tracker shows Player 1.
-            create_ship_tracker(0, "player2", document.querySelector("aside"), player_name_of(1));
-            create_ship_tracker(1, "player1", document.querySelector("main"), player_name_of(0));
+            create_ship_tracker(
+                0, "player2", document.querySelector("aside"), player_name_of(1)
+            );
+            create_ship_tracker(
+                1, "player1", document.querySelector("main"), player_name_of(0)
+            );
 
             // Swap game states
-            [game_state[0], game_state[1]] = [game_state[1], game_state[0]];
+            const gs_temp = game_state[0];
+            game_state[0] = game_state[1];
+            game_state[1] = gs_temp;
             Audio_Manager.start_ambient();
 
             update_display = function () {
                 const active_player_idx = next_player % 2;
 
-                // Pre-compute the ghost preview destination cells (if any) so the
-                // per-cell loop can highlight the would-be new position.
+                // Pre-compute ghost preview destination cells (if any)
+                // so the per-cell loop can highlight the new position.
                 const ghost_own_board_idx = 1 - active_player_idx;
                 const ghost_preview_keys = {};
                 let ghost_preview_blocked = false;
-                if (ghost_selected_ship && current_action_mode === "ghost_relocate"
+                if (ghost_selected_ship
+                        && current_action_mode === "ghost_relocate"
                         && ghost_relocate_anchor) {
                     // Teleport: highlight the footprint under the cursor.
                     const gboard = game_state[ghost_own_board_idx];
-                    const len = Battleship.ship_cells_by_name(gboard, ghost_selected_ship).length;
+                    const len = Battleship.ship_cells_by_name(
+                        gboard, ghost_selected_ship
+                    ).length;
                     const cells = Battleship.relocate_footprint(
                         ghost_relocate_anchor, len, ghost_relocate_orientation
                     );
@@ -770,26 +838,34 @@ const create_play_button = function () {
                         gboard, cells, ghost_selected_ship
                     );
                     cells.forEach(function (cr) {
-                        if (cr[0] >= 0 && cr[0] < width && cr[1] >= 0 && cr[1] < height) {
+                        if (cr[0] >= 0 && cr[0] < width
+                                && cr[1] >= 0 && cr[1] < height) {
                             ghost_preview_keys[cr[0] + "," + cr[1]] = true;
                         }
                     });
-                } else if (ghost_selected_ship && ghost_preview_direction &&
-                    (current_action_mode === "ghost_select" || current_action_mode === "ghost_move")) {
+                } else if (ghost_selected_ship && ghost_preview_direction
+                        && (current_action_mode === "ghost_select"
+                        || current_action_mode === "ghost_move")) {
                     const gboard = game_state[ghost_own_board_idx];
-                    const offsets = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
+                    const offsets = {
+                        "up": [0, -1],
+                        "down": [0, 1],
+                        "left": [-1, 0],
+                        "right": [1, 0]
+                    };
                     const off = offsets[ghost_preview_direction];
                     const dist = ghost_preview_distance || 1;
-                    // Whole slide validity (bounds + path) comes from the engine.
+                    // Slide validity (bounds + path) from engine.
                     ghost_preview_blocked = Battleship.ghost_slide(
                         game_state[ghost_own_board_idx], ghost_selected_ship,
                         ghost_preview_direction, dist
                     ) === game_state[ghost_own_board_idx];
-                    // Highlight the would-be destination footprint (offset × distance).
+                    // Highlight would-be destination footprint (offset × dist).
                     for (let r = 0; r < height; r++) {
                         for (let c = 0; c < width; c++) {
-                            if (Battleship.is_ship_here(gboard[r][c]) &&
-                                get_ship_name(gboard[r][c]) === ghost_selected_ship) {
+                            if (Battleship.is_ship_here(gboard[r][c])
+                                    && get_ship_name(gboard[r][c])
+                                    === ghost_selected_ship) {
                                 const nc = c + off[0] * dist;
                                 const nr = r + off[1] * dist;
                                 ghost_preview_keys[nc + "," + nr] = true;
@@ -801,7 +877,9 @@ const create_play_button = function () {
                 game_state.forEach(function (game_board, game_board_index) {
                     game_board.forEach(function (row, row_index) {
                         row.forEach(function (cell, column_index) {
-                            const table_cell = table_cells[game_board_index][row_index][column_index];
+                            const table_cell = table_cells[
+                                game_board_index
+                            ][row_index][column_index];
 
                             table_cell.className = Battleship.cell_state(
                                 game_board,
@@ -814,11 +892,12 @@ const create_play_button = function () {
                             table_cell.style.outline = "none";
                             table_cell.style.cursor = "default";
                             table_cell.classList.remove(
-                                "ghost-target", "ghost-selected", "shot-flash",
-                                "ghost-origin", "ghost-preview", "ghost-preview-invalid"
+                                "ghost-target", "ghost-selected",
+                                "shot-flash", "ghost-origin",
+                                "ghost-preview", "ghost-preview-invalid"
                             );
 
-                            // The active player's own fleet sits on the opposite board.
+                            // Active player's own fleet is on opposite board.
                             const own_board_idx = (1 - active_player_idx);
 
                             if ((current_action_mode === "ghost_select"
@@ -826,18 +905,28 @@ const create_play_button = function () {
                                     || current_action_mode === "ghost_relocate")
                                     && game_board_index === own_board_idx) {
                                 const ship_name = get_ship_name(cell);
-                                if (ship_name && Battleship.is_ship_here(cell) && !Battleship.is_ship_sunk_by_name(game_board, ship_name)) {
+                                if (ship_name
+                                        && Battleship.is_ship_here(cell)
+                                        && !Battleship.is_ship_sunk_by_name(
+                                            game_board, ship_name
+                                        )) {
                                     table_cell.className = "cell_with_ship";
                                     table_cell.classList.add("ghost-target");
                                     table_cell.style.cursor = "pointer";
 
-                                    if (ghost_selected_ship && ship_name === ghost_selected_ship) {
-                                        table_cell.classList.add("ghost-origin");
+                                    if (ghost_selected_ship
+                                            && ship_name
+                                            === ghost_selected_ship) {
+                                        table_cell.classList
+                                            .add("ghost-origin");
                                     }
                                 }
 
-                                // Preview of the would-be destination footprint.
-                                if (ghost_preview_keys[column_index + "," + row_index]) {
+                                // Preview of would-be destination footprint.
+                                const preview_key = (
+                                    column_index + "," + row_index
+                                );
+                                if (ghost_preview_keys[preview_key]) {
                                     table_cell.classList.add(
                                         ghost_preview_blocked
                                             ? "ghost-preview-invalid"
@@ -846,10 +935,10 @@ const create_play_button = function () {
                                 }
                             }
 
-                            // Ghost-move damage trace: a vacated, previously-hit
-                            // cell stays on the board as a scar (full override of
-                            // the plain "miss" look) until a ship occupies it again.
-                            if (ghost_scars[game_board_index].includes(column_index + "," + row_index)
+                            // Ghost-move trace: vacated hit-cell becomes scar
+                            // until a ship occupies it again.
+                            const scar_key = column_index + "," + row_index;
+                            if (ghost_scars[game_board_index].includes(scar_key)
                                     && !Battleship.is_ship_here(cell)) {
                                 table_cell.className = "ghost-scar";
                             }
@@ -870,21 +959,34 @@ const create_play_button = function () {
 
                 // Update ship-status trackers
                 [0, 1].forEach(function (board_idx) {
-                    const tracker = document.getElementById("tracker_" + board_idx);
+                    const tracker = document.getElementById(
+                        "tracker_" + board_idx
+                    );
                     if (!tracker) return;
                     Battleship.ship_array.forEach(function (ship) {
-                        const item = tracker.querySelector("[data-ship=\"" + ship.name + "\"]");
+                        const item = tracker.querySelector(
+                            "[data-ship=\"" + ship.name + "\"]"
+                        );
                         if (!item) return;
-                        item.classList.toggle("sunk", Battleship.is_ship_sunk_by_name(game_state[board_idx], ship.name));
+                        item.classList.toggle(
+                            "sunk",
+                            Battleship.is_ship_sunk_by_name(
+                                game_state[board_idx], ship.name
+                            )
+                        );
                     });
                 });
             };
 
             table_cells = [
-                R.range(0, height).map(create_row_in_table_to_shoot_ships(game_board_1, 0)),
-                R.range(0, height).map(create_row_in_table_to_shoot_ships(game_board_2, 1))
+                R.range(0, height).map(
+                    create_row_in_table_to_shoot_ships(game_board_1, 0)
+                ),
+                R.range(0, height).map(
+                    create_row_in_table_to_shoot_ships(game_board_2, 1)
+                )
             ];
-            
+
             update_display();
             update_battle_controls();
             });
@@ -907,7 +1009,9 @@ const create_rotate_button = function (button_container, game_board_index) {
                 game_board_index
             ].find((ship) => ship.name === selected_ship_name);
 
-            const active_td = document.querySelector(".dragging, .is-repositioning");
+            const active_td = document.querySelector(
+                ".dragging, .is-repositioning"
+            );
             const img = active_td ? active_td.querySelector("img") : null;
 
             if (selected_ship_object.orientation === "horizontal") {
@@ -917,8 +1021,13 @@ const create_rotate_button = function (button_container, game_board_index) {
                 selected_ship_object.orientation = "horizontal";
                 if (img) img.style.transform = "rotate(0deg)";
             }
-            if (hovered_cell_info && hovered_cell_info.board_index === game_board_index) {
-                show_preview(game_board_index, hovered_cell_info.col, hovered_cell_info.row);
+            if (hovered_cell_info
+                    && hovered_cell_info.board_index === game_board_index) {
+                show_preview(
+                    game_board_index,
+                    hovered_cell_info.col,
+                    hovered_cell_info.row
+                );
             }
         }
     });
@@ -986,7 +1095,8 @@ const mark_origin = function (game_board_index) {
     game_state[game_board_index].forEach(function (row, r) {
         row.forEach(function (cell, c) {
             if (cell.shipName === selected_ship_name) {
-                table_cells[game_board_index][r][c].classList.add("place-origin");
+                table_cells[game_board_index][r][c].classList
+                    .add("place-origin");
             }
         });
     });
@@ -1049,14 +1159,22 @@ const create_cell_in_row_to_place_ships = function (
 
         td.tabIndex = 0;
 
-        // Live preview: show where the selected ship would land on hover/focus.
-        // Also track the last hovered cell so R-key rotation can refresh the preview.
+        // Live preview: show where selected ship would land on hover/focus.
+        // Also track last hovered cell so R-key rotation refreshes preview.
         td.onmouseenter = function () {
-            hovered_cell_info = { board_index: game_board_index, col: column_index, row: row_index };
+            hovered_cell_info = {
+                "board_index": game_board_index,
+                "col": column_index,
+                "row": row_index
+            };
             show_preview(game_board_index, column_index, row_index);
         };
         td.onfocus = function () {
-            hovered_cell_info = { board_index: game_board_index, col: column_index, row: row_index };
+            hovered_cell_info = {
+                "board_index": game_board_index,
+                "col": column_index,
+                "row": row_index
+            };
             show_preview(game_board_index, column_index, row_index);
         };
 
@@ -1085,6 +1203,7 @@ const create_cell_in_row_to_place_ships = function (
                         game_state[game_board_index], ship,
                         column_index, row_index, game_board_index
                     );
+                    ship.placed = true;
                     repositioning = false;
                     selected_ship_name = undefined;
                     if (card) card.className = "ship is-placed";
@@ -1104,14 +1223,16 @@ const create_cell_in_row_to_place_ships = function (
 
             // ── Fresh placement ──
             const ship_element = document.getElementsByClassName("dragging");
+            const prev_board = game_state[game_board_index];
             game_state[game_board_index] = Battleship.place_ship(
-                game_state[game_board_index],
+                prev_board,
                 ship,
                 column_index,
                 row_index,
                 game_board_index
             );
-            if (ship.placed === true) {
+            if (game_state[game_board_index] !== prev_board) {
+                ship.placed = true;
                 if (ship_element[0]) {
                     ship_element[0].className = "ship is-placed";
                 }
@@ -1216,7 +1337,10 @@ const create_ship_cell = function (ship, game_board_index, tr) {
 
     const img = document.createElement("img");
     const player_folder = game_board_index === 0 ? "player1" : "player2";
-    img.setAttribute("src", `./assets/${player_folder}/${ship.name}.png`);
+    img.setAttribute(
+        "src",
+        "./assets/" + player_folder + "/" + ship.name + ".png"
+    );
     img.id = ship.name;
     img.style.transition = "transform 0.2s ease";
 
@@ -1248,7 +1372,9 @@ const create_ship_cell = function (ship, game_board_index, tr) {
             const prev_ship = multiplayer_ship_array[game_board_index].find(
                 (s) => s.name === prev.dataset.ship
             );
-            prev.className = "ship" + (prev_ship && prev_ship.placed ? " is-placed" : "");
+            prev.className = (
+                "ship" + (prev_ship && prev_ship.placed ? " is-placed" : "")
+            );
         }
 
         // A placed ship enters reposition mode and STAYS on the board as a
@@ -1333,24 +1459,37 @@ const create_cell_in_row_to_shoot_ships = function (
                 // In teleport mode a board click is a placement attempt, not a
                 // re-selection. Cancel (in the side panel) returns to picking.
                 if (current_action_mode === "ghost_relocate") {
-                    attempt_ghost_relocate(active_player_idx, column_index, row_index);
+                    attempt_ghost_relocate(
+                        active_player_idx, column_index, row_index
+                    );
                     return;
                 }
 
-                const cell = game_state[game_board_index][row_index][column_index];
+                const cell = game_state[game_board_index][row_index][
+                    column_index
+                ];
                 const ship_name = get_ship_name(cell);
 
-                if (ship_name && Battleship.is_ship_here(cell) && !Battleship.is_ship_sunk_by_name(game_state[game_board_index], ship_name)) {
+                if (ship_name && Battleship.is_ship_here(cell)
+                        && !Battleship.is_ship_sunk_by_name(
+                            game_state[game_board_index], ship_name
+                        )) {
                     ghost_selected_ship = ship_name;
                     ghost_preview_direction = null;
                     ghost_preview_distance = 1;
-                    if (Battleship.is_ship_damaged(game_state[game_board_index], ship_name)) {
-                        // Detected & damaged → emergency escape (orthogonal 1–2 tiles).
+                    if (Battleship.is_ship_damaged(
+                        game_state[game_board_index], ship_name
+                    )) {
+                        // Detected & damaged: emergency escape (1-2 tiles).
                         current_action_mode = "ghost_move";
                     } else {
-                        // Intact & undetected → stealth teleport anywhere pristine.
-                        ghost_relocate_orientation = Battleship.infer_ship_orientation(
-                            Battleship.ship_cells_by_name(game_state[game_board_index], ship_name)
+                        // Intact & undetected: stealth teleport anywhere.
+                        ghost_relocate_orientation = (
+                            Battleship.infer_ship_orientation(
+                                Battleship.ship_cells_by_name(
+                                    game_state[game_board_index], ship_name
+                                )
+                            )
                         );
                         ghost_relocate_anchor = null;
                         current_action_mode = "ghost_relocate";
@@ -1362,8 +1501,9 @@ const create_cell_in_row_to_shoot_ships = function (
             }
 
             if (next_player % 2 === game_board_index) {
-                
-                if (current_action_mode === "shoot" && td.className === "unshot" && !board_locked) {
+                if (current_action_mode === "shoot"
+                        && td.className === "unshot"
+                        && !board_locked) {
                     board_locked = true;
                     document.body.classList.add("board-locked");
 
@@ -1383,26 +1523,39 @@ const create_cell_in_row_to_shoot_ships = function (
 
                     // Track battle statistics for the victory screen
                     standard_fire_shots[active_player_idx]++;
-                    if (target_had_ship) standard_fire_hits[active_player_idx]++;
+                    if (target_had_ship) {
+                        standard_fire_hits[active_player_idx]++;
+                    }
                     if (target_had_ship && new_cell_state === "sunken_ship") {
                         ships_sunk_count[active_player_idx]++;
                     }
 
-                    // Show this cell's result immediately (turn switches after delay)
-                    const shot_td = table_cells[game_board_index][row_index][column_index];
+                    // Show this cell's result immediately (turn switches later)
+                    const shot_td = table_cells[
+                        game_board_index
+                    ][row_index][column_index];
                     shot_td.className = new_cell_state;
                     shot_td.classList.add("shot-flash");
 
                     let vfx_delay = 900;
                     if (target_had_ship && new_cell_state === "sunken_ship") {
-                        add_impact_strike(game_board_index, row_index, column_index);
-                        trigger_sunk_bombardment(game_board_index, row_index, column_index);
+                        add_impact_strike(
+                            game_board_index, row_index, column_index
+                        );
+                        trigger_sunk_bombardment(
+                            game_board_index, row_index, column_index
+                        );
                         Audio_Manager.play_sunk();
-                        // Let the explosion play, then freeze ~0.8s on the result.
+                        // Let explosion play, then freeze ~0.8s on result.
                         vfx_delay = 2600;
                     } else if (target_had_ship) {
-                        add_impact_strike(game_board_index, row_index, column_index);
-                        add_cell_effect(game_board_index, row_index, column_index, "hit-bubbles");
+                        add_impact_strike(
+                            game_board_index, row_index, column_index
+                        );
+                        add_cell_effect(
+                            game_board_index, row_index, column_index,
+                            "hit-bubbles"
+                        );
                         Audio_Manager.play_hit();
                         vfx_delay = 1300;
                     } else {
@@ -1415,9 +1568,11 @@ const create_cell_in_row_to_shoot_ships = function (
                         document.body.classList.remove("board-locked");
                         end_current_turn();
                     }, vfx_delay);
-                } 
+                }
                 // 2. Sonar scan mode
-                else if (current_action_mode === "sonar" && td.className === "unshot" && !board_locked) {
+                else if (current_action_mode === "sonar"
+                        && td.className === "unshot"
+                        && !board_locked) {
                     // Lock the board so the scan result stays on the active
                     // player's side until they have had time to read it.
                     board_locked = true;
@@ -1431,16 +1586,19 @@ const create_cell_in_row_to_shoot_ships = function (
                     );
 
                     for (let r = row_index - 1; r <= row_index + 1; r++) {
-                        for (let c = column_index - 1; c <= column_index + 1; c++) {
+                        for (let c = column_index - 1; c <= column_index + 1;
+                                c++) {
                             if (r >= 0 && r < height && c >= 0 && c < width) {
-                                sonar_cells.push({r, c});
+                                sonar_cells.push({"r": r, "c": c});
                             }
                         }
                     }
 
                     const sonar_overlays = [];
                     sonar_cells.forEach(function (coords) {
-                        const target_td = table_cells[game_board_index][coords.r][coords.c];
+                        const target_td = table_cells[
+                            game_board_index
+                        ][coords.r][coords.c];
                         const overlay = document.createElement("div");
                         overlay.className = "sonar-cell-overlay";
                         target_td.appendChild(overlay);
@@ -1458,7 +1616,7 @@ const create_cell_in_row_to_shoot_ships = function (
                     // Keep the scan visible for the full display window, then
                     // clear it, unlock the board and pass the turn.
                     setTimeout(function () {
-                        sonar_overlays.forEach(function (overlay) { overlay.remove(); });
+                        sonar_overlays.forEach(function (ov) { ov.remove(); });
                         sonar_count_label.remove();
                         board_locked = false;
                         document.body.classList.remove("board-locked");
@@ -1473,7 +1631,7 @@ const create_cell_in_row_to_shoot_ships = function (
                 td.onclick();
                 return;
             }
-            // Ghost mode: skip cell-navigation so arrow keys reach document.body.onkeydown
+            // Ghost mode: skip cell-nav so arrow keys reach body.onkeydown
             if (current_action_mode === "ghost_select"
                     || current_action_mode === "ghost_move"
                     || current_action_mode === "ghost_relocate") {
@@ -1533,19 +1691,28 @@ document.body.onkeydown = function (event) {
     // Teleport mode: R rotates the footprint being placed.
     if (current_action_mode === "ghost_relocate" && ghost_selected_ship
             && (event.key === "r" || event.key === "R")) {
-        ghost_relocate_orientation =
-            ghost_relocate_orientation === "horizontal" ? "vertical" : "horizontal";
+        ghost_relocate_orientation = (
+            ghost_relocate_orientation === "horizontal"
+            ? "vertical"
+            : "horizontal"
+        );
         update_display();
         update_battle_controls();
         event.preventDefault();
         return;
     }
 
-    // Ghost move direction via arrow keys — checked first so it takes priority
-    // over the generic cell-focus fallback below.
-    if ((current_action_mode === "ghost_select" || current_action_mode === "ghost_move")
+    // Ghost move direction via arrow keys — checked first so it takes
+    // priority over the generic cell-focus fallback below.
+    if ((current_action_mode === "ghost_select"
+            || current_action_mode === "ghost_move")
             && ghost_selected_ship) {
-        const dir_map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+        const dir_map = {
+            "ArrowUp": "up",
+            "ArrowDown": "down",
+            "ArrowLeft": "left",
+            "ArrowRight": "right"
+        };
         const dir = dir_map[event.key];
         if (dir) {
             ghost_preview_direction = dir;
@@ -1594,20 +1761,26 @@ document.body.onkeydown = function (event) {
             }
             return;
         }
-        if (!document.activeElement || document.activeElement.tagName !== "TD") {
+        if (!document.activeElement
+                || document.activeElement.tagName !== "TD") {
             table_cells[0][0][0].focus();
         }
     }
 
     // R key: rotate the currently selected/repositioning ship on either board.
-    if ((event.key === "r" || event.key === "R") && selected_ship_name !== undefined) {
-        const active_board_index = game_board_1.style.visibility === "hidden" ? 1 : 0;
-        const selected_ship_object = multiplayer_ship_array[active_board_index].find(
-            (ship) => ship.name === selected_ship_name
+    if ((event.key === "r" || event.key === "R")
+            && selected_ship_name !== undefined) {
+        const active_board_index = (
+            game_board_1.style.visibility === "hidden" ? 1 : 0
         );
+        const selected_ship_object = multiplayer_ship_array[
+            active_board_index
+        ].find((ship) => ship.name === selected_ship_name);
 
-        // Works for fresh placement (.dragging) and repositioning (.is-repositioning)
-        const active_td = document.querySelector(".dragging, .is-repositioning");
+        // Works for fresh placement (.dragging) and repositioning
+        const active_td = document.querySelector(
+            ".dragging, .is-repositioning"
+        );
         const img = active_td ? active_td.querySelector("img") : null;
 
         if (selected_ship_object) {
@@ -1618,9 +1791,14 @@ document.body.onkeydown = function (event) {
                 selected_ship_object.orientation = "horizontal";
                 if (img) img.style.transform = "rotate(0deg)";
             }
-            // Refresh the hover preview so the new orientation is shown immediately
-            if (hovered_cell_info && hovered_cell_info.board_index === active_board_index) {
-                show_preview(active_board_index, hovered_cell_info.col, hovered_cell_info.row);
+            // Refresh hover preview so new orientation shows immediately
+            if (hovered_cell_info
+                    && hovered_cell_info.board_index === active_board_index) {
+                show_preview(
+                    active_board_index,
+                    hovered_cell_info.col,
+                    hovered_cell_info.row
+                );
             }
         }
         event.preventDefault();
@@ -1637,10 +1815,13 @@ let sonar_scans_left = [2, 2];       // Each player has 2 sonar scans.
 let ghost_moves_left = [1, 1];       // Each player has 1 ghost move.
 let current_action_mode = "shoot";   // shoot, sonar, ghost_select, ghost_move
 let ghost_selected_ship = null;
-let ghost_preview_direction = null;  // pending preview direction (not yet confirmed)
+// pending preview direction (not yet confirmed):
+let ghost_preview_direction = null;
 let ghost_preview_distance = 1;      // pending preview distance: 1 or 2 tiles
-let ghost_relocate_orientation = "horizontal"; // footprint orientation while teleporting an intact ship
-let ghost_relocate_anchor = null;    // hovered top-left anchor while teleporting (null = none)
+// footprint orientation while teleporting an intact ship:
+let ghost_relocate_orientation = "horizontal";
+// hovered top-left anchor while teleporting (null = none):
+let ghost_relocate_anchor = null;
 let board_locked = false;   // true while VFX plays; blocks new shots
 
 // Per-board "x,y" keys of cells a ghost-moved ship left behind as damage.
@@ -1677,7 +1858,7 @@ const end_current_turn = function () {
     update_battle_controls();
 };
 
-// ── Stealth teleport (intact ships) ─────────────────────────────────
+// ── Stealth teleport (intact ships) ─────────────────────────────
 // A ship with zero hits is "undetected" and may relocate to any pristine
 // position; a ship with at least one hit is "damaged" and is limited to the
 // orthogonal 1–2 tile escape slide above.
@@ -1686,11 +1867,15 @@ const end_current_turn = function () {
 // infer_ship_orientation, ship_cells_by_name) lives in BattleShip.js.
 
 // Commits a teleport at the given anchor (no-op if the footprint is invalid).
-const attempt_ghost_relocate = function (active_player_idx, anchor_col, anchor_row) {
+const attempt_ghost_relocate = function (
+    active_player_idx, anchor_col, anchor_row
+) {
     if (board_locked || !ghost_selected_ship) return;
     const own_board_idx = 1 - active_player_idx;
     const gboard = game_state[own_board_idx];
-    const len = Battleship.ship_cells_by_name(gboard, ghost_selected_ship).length;
+    const len = Battleship.ship_cells_by_name(
+        gboard, ghost_selected_ship
+    ).length;
     const cells = Battleship.relocate_footprint(
         [anchor_col, anchor_row], len, ghost_relocate_orientation
     );
@@ -1729,24 +1914,33 @@ const flash_ghost_landing = function (player_idx, ship_name) {
     }
 };
 
-const add_cell_effect = function (game_board_index, row_index, column_index, effect_type) {
+const add_cell_effect = function (
+    game_board_index, row_index, column_index, effect_type
+) {
     const target_cell = table_cells[game_board_index][row_index][column_index];
     if (!target_cell) return;
 
     const effect = document.createElement("div");
-    effect.className = `cell-effect ${effect_type}`;
+    effect.className = "cell-effect " + effect_type;
 
-    const particle_count =
-        effect_type === "sunk-explosion" ? 18 :
-        effect_type === "sunk-dust"      ? 14 : 9;
-    const base_dist  = effect_type === "sunk-explosion" ? 32 : 24;
-    const step_dist  = effect_type === "sunk-explosion" ? 12 : 9;
-    const delay_step = effect_type === "sunk-explosion" ? 18 : 22;
+    const particle_count = (
+        effect_type === "sunk-explosion" ? 18
+        : effect_type === "sunk-dust" ? 14
+        : 9
+    );
+    const base_dist  = (effect_type === "sunk-explosion" ? 32 : 24);
+    const step_dist  = (effect_type === "sunk-explosion" ? 12 : 9);
+    const delay_step = (effect_type === "sunk-explosion" ? 18 : 22);
     R.range(0, particle_count).forEach(function (particle_index) {
         const particle = document.createElement("span");
-        particle.style.setProperty("--angle",    ((360 / particle_count) * particle_index) + "deg");
-        particle.style.setProperty("--delay",    (particle_index * delay_step) + "ms");
-        particle.style.setProperty("--distance", (base_dist + (particle_index % 5) * step_dist) + "px");
+        const angle = ((360 / particle_count) * particle_index) + "deg";
+        const delay = (particle_index * delay_step) + "ms";
+        const dist = (
+            base_dist + (particle_index % 5) * step_dist
+        ) + "px";
+        particle.style.setProperty("--angle", angle);
+        particle.style.setProperty("--delay", delay);
+        particle.style.setProperty("--distance", dist);
         effect.append(particle);
     });
 
@@ -1785,7 +1979,8 @@ const trigger_sunk_bombardment = function (game_board_index, hit_row, hit_col) {
     for (let r = 0; r < height; r++) {
         for (let c = 0; c < width; c++) {
             const cell = board[r][c];
-            if (cell && Battleship.is_ship_here(cell) && cell.shipName === ship_name) {
+            if (cell && Battleship.is_ship_here(cell)
+                    && cell.shipName === ship_name) {
                 add_cell_effect(game_board_index, r, c, "sunk-explosion");
             }
         }
@@ -1860,10 +2055,13 @@ const update_battle_controls = function () {
 
     // ── Turn label ──────────────────────────────────────────────
     const label_row = document.createElement("div");
-    label_row.style.cssText = "display:flex;align-items:center;gap:0.5rem;justify-content:center;width:100%;";
+    label_row.style.cssText = "display:flex;align-items:center;"
+        + "gap:0.5rem;justify-content:center;width:100%;";
 
     const dot = document.createElement("div");
-    dot.className = "center-player-dot " + (active_player_idx === 0 ? "dot-p1" : "dot-p2");
+    dot.className = (
+        "center-player-dot " + (active_player_idx === 0 ? "dot-p1" : "dot-p2")
+    );
     label_row.append(dot);
 
     const turn_label = document.createElement("div");
@@ -1908,11 +2106,23 @@ const update_battle_controls = function () {
         const wrap = document.createElement("div");
         wrap.className = "score-board";
         [
-            { cls: "score-p1", label: player_name_of(0), value: count_hits(game_state[0]), active: active_player_idx === 0 },
-            { cls: "score-p2", label: player_name_of(1), value: count_hits(game_state[1]), active: active_player_idx === 1 }
+            {
+                "cls": "score-p1",
+                "label": player_name_of(0),
+                "value": count_hits(game_state[0]),
+                "active": active_player_idx === 0
+            },
+            {
+                "cls": "score-p2",
+                "label": player_name_of(1),
+                "value": count_hits(game_state[1]),
+                "active": active_player_idx === 1
+            }
         ].forEach(function (s) {
             const side = document.createElement("div");
-            side.className = "score-side " + s.cls + (s.active ? " is-active" : "");
+            side.className = (
+                "score-side " + s.cls + (s.active ? " is-active" : "")
+            );
             const lbl = document.createElement("div");
             lbl.className = "score-label";
             lbl.textContent = s.label;
@@ -1940,16 +2150,22 @@ const update_battle_controls = function () {
         status.textContent = "Ghost — click one of your ships.";
     } else if (current_action_mode === "ghost_move") {
         if (ghost_preview_direction) {
-            status.textContent = "Damaged ship — confirm the escape, or pick another direction.";
+            status.textContent = (
+                "Damaged ship — confirm escape, or pick another direction."
+            );
         } else {
-            status.textContent = ghost_selected_ship + " is damaged. Escape up to 2 tiles — pick a direction.";
+            status.textContent = ghost_selected_ship
+                + " is damaged. Escape up to 2 tiles — pick a direction.";
         }
     } else if (current_action_mode === "ghost_relocate") {
-        status.textContent = ghost_selected_ship + " is intact. Click any clear water to redeploy · R to rotate.";
+        status.textContent = ghost_selected_ship
+            + " is intact. Click any clear water to redeploy · R to rotate.";
     }
     center.append(status);
 
-    center.append(Object.assign(document.createElement("div"), { className: "center-divider" }));
+    center.append(Object.assign(
+        document.createElement("div"), {"className": "center-divider"}
+    ));
 
     // ── Action buttons ──────────────────────────────────────────
     const btn_row = document.createElement("div");
@@ -2021,8 +2237,7 @@ const update_battle_controls = function () {
             update_battle_controls();
             return;
         }
-        // Ghost Move is now a deliberate tactical decision: confirm first, warn
-        // the opponent, and ONLY THEN reveal this player's ships for relocation.
+        // Ghost Move: confirm first, warn the opponent, THEN reveal ships.
         show_ghost_confirm(active_player_idx, function () {
             show_ghost_handoff(active_player_idx, function () {
                 ghost_preview_direction = null;
@@ -2142,9 +2357,9 @@ const update_battle_controls = function () {
         }
     }
 
-    // ── Teleport controls (ghost_relocate only) ─────────────────
-    // Intact ships place directly on the board (like deployment); this panel
-    // only offers Rotate and Cancel — the click itself commits the move.
+    // ── Teleport controls (ghost_relocate only) ──────────────────
+    // Intact ships place directly on the board (like deployment); this
+    // panel only offers Rotate and Cancel — click commits the move.
     if (current_action_mode === "ghost_relocate") {
         const relocate_box = document.createElement("div");
         relocate_box.className = "ghost-relocate-controls";
@@ -2153,8 +2368,11 @@ const update_battle_controls = function () {
         rotate_btn.className = "ghost-rotate-btn";
         rotate_btn.textContent = "⟳ Rotate  [R]";
         rotate_btn.onclick = function () {
-            ghost_relocate_orientation =
-                ghost_relocate_orientation === "horizontal" ? "vertical" : "horizontal";
+            ghost_relocate_orientation = (
+                ghost_relocate_orientation === "horizontal"
+                ? "vertical"
+                : "horizontal"
+            );
             update_display();
             update_battle_controls();
         };
@@ -2174,7 +2392,9 @@ const update_battle_controls = function () {
         center.append(relocate_box);
     }
 
-    center.append(Object.assign(document.createElement("div"), { className: "center-divider" }));
+    center.append(Object.assign(
+        document.createElement("div"), {"className": "center-divider"}
+    ));
 
     // ── Waiting label ───────────────────────────────────────────
     const wait = document.createElement("div");
@@ -2204,7 +2424,7 @@ const update_battle_controls = function () {
 };
 
 // ==========================================
-// 5. 
+// 5.
 // ==========================================
 create_rotate_button(button_container_1, 0);
 create_rotate_button(button_container_2, 1);
@@ -2260,7 +2480,7 @@ setInterval(function () {
         update_deploy_controls();
     }
 }, 250);
-// ── Name-setup phase ────────────────────────────────────────────────
+// ── Name-setup phase ─────────────────────────────────────────────
 // Both commanders enter their call signs before anything else; the names
 // then drive every multiplayer label. Defaults to Siyi / Zipei if left blank.
 const start_with_names = function () {

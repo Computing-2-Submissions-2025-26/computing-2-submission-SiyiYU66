@@ -2,6 +2,7 @@
 <!-- They can all be removed for your apps -->
 <!doctype html>
 <html lang="en-gb">
+<head>
 <meta charset="utf-8">
 <title>Battleship</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,7 +11,7 @@
 <link rel="stylesheet" href="Human_VS_Human.css?v=14">
 <link rel="icon" href="./assets/favicon.png">
 <script type="module" src="Human_VS_Human.js?v=14"></script>
-
+</head>
 <body class="intro-phase battle-initializing">
 
 <!-- Cinematic deploy-phase battlefield backdrop (visual only, CSS-driven) -->
@@ -58,9 +59,9 @@
 
 <header>
     <h1>
-        <img src="./assets/battleship.png">
+        <img src="./assets/battleship.png" alt="">
         Battleship
-        <img src="./assets/battleship.png">
+        <img src="./assets/battleship.png" alt="">
     </h1>
     <div id="game_rules">
         <div class="mechanic-card fire-card">
@@ -90,7 +91,7 @@
 <aside>
     <h2>Player 1</h2>
     <div class = "game_board_container" id="game_container_1">
-        <table id="game_board_1" index="0">
+        <table id="game_board_1" data-index="0">
             
         </table>
     </div>
@@ -136,7 +137,7 @@
 <main>
     <h2>Player 2</h2>
     <div class = "game_board_container" id="game_container_2">
-        <table id="game_board_2" index="0">
+        <table id="game_board_2" data-index="0">
             
         </table>
     </div>
@@ -177,4 +178,6 @@
         </div>
     </div>
 </main>
+</body>
+</html>
 

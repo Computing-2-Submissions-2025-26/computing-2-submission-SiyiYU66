@@ -213,7 +213,7 @@ Battleship.place_ship = function (board, ship, x_top_left, y_top_left) {
     if (footprint_overlaps(board, footprint)) {
         return board;
     }
-    if (ship.placed === true) {
+    if (ship.name && ship_cells_of(board, ship.name).length > 0) {
         return board;
     }
     // Only tag the cell with an identity when the ship actually has a name.
@@ -222,11 +222,9 @@ Battleship.place_ship = function (board, ship, x_top_left, y_top_left) {
         ? {"ship": true}
         : {"ship": true, "shipName": ship.name}
     );
-    const new_board = footprint.reduce(function (acc, coords) {
+    return footprint.reduce(function (acc, coords) {
         return update_cell(acc, coords[0], coords[1], patch);
     }, board);
-    ship.placed = true;
-    return new_board;
 };
 
 // ===========================================================================
@@ -404,22 +402,11 @@ Battleship.has_player_won = function (board) {
  * @memberof Battleship
  * @function
  * @param {string} ship_name The name of the ship
- * @param {Battleship.multiplayer_ship_array} multiplayer_ship_array
- * The ship sets
- * @param {(0|1)} game_board_index The board number
+ * @param {Battleship.Board} board The board to inspect
  * @returns {boolean} true if the ship has already been placed
  */
-Battleship.is_ship_placed = function (
-    ship_name,
-    multiplayer_ship_array,
-    game_board_index
-) {
-    const ship = multiplayer_ship_array[game_board_index].find(
-        function (candidate) {
-            return candidate.name === ship_name;
-        }
-    );
-    return ship.placed;
+Battleship.is_ship_placed = function (ship_name, board) {
+    return ship_cells_of(board, ship_name).length > 0;
 };
 
 /**
@@ -472,10 +459,9 @@ Battleship.is_ship_damaged = function (board, ship_name) {
 // 9. RANDOM SETUP  (single-player convenience; not unit-tested as it is random)
 // ===========================================================================
 
-const set_random_orientation = function (ship) {
+const random_orientation = function () {
     const options = ["horizontal", "vertical"];
-    ship.orientation = options[Math.floor(Math.random() * options.length)];
-    return ship;
+    return options[Math.floor(Math.random() * options.length)];
 };
 
 /**
@@ -487,13 +473,16 @@ const set_random_orientation = function (ship) {
  */
 Battleship.random_board = function () {
     return Battleship.ship_array.reduce(function (board, ship) {
-        ship.placed = false;
-        set_random_orientation(ship);
+        const oriented = Object.assign(
+            {},
+            ship,
+            {"orientation": random_orientation()}
+        );
         let next_board = board;
         while (next_board === board) {
-            const col = Math.floor(Math.random() * (10 - ship.length));
-            const row = Math.floor(Math.random() * (10 - ship.length));
-            next_board = Battleship.place_ship(board, ship, col, row);
+            const col = Math.floor(Math.random() * (10 - oriented.length));
+            const row = Math.floor(Math.random() * (10 - oriented.length));
+            next_board = Battleship.place_ship(board, oriented, col, row);
         }
         return next_board;
     }, Battleship.empty_board(10, 10));
