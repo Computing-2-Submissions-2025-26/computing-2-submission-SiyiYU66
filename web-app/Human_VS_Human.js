@@ -509,12 +509,14 @@ const show_ghost_handoff = function (active_idx, on_proceed) {
     );
 };
 
-// Cinematic end-game overlay with the victory image and a battle report.
+// Cinematic end-game overlay — HTML/CSS text banner + battle report.
 const show_victory_screen = function (winner_player) {
-    const img_src = winner_player === 1
-        ? "./assets/player1 win pic.png"
-        : "./assets/player2 win pic.png";
     const player_idx = winner_player - 1;
+    const faction = (
+        winner_player === 1
+        ? "is-p1"
+        : "is-p2"
+    );
 
     const elapsed_seconds = battle_start_time
         ? Math.floor((Date.now() - battle_start_time) / 1000)
@@ -535,38 +537,74 @@ const show_victory_screen = function (winner_player) {
     const total_ships = Battleship.ship_array.length;
 
     const overlay = document.createElement("div");
-    overlay.className = "victory-overlay";
+    overlay.className = "victory-overlay " + faction;
 
-    const bg_img = document.createElement("img");
-    bg_img.src = img_src;
-    bg_img.className = "victory-bg-img";
-    overlay.append(bg_img);
+    // Rising embers — same style as homepage .bg-embers
+    const vc_p = document.createElement("div");
+    vc_p.className = "vc-particles";
+    [
+        {"l": "5%",  "d": "0.4s", "s": "5px"},
+        {"l": "12%", "d": "2.4s", "s": "4px"},
+        {"l": "20%", "d": "4.7s", "s": "6px"},
+        {"l": "28%", "d": "1.5s", "s": "4px"},
+        {"l": "38%", "d": "4.1s", "s": "5px"},
+        {"l": "48%", "d": "6.3s", "s": "3px"},
+        {"l": "58%", "d": "1.0s", "s": "5px"},
+        {"l": "68%", "d": "5.5s", "s": "4px"},
+        {"l": "76%", "d": "3.2s", "s": "6px"},
+        {"l": "84%", "d": "2.1s", "s": "4px"},
+        {"l": "90%", "d": "4.3s", "s": "5px"},
+        {"l": "96%", "d": "0.9s", "s": "3px"}
+    ].forEach(function (cfg) {
+        const sp = document.createElement("span");
+        sp.style.left = cfg.l;
+        sp.style.width = cfg.s;
+        sp.style.height = cfg.s;
+        sp.style.animationDelay = cfg.d;
+        vc_p.append(sp);
+    });
+    overlay.append(vc_p);
 
+    // ── Cinematic text banner ─────────────────────────
+    const banner = document.createElement("div");
+    banner.className = "victory-cinematic";
+
+    const top_lbl = document.createElement("div");
+    top_lbl.className = "victory-label";
+    top_lbl.textContent = "MISSION COMPLETE";
+
+    const name_el = document.createElement("div");
+    name_el.className = "victory-name " + faction;
+    name_el.textContent = player_name_of(player_idx);
+
+    const tagline = document.createElement("div");
+    tagline.className = "victory-tagline";
+    tagline.textContent = "YOU HAVE SUNK THE ENEMY FLEET";
+
+    banner.append(top_lbl, name_el, tagline);
+    overlay.append(banner);
+
+    // ── Battle report card ────────────────────────────
     const report = document.createElement("div");
-    report.className = "victory-report";
-
-    // Winner headline, in the winner's faction colour.
-    const winner_name = document.createElement("div");
-    winner_name.className = "victory-winner " +
-        (winner_player === 1 ? "is-p1" : "is-p2");
-    winner_name.textContent = player_name_of(winner_player - 1) + " WINS";
-    report.append(winner_name);
+    report.className = "victory-report " + faction;
 
     const report_title = document.createElement("div");
     report_title.className = "victory-report-title";
     report_title.textContent = (
-        player_name_of(winner_player - 1) + "'s Battle Report"
+        player_name_of(player_idx) + "'s Battle Report"
     );
     report.append(report_title);
 
     const stats_row = document.createElement("div");
     stats_row.className = "victory-stats-row";
 
-    const make_stat = function (label, value) {
+    const make_stat = function (label, value, extra_cls) {
         const card = document.createElement("div");
         card.className = "victory-stat-card";
         const val = document.createElement("div");
-        val.className = "victory-stat-value";
+        val.className = "victory-stat-value" + (
+            extra_cls ? " " + extra_cls : ""
+        );
         val.textContent = value;
         const lbl = document.createElement("div");
         lbl.className = "victory-stat-label";
@@ -575,24 +613,55 @@ const show_victory_screen = function (winner_player) {
         return card;
     };
 
-    stats_row.append(
-        make_stat("ACCURACY",    accuracy + "%"),
-        make_stat(
-            "SHIPS SUNK",
-            ships_sunk_count[player_idx] + "/" + total_ships
-        ),
-        make_stat("BATTLE TIME", time_str)
-    );
+    const acc_card = make_stat("ACCURACY", "0%");
+    const acc_val = acc_card.querySelector(".victory-stat-value");
+
+    const sunk_total_str = "0/" + total_ships;
+    const sunk_card = make_stat("SHIPS SUNK", sunk_total_str);
+    const sunk_val = sunk_card.querySelector(".victory-stat-value");
+
+    const time_card = make_stat("BATTLE TIME", time_str, "vc-time-fade");
+
+    stats_row.append(acc_card, sunk_card, time_card);
     report.append(stats_row);
     overlay.append(report);
 
     const return_btn = document.createElement("button");
     return_btn.className = "victory-return-btn";
     return_btn.textContent = "RETURN TO MENU";
-    return_btn.onclick = function () { window.location.href = "./index.html"; };
+    return_btn.onclick = function () {
+        window.location.href = "./index.html";
+    };
     overlay.append(return_btn);
 
     document.body.append(overlay);
+
+    // Count-up animation: starts after report card slides in (~2.4s)
+    const count_up = function (el, target, render_fn, duration) {
+        if (target === 0) {
+            el.textContent = render_fn(0);
+            return;
+        }
+        const t0 = Date.now();
+        const tick = function () {
+            const ratio = Math.min((Date.now() - t0) / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - ratio, 3);
+            el.textContent = render_fn(Math.round(eased * target));
+            if (ratio < 1) { requestAnimationFrame(tick); }
+        };
+        requestAnimationFrame(tick);
+    };
+
+    const sunk_target = ships_sunk_count[player_idx];
+    setTimeout(function () {
+        count_up(acc_val, accuracy, function (v) {
+            return v + "%";
+        }, 1200);
+        count_up(sunk_val, sunk_target, function (v) {
+            return v + "/" + total_ships;
+        }, 1000);
+    }, 2400);
 };
 
 // Plays a board-exchange animation before the battle begins: the orange

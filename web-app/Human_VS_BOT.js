@@ -33,9 +33,10 @@ let table_cells = [null, null];
 let selected_ship_name = undefined;
 let repositioning = false;   // true while moving an already-placed ship
 let board_locked = false;
-let hovered_cell_info = null;  // last hovered cell for R-key preview refresh
-let phase = "difficulty";   // difficulty | placing | deploying | battle | over
+let hovered_cell_info = null;
+let phase = "difficulty";
 let turn = "player";        // player | bot
+let battle_start_time = 0;
 
 // Bot AI memory
 let ai_queue = [];          // priority cells to fire at next
@@ -395,6 +396,7 @@ const create_place_cell = function (row_index, tr) {
                     game_state[0] = Battleship.place_ship(
                         game_state[0], ship, column_index, row_index, 0
                     );
+                    ship.placed = true;
                     repositioning = false;
                     selected_ship_name = undefined;
                     if (card) card.className = "ship is-placed";
@@ -414,10 +416,12 @@ const create_place_cell = function (row_index, tr) {
             }
 
             // ── Fresh placement ──
+            const prev_board = game_state[0];
             game_state[0] = Battleship.place_ship(
                 game_state[0], ship, column_index, row_index, 0
             );
-            if (ship.placed === true) {
+            if (game_state[0] !== prev_board) {
+                ship.placed = true;
                 const dragging = document.getElementsByClassName("dragging");
                 if (dragging.length) dragging[0].className = "ship is-placed";
                 selected_ship_name = undefined;
@@ -953,6 +957,7 @@ const render_hud = function () {
 
 const start_battle = function () {
     phase = "battle";
+    battle_start_time = Date.now();
     document.body.className = "battle-phase";
     set_turn("player");
     render_player_board();
@@ -1158,27 +1163,179 @@ const end_game = function (winner) {
     board_locked = true;
     document.body.classList.remove("board-locked");
 
+    // ── Stats: always show the winner's perspective ───
+    // winner=player → what player did to bot board (idx 1)
+    // winner=bot    → what bot did to player board (idx 0)
+    const target_idx = (winner === "player" ? 1 : 0);
+    const target_board = game_state[target_idx];
+    const total_ships = Battleship.ship_array.length;
+
+    const elapsed = battle_start_time
+        ? Math.floor((Date.now() - battle_start_time) / 1000)
+        : 0;
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    const time_str = mins + ":" + String(secs).padStart(2, "0");
+
+    const total_shots = target_board.reduce(function (sum, row) {
+        return sum + row.filter(function (cell) {
+            return cell.shot;
+        }).length;
+    }, 0);
+    const hit_count = count_hits(target_board);
+    const accuracy = (
+        total_shots > 0
+        ? Math.round(hit_count / total_shots * 100)
+        : 0
+    );
+    const sunk_count = Battleship.ship_array.reduce(
+        function (n, ship) {
+            return n + (
+                Battleship.is_ship_sunk_by_name(
+                    target_board, ship.name
+                )
+                ? 1
+                : 0
+            );
+        },
+        0
+    );
+
+    const faction = (winner === "player" ? "is-p1" : "is-p2");
+    const label = (winner === "player" ? "HUMAN" : "BOT");
+
+    // ── Overlay (identical structure to 2-player) ────
     const overlay = document.createElement("div");
-    overlay.className = "screen-overlay " +
-        (winner === "player" ? "overlay-orange" : "overlay-blue");
+    overlay.className = "victory-overlay " + faction;
 
-    const message = document.createElement("div");
-    message.className = "overlay-message";
-    message.textContent = winner === "player"
-        ? "Victory! Enemy fleet destroyed."
-        : "Defeat. Your fleet was sunk.";
-    overlay.append(message);
+    // Rising ember particles — same as multiplayer
+    const vc_p = document.createElement("div");
+    vc_p.className = "vc-particles";
+    [
+        {"l": "5%",  "d": "0.4s", "s": "5px"},
+        {"l": "12%", "d": "2.4s", "s": "4px"},
+        {"l": "20%", "d": "4.7s", "s": "6px"},
+        {"l": "28%", "d": "1.5s", "s": "4px"},
+        {"l": "38%", "d": "4.1s", "s": "5px"},
+        {"l": "48%", "d": "6.3s", "s": "3px"},
+        {"l": "58%", "d": "1.0s", "s": "5px"},
+        {"l": "68%", "d": "5.5s", "s": "4px"},
+        {"l": "76%", "d": "3.2s", "s": "6px"},
+        {"l": "84%", "d": "2.1s", "s": "4px"},
+        {"l": "90%", "d": "4.3s", "s": "5px"},
+        {"l": "96%", "d": "0.9s", "s": "3px"}
+    ].forEach(function (cfg) {
+        const sp = document.createElement("span");
+        sp.style.left = cfg.l;
+        sp.style.width = cfg.s;
+        sp.style.height = cfg.s;
+        sp.style.animationDelay = cfg.d;
+        vc_p.append(sp);
+    });
+    overlay.append(vc_p);
 
-    const holder = document.createElement("div");
-    holder.className = "overlay-action-holder";
-    const again = document.createElement("button");
-    again.className = "overlay-ok-button";
-    again.textContent = "Play Again";
-    again.onclick = function () { window.location.reload(); };
-    holder.append(again);
-    overlay.append(holder);
+    // Cinematic banner
+    const banner = document.createElement("div");
+    banner.className = "victory-cinematic";
+
+    const top_lbl = document.createElement("div");
+    top_lbl.className = "victory-label";
+    top_lbl.textContent = "MISSION COMPLETE";
+
+    const name_el = document.createElement("div");
+    name_el.className = "victory-name " + faction;
+    name_el.textContent = label;
+
+    const tagline = document.createElement("div");
+    tagline.className = "victory-tagline";
+    tagline.textContent = "YOU HAVE SUNK THE ENEMY FLEET";
+
+    banner.append(top_lbl, name_el, tagline);
+    overlay.append(banner);
+
+    // Battle report card
+    const report = document.createElement("div");
+    report.className = "victory-report " + faction;
+
+    const report_title = document.createElement("div");
+    report_title.className = "victory-report-title";
+    report_title.textContent = label + "'s Battle Report";
+    report.append(report_title);
+
+    const stats_row = document.createElement("div");
+    stats_row.className = "victory-stats-row";
+
+    const make_stat = function (lbl_txt, value, extra_cls) {
+        const card = document.createElement("div");
+        card.className = "victory-stat-card";
+        const val_el = document.createElement("div");
+        val_el.className = "victory-stat-value" + (
+            extra_cls ? " " + extra_cls : ""
+        );
+        val_el.textContent = value;
+        const lbl_el = document.createElement("div");
+        lbl_el.className = "victory-stat-label";
+        lbl_el.textContent = lbl_txt;
+        card.append(val_el, lbl_el);
+        return card;
+    };
+
+    const acc_card = make_stat("ACCURACY", "0%");
+    const acc_val = acc_card.querySelector(".victory-stat-value");
+
+    const sunk_card = make_stat(
+        "SHIPS SUNK", "0/" + total_ships
+    );
+    const sunk_val = sunk_card.querySelector(
+        ".victory-stat-value"
+    );
+
+    const time_card = make_stat(
+        "BATTLE TIME", time_str, "vc-time-fade"
+    );
+
+    stats_row.append(acc_card, sunk_card, time_card);
+    report.append(stats_row);
+    overlay.append(report);
+
+    const return_btn = document.createElement("button");
+    return_btn.className = "victory-return-btn";
+    return_btn.textContent = "RETURN TO MENU";
+    return_btn.onclick = function () {
+        window.location.href = "./index.html";
+    };
+    overlay.append(return_btn);
 
     document.body.append(overlay);
+
+    // Count-up starts after report slides in (~2.4s)
+    const count_up = function (el, target, render_fn, dur) {
+        if (target === 0) {
+            el.textContent = render_fn(0);
+            return;
+        }
+        const t0 = Date.now();
+        const tick = function () {
+            const ratio = Math.min(
+                (Date.now() - t0) / dur, 1
+            );
+            const eased = 1 - Math.pow(1 - ratio, 3);
+            el.textContent = render_fn(
+                Math.round(eased * target)
+            );
+            if (ratio < 1) { requestAnimationFrame(tick); }
+        };
+        requestAnimationFrame(tick);
+    };
+
+    setTimeout(function () {
+        count_up(acc_val, accuracy, function (v) {
+            return v + "%";
+        }, 1200);
+        count_up(sunk_val, sunk_count, function (v) {
+            return v + "/" + total_ships;
+        }, 1000);
+    }, 2400);
 };
 
 // ==========================================================================
