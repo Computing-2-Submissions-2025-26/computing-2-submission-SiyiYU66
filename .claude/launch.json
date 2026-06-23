@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "battleship",
+      "name": "submission-webapp",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "web-app", "-p", "5500", "--no-clipboard"],
-      "port": 5500
+      "runtimeArgs": ["serve", "web-app", "-p", "5580", "--no-clipboard"],
+      "port": 5580
     }
   ]
 }

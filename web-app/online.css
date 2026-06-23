@@ -1,0 +1,375 @@
+/* online.css — Phase 1 lobby styles */
+
+.online-lobby {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2.5rem;
+    padding: clamp(6rem, 12vh, 9rem) 1.5rem 4rem;
+}
+
+.lobby-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    width: min(100%, 26rem);
+    background: rgba(4, 8, 18, 0.82);
+    border: 1px solid rgba(79, 227, 255, 0.22);
+    border-radius: 16px;
+    padding: 2.4rem 2rem;
+    box-sizing: border-box;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), 0 0 60px rgba(0, 100, 180, 0.08);
+    backdrop-filter: blur(8px);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+.ob-btn {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 0.7rem 1.8rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    width: 100%;
+}
+
+.ob-btn:active:not(:disabled) { transform: translateY(2px) scale(0.97); }
+.ob-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.ob-btn-primary {
+    background: linear-gradient(135deg, #e07840 0%, #b84a10 100%);
+    color: #fff;
+    box-shadow: 0 0 22px rgba(224, 120, 64, 0.35);
+}
+
+.ob-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.15);
+    box-shadow: 0 0 32px rgba(224, 120, 64, 0.55);
+}
+
+.ob-btn-secondary {
+    background: linear-gradient(135deg, #2a6ea8 0%, #1050a0 100%);
+    color: #e8f4ff;
+    box-shadow: 0 0 22px rgba(40, 120, 200, 0.28);
+    width: auto;
+    white-space: nowrap;
+}
+
+.ob-btn-secondary:hover:not(:disabled) {
+    filter: brightness(1.15);
+    box-shadow: 0 0 32px rgba(40, 120, 200, 0.5);
+}
+
+.ob-btn-ghost {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(160, 210, 240, 0.8);
+    border: 1px solid rgba(79, 227, 255, 0.2);
+    width: auto;
+    padding: 0.45rem 1.2rem;
+}
+
+.ob-btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: #4fe3ff;
+}
+
+.ob-btn-small { font-size: 0.7rem; letter-spacing: 0.08em; }
+
+/* ── Join row ─────────────────────────────────────────────────────────────── */
+
+.ob-join-row {
+    display: flex;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.ob-input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(10, 20, 40, 0.8);
+    border: 1px solid rgba(79, 227, 255, 0.3);
+    border-radius: 8px;
+    color: #4fe3ff;
+    font-family: "Orbitron", monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    padding: 0.65rem 0.9rem;
+    outline: none;
+    text-transform: uppercase;
+    text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ob-input:focus {
+    border-color: rgba(79, 227, 255, 0.7);
+    box-shadow: 0 0 16px rgba(79, 227, 255, 0.2);
+}
+
+.ob-input::placeholder { color: rgba(79, 227, 255, 0.3); }
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+
+.ob-divider {
+    color: rgba(160, 200, 220, 0.4);
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+}
+
+/* ── Section label ───────────────────────────────────────────────────────── */
+
+.ob-label {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: rgba(160, 210, 240, 0.55);
+    margin: 0;
+}
+
+/* ── Code display ─────────────────────────────────────────────────────────── */
+
+.ob-code-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(10, 20, 40, 0.6);
+    border: 1px solid rgba(79, 227, 255, 0.35);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: space-between;
+}
+
+.ob-code-display span {
+    font-family: "Orbitron", monospace;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.28em;
+    color: #4fe3ff;
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.5);
+}
+
+/* ── Status / hint ───────────────────────────────────────────────────────── */
+
+.ob-status-msg {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: rgba(200, 230, 245, 0.8);
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.ob-hint {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.72rem;
+    color: rgba(160, 200, 220, 0.45);
+    letter-spacing: 0.08em;
+    margin: 0;
+}
+
+/* ── Pulsing dot ─────────────────────────────────────────────────────────── */
+
+.ob-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4fe3ff;
+    flex-shrink: 0;
+    animation: ob-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ob-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(79, 227, 255, 0.7);
+    }
+    50% {
+        opacity: 0.35;
+        transform: scale(0.7);
+        box-shadow: none;
+    }
+}
+
+/* ── Error text ──────────────────────────────────────────────────────────── */
+
+.ob-error {
+    color: rgba(255, 100, 80, 0.9);
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    min-height: 1.2em;
+    margin: 0;
+    text-align: center;
+}
+
+.ob-error-big {
+    font-size: 0.88rem;
+    line-height: 1.75;
+}
+
+.ob-error-big code {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    color: #f0c060;
+}
+
+/* ── Ready / disconnected banner ─────────────────────────────────────────── */
+
+.ob-ready-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #4fe3ff;
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.6);
+}
+
+.ob-ready-banner.ob-disconnected {
+    color: rgba(255, 120, 90, 0.9);
+    text-shadow: 0 0 18px rgba(255, 80, 60, 0.4);
+}
+
+.ob-ready-icon { font-size: 1.3rem; }
+
+/* ── Player list ─────────────────────────────────────────────────────────── */
+
+.ob-player-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.ob-player {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ob-faction-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ob-p1 { color: rgba(255, 200, 140, 0.9); }
+.ob-p1 .ob-faction-dot {
+    background: #e07840;
+    box-shadow: 0 0 8px rgba(224, 120, 64, 0.7);
+}
+
+.ob-p2 { color: rgba(140, 210, 255, 0.9); }
+.ob-p2 .ob-faction-dot {
+    background: #40b8ff;
+    box-shadow: 0 0 8px rgba(64, 184, 255, 0.7);
+}
+
+/* ── Coming-soon note ────────────────────────────────────────────────────── */
+
+.ob-coming-soon {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.7rem;
+    color: rgba(160, 200, 220, 0.35);
+    letter-spacing: 0.08em;
+    text-align: center;
+    margin: 0;
+}
+
+/* ── Back link ───────────────────────────────────────────────────────────── */
+
+.ob-back-link {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 0.72rem;
+    color: rgba(160, 200, 220, 0.45);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    margin-top: 0.4rem;
+    transition: color 0.2s ease;
+}
+
+.ob-back-link:hover { color: rgba(79, 227, 255, 0.7); }
+
+/* ── Name-input error state ───────────────────────────────────────────────── */
+
+.ob-input.ob-input-error {
+    border-color: rgba(255, 100, 80, 0.75);
+    box-shadow: 0 0 12px rgba(255, 80, 60, 0.25);
+}
+
+/* ── Online waiting overlay (injected by OnlineGameController) ───────────── */
+
+.online-waiting-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.5rem;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(79, 227, 255, 0.08), transparent 60%),
+        linear-gradient(135deg, #04080f, #0a1a2e 55%, #060f1c);
+    color: var(--ink);
+    font-family: var(--logo-font, "Orbitron", sans-serif);
+    text-align: center;
+    padding: 2rem;
+}
+
+.ogc-wait-title {
+    font-size: clamp(1.4rem, 4vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #4fe3ff;
+    text-shadow: 0 0 28px rgba(79, 227, 255, 0.6);
+}
+
+.ogc-wait-sub {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: clamp(0.78rem, 1.5vw, 1rem);
+    color: rgba(200, 230, 255, 0.65);
+    letter-spacing: 0.06em;
+}
+
+.ogc-pulse-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #4fe3ff;
+    box-shadow: 0 0 16px rgba(79, 227, 255, 0.7);
+    animation: ogc-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ogc-pulse {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.6); }
+}

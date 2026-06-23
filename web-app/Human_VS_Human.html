@@ -11,6 +11,10 @@
 <link rel="stylesheet" href="Human_VS_Human.css?v=14">
 <link rel="icon" href="./assets/favicon.png">
 <script type="module" src="Human_VS_Human.js?v=14"></script>
+<!-- socket.io client (served by Express; 404 is harmless in local/file mode) -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Online game adapter — activates only when sessionStorage has online_session -->
+<script type="module" src="./OnlineGameController.js"></script>
 </head>
 <body class="intro-phase battle-initializing">
 
@@ -55,7 +59,7 @@
     </div>
 </div>
 
-<a href="./index.html" class="nav-home-btn" title="Return to Menu">&larr; MENU</a>
+<a href="./multiplayer.html" class="nav-home-btn" title="Return to Menu">&larr; MENU</a>
 
 <header>
     <h1>

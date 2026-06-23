@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-gb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Battleship — 2 Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="Human_VS_Human.css?v=14">
+<link rel="stylesheet" href="Human_VS_BOT.css?v=14">
+<style>
+    /* ── Connection overlay (mirrors #difficulty_overlay layout) ── */
+    #connection_overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(1.2rem, 3.5vh, 2.6rem);
+        color: var(--ink);
+        font-family: var(--body-font-family);
+        background:
+            radial-gradient(circle at 50% 28%, rgba(79, 227, 255, 0.10), transparent 60%),
+            linear-gradient(135deg, #05080f, #0a1e2e 55%, #0e1c2a);
+    }
+
+    /* Card accent colours for the two connection options */
+    .conn-local  .diff-name { color: #e07840; text-shadow: 0 0 18px rgba(224, 120, 64, 0.55); }
+    .conn-online .diff-name { color: #4fe3ff; text-shadow: 0 0 18px rgba(79, 227, 255, 0.55); }
+</style>
+</head>
+<body>
+
+<a href="./index.html" class="nav-home-btn" title="Back to Menu">&larr; MENU</a>
+
+<div id="connection_overlay">
+    <h1 class="diff-heading">2 Player</h1>
+    <div class="diff-sub">Swipe or use the arrows to choose</div>
+
+    <div class="diff-carousel" id="conn_carousel">
+        <div class="diff-track" id="conn_track">
+            <div class="diff-card conn-local">
+                <div class="diff-emoji">🖥️</div>
+                <div class="diff-name">Same Device</div>
+                <div class="diff-desc">Your friend is beside you? Play on this device.</div>
+            </div>
+            <div class="diff-card conn-online">
+                <div class="diff-emoji">📡</div>
+                <div class="diff-name">Online</div>
+                <div class="diff-desc">Your friend is online? Connect via room code.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="diff-controls">
+        <button class="diff-arrow" id="conn_prev" aria-label="Previous option">&#8249;</button>
+        <div class="diff-dots" id="conn_dots"></div>
+        <button class="diff-arrow" id="conn_next" aria-label="Next option">&#8250;</button>
+    </div>
+
+    <button class="diff-start save-turn-button is-ready" id="conn_start">Play</button>
+</div>
+
+<script>
+    const HREFS = ["./Human_VS_Human.html", "./online.html"];
+
+    const track    = document.getElementById("conn_track");
+    const dots_div = document.getElementById("conn_dots");
+    const prev_btn = document.getElementById("conn_prev");
+    const next_btn = document.getElementById("conn_next");
+    const start_btn = document.getElementById("conn_start");
+    const cards    = Array.from(track.children);
+
+    let index = 0;
+
+    cards.forEach(function () {
+        const dot = document.createElement("div");
+        dot.className = "diff-dot";
+        dots_div.append(dot);
+    });
+    const dots = Array.from(dots_div.children);
+
+    const render = function () {
+        track.style.transform = "translateX(" + (-index * 100) + "%)";
+        cards.forEach(function (card, i) {
+            card.classList.toggle("is-focus", i === index);
+        });
+        dots.forEach(function (dot, i) {
+            dot.classList.toggle("is-active", i === index);
+        });
+    };
+
+    const go = function (next_index) {
+        index = Math.max(0, Math.min(cards.length - 1, next_index));
+        render();
+    };
+
+    prev_btn.onclick = function () { go(index - 1); };
+    next_btn.onclick = function () { go(index + 1); };
+    dots.forEach(function (dot, i) {
+        dot.onclick = function () { go(i); };
+    });
+
+    // Drag / swipe support
+    let drag_x = null;
+    const carousel = document.getElementById("conn_carousel");
+    carousel.addEventListener("pointerdown", function (e) { drag_x = e.clientX; });
+    window.addEventListener("pointerup", function (e) {
+        if (drag_x === null) { return; }
+        const dx = e.clientX - drag_x;
+        drag_x = null;
+        if (dx < -40) { go(index + 1); }
+        else if (dx > 40) { go(index - 1); }
+    });
+
+    start_btn.onclick = function () {
+        window.location.href = HREFS[index];
+    };
+
+    render();
+</script>
+</body>
+</html>

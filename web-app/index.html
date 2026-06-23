@@ -46,10 +46,10 @@
             <span class="sweep-layer" aria-hidden="true"></span>
         </a>
 
-        <a href="./Human_VS_Human.html" id="multiplayer" class="mode-panel panel-p2">
+        <a href="./multiplayer.html" id="multiplayer" class="mode-panel panel-p2">
             <img src="./assets/2 Player mode selection pic.png"
                  class="mode-img"
-                 alt="Two Players — Play Against a Friend. Two commanders, one device.">
+                 alt="Two Players — Play Against a Friend. Same device or online.">
             <span class="scan-border" aria-hidden="true"></span>
             <span class="sweep-layer" aria-hidden="true"></span>
         </a>
@@ -66,13 +66,9 @@
 <div class="launch-overlay" aria-hidden="true"></div>
 
 <script>
-    // Selecting a mode feels like launching a mission; links still work
-    // normally (and with keyboard / no-JS) for accessibility + routing.
     document.querySelectorAll(".mode-panel").forEach(function (panel) {
         panel.addEventListener("click", function (event) {
-            if (event.metaKey || event.ctrlKey || event.shiftKey) {
-                return;
-            }
+            if (event.metaKey || event.ctrlKey || event.shiftKey) { return; }
             event.preventDefault();
             const href = panel.getAttribute("href");
             document.body.classList.add("launching");
@@ -80,9 +76,7 @@
                 panel.classList.contains("panel-p1") ? "launch-p1" : "launch-p2"
             );
             panel.classList.add("is-launching");
-            setTimeout(function () {
-                window.location.href = href;
-            }, 700);
+            setTimeout(function () { window.location.href = href; }, 700);
         });
     });
 </script>

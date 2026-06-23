@@ -1369,6 +1369,10 @@ body.battle-initializing #center_control,
 body.battle-initializing .nav-home-btn {
     visibility: hidden !important;
 }
+/* Show the button on the name-entry screen (intro-phase runs before battle starts) */
+body.intro-phase .nav-home-btn {
+    visibility: visible !important;
+}
 
 .countdown-overlay {
     flex-direction: column;
@@ -2922,7 +2926,7 @@ body.intro-phase main {
     position: fixed;
     top: 1rem;
     left: 1.2rem;
-    z-index: 110000;
+    z-index: 130000;
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
