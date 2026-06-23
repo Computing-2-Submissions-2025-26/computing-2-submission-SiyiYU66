@@ -57,7 +57,7 @@ const show_panel = function (name) {
 };
 
 const set_hud = function (text) {
-    hud_status.textContent = text;
+    if (hud_status) { hud_status.textContent = text; }
 };
 
 // ── Socket events ─────────────────────────────────────────────────────────────
@@ -85,7 +85,15 @@ socket.on("room_joined", function (data) {
 
 socket.on("both_connected", function () {
     const faction = my_seat === 0 ? "ORANGE FACTION · P1" : "BLUE FACTION · P2";
-    if (naming_faction) { naming_faction.textContent = "YOU ARE: " + faction; }
+    const panel_naming = document.getElementById("panel-naming");
+    if (panel_naming) {
+        panel_naming.classList.remove("faction-p1", "faction-p2");
+        panel_naming.classList.add(my_seat === 0 ? "faction-p1" : "faction-p2");
+    }
+    if (naming_faction) {
+        naming_faction.textContent = "YOU ARE: " + faction;
+        naming_faction.className = "ob-label " + (my_seat === 0 ? "ob-faction-p1" : "ob-faction-p2");
+    }
     if (naming_status)  { naming_status.textContent = "Waiting for opponent to enter their name…"; }
     show_panel("naming");
     set_hud("CONNECTED — ENTER NAME");

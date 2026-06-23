@@ -13,7 +13,6 @@
 <body>
 
 <div class="bg-cinematic" aria-hidden="true">
-    <img src="./assets/background pic.png" alt="" class="bg-cinematic-img">
     <div class="bg-cinematic-vignette"></div>
 </div>
 <div class="bg-embers" aria-hidden="true">
@@ -21,12 +20,9 @@
     <span></span><span></span><span></span><span></span>
 </div>
 
-<div class="hud-strip hud-top">
-    <span class="hud-tag">COMMAND INTERFACE · V.25.06</span>
-    <span class="hud-tag">ONLINE THEATRE ·
-        <b id="conn-status-hud" class="hud-online">CONNECTING...</b>
-    </span>
-</div>
+<b id="conn-status-hud" style="display:none" aria-hidden="true"></b>
+
+<a href="./index.html" class="nav-home-btn" title="Return to Menu">&larr; MENU</a>
 
 <main class="online-lobby">
     <header class="logo-block">
@@ -57,7 +53,6 @@
         </div>
         <p id="join-error" class="ob-error" aria-live="polite"></p>
 
-        <a href="./index.html" class="ob-back-link">← BACK TO MENU</a>
     </section>
 
     <!-- Panel: Waiting (host created room, waiting for opponent) -->
@@ -83,19 +78,17 @@
         </div>
         <p id="naming-faction" class="ob-label"></p>
         <p class="ob-hint" style="margin-bottom:0.4rem">Enter your commander name:</p>
-        <div class="ob-join-row">
-            <input
-                id="input-name"
-                class="ob-input"
-                type="text"
-                maxlength="14"
-                placeholder="YOUR NAME"
-                autocomplete="off"
-                spellcheck="false"
-                aria-label="Your commander name"
-            >
-            <button id="btn-ready" class="ob-btn ob-btn-primary">READY</button>
-        </div>
+        <input
+            id="input-name"
+            class="ob-input ob-input-name"
+            type="text"
+            maxlength="14"
+            placeholder="YOUR NAME"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Your commander name"
+        >
+        <button id="btn-ready" class="ob-btn ob-btn-primary">READY</button>
         <p id="naming-status" class="ob-hint" aria-live="polite" style="margin-top:0.6rem"></p>
         <button id="btn-leave" class="ob-btn ob-btn-ghost ob-btn-small" style="margin-top:1rem">LEAVE ROOM</button>
     </section>

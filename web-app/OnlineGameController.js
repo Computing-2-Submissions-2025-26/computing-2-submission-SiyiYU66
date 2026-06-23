@@ -69,9 +69,7 @@ socket.on("opponent_left", function () {
 // Phase 2B-1: both players have confirmed deployment; battle can begin.
 socket.on("battle_ready", function () {
     placement_obs.disconnect();
-    const waiting = document.getElementById("ogc-waiting-overlay");
-    if (waiting) { waiting.remove(); }
-    show_battle_stations_msg();
+    show_combat_start();
 });
 
 // ── 4. Pre-fill name overlay and auto-submit ───────────────────────────────────
@@ -91,43 +89,64 @@ if (ns_1 && ns_2 && ns_btn) {
     ns_btn.click();
 }
 
-// ── 5. Guest (seat 1) bypass — jump straight to placing-player-2 ──────────────
+// ── 5. Bypass all same-device handoff overlays (both seats) ──────────────────
 //
-// The local flow is: countdown → "HIDE YOUR SCREEN" (P1) → placing-player-1 →
-// pass screen → placing-player-2.
-// Online players are on separate devices, so the guest needs to skip P1's
-// placement entirely.  We:
-//   a) auto-click the "HIDE YOUR SCREEN" overlay's GOT IT button, and
-//   b) immediately switch the body class from placing-player-1 to placing-player-2.
-// The CSS already makes placing-player-2 show main (P2's board) and hide aside.
+// "HIDE YOUR SCREEN" is designed for local same-device play where both players
+// share one screen.  Online players are on separate devices, so this overlay
+// must never block either player.  A MutationObserver fires for BOTH seats and
+// auto-dismisses it the instant HVH.js creates it.
+//
+// "PASS THE SCREEN" and the swap animation are already suppressed because OGC.js
+// intercepts the Confirm Deployment button (capture phase + stopImmediatePropagation).
 
-if (seat === 1) {
-
-    // (a) Watch body's direct children for a transition overlay.
-    const hide_obs = new MutationObserver(function (mutations) {
-        for (const m of mutations) {
-            for (const node of m.addedNodes) {
-                if (node.nodeType !== 1) { continue; }
-                if (!node.classList.contains("screen-overlay")) { continue; }
-                const title = node.querySelector(".ts-title");
-                if (title && title.textContent.includes("HIDE")) {
-                    const btn = node.querySelector(".ts-button");
-                    if (btn) {
-                        hide_obs.disconnect();
-                        btn.click();   // dismiss the overlay immediately
-                    }
+const hide_obs = new MutationObserver(function (mutations) {
+    for (const m of mutations) {
+        for (const node of m.addedNodes) {
+            if (node.nodeType !== 1) { continue; }
+            if (!node.classList.contains("screen-overlay")) { continue; }
+            const title = node.querySelector(".ts-title");
+            if (title && title.textContent.includes("HIDE")) {
+                const btn = node.querySelector(".ts-button");
+                if (btn) {
+                    hide_obs.disconnect();
+                    btn.click();   // dismiss immediately — no handoff needed online
                 }
             }
         }
-    });
-    hide_obs.observe(document.body, {childList: true});
+    }
+});
+hide_obs.observe(document.body, {childList: true});
 
-    // (b) Switch phase as soon as body gets placing-player-1.
+// ── 5b. Guest (seat 1) — jump straight to placing-player-2 ───────────────────
+//
+// After the HIDE overlay is auto-dismissed its callback sets placing-player-1.
+// For seat 1 that is wrong — P2's board is in <main> (placing-player-2).
+// Detect the class change and flip it immediately, then reveal P2's elements
+// which start as visibility:hidden by default CSS (the local pass-screen
+// callback that normally shows them never runs in online mode).
+
+if (seat === 1) {
     const phase_obs = new MutationObserver(function () {
         if (document.body.classList.contains("placing-player-1")) {
             phase_obs.disconnect();
             document.body.classList.remove("placing-player-1");
             document.body.classList.add("placing-player-2");
+            // Mirror what HVH.js's pass-screen callback does in local play:
+            // hide board 1 elements so HVH.js's keyboard handler correctly
+            // identifies board index 1 as active (it checks
+            // game_board_1.style.visibility === "hidden" to pick the board).
+            const gb1 = document.getElementById("game_board_1");
+            const s1  = document.getElementById("ships_1");
+            const bc1 = document.getElementById("button_container_1");
+            if (gb1) { gb1.style.visibility = "hidden"; }
+            if (s1)  { s1.style.visibility  = "hidden"; }
+            if (bc1) { bc1.style.visibility = "hidden"; }
+            const gb2 = document.getElementById("game_board_2");
+            const s2  = document.getElementById("ships_2");
+            const bc2 = document.getElementById("button_container_2");
+            if (gb2) { gb2.style.visibility = "visible"; }
+            if (s2)  { s2.style.visibility  = "visible"; }
+            if (bc2) { bc2.style.visibility = "visible"; }
         }
     });
     phase_obs.observe(document.body, {attributes: true, attributeFilter: ["class"]});
@@ -241,7 +260,6 @@ if (my_board_el && my_ships_el) {
 // ── 7. UI helpers ──────────────────────────────────────────────────────────────
 
 function show_waiting_overlay () {
-    // Remove any previous instance.
     const prev = document.getElementById("ogc-waiting-overlay");
     if (prev) { prev.remove(); }
 
@@ -249,19 +267,31 @@ function show_waiting_overlay () {
     overlay.id = "ogc-waiting-overlay";
     overlay.className = "online-waiting-overlay";
     overlay.innerHTML =
+        "<div class='ogc-particles'></div>" +
+        "<div class='ogc-radar'><div class='ogc-radar-sweep'></div></div>" +
         "<div class='ogc-wait-title'>FLEET DEPLOYED</div>" +
-        "<div class='ogc-pulse-dot'></div>" +
-        "<div class='ogc-wait-sub'>Waiting for opponent to finish deploying…</div>";
+        "<div class='ogc-wait-sub'>Waiting for opposing commander…</div>";
     document.body.append(overlay);
 }
 
-function show_battle_stations_msg () {
+function show_combat_start () {
+    // Remove the "waiting" overlay if still present.
+    const prev = document.getElementById("ogc-waiting-overlay");
+    if (prev) { prev.remove(); }
+
     const overlay = document.createElement("div");
-    overlay.className = "online-waiting-overlay";
+    overlay.className = "online-waiting-overlay ogc-combat-ready";
     overlay.innerHTML =
-        "<div class='ogc-wait-title'>BATTLE STATIONS</div>" +
-        "<div class='ogc-wait-sub'>Both fleets deployed — commencing battle…</div>";
+        "<div class='ogc-particles'></div>" +
+        "<div class='ogc-wait-title'>DEPLOYMENT CONFIRMED</div>" +
+        "<div class='ogc-combat-sub'>ENTERING COMBAT THEATRE</div>";
     document.body.append(overlay);
+
+    // Hold for 1.5 s, then fade out over 0.45 s.
+    setTimeout(function () {
+        overlay.classList.add("ogc-fade-out");
+        setTimeout(function () { overlay.remove(); }, 450);
+    }, 1500);
 }
 
 function show_ogc_error (msg, detail) {
