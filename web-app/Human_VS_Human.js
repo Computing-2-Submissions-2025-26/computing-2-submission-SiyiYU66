@@ -2324,12 +2324,17 @@ const update_battle_controls = function () {
         }
         // Ghost Move: confirm first, warn the opponent, THEN reveal ships.
         show_ghost_confirm(active_player_idx, function () {
-            show_ghost_handoff(active_player_idx, function () {
+            const proceed = function () {
                 ghost_preview_direction = null;
                 current_action_mode = "ghost_select";
                 update_display();
                 update_battle_controls();
-            });
+            };
+            if (window.hvh_skip_ghost_handoff) {
+                proceed();
+            } else {
+                show_ghost_handoff(active_player_idx, proceed);
+            }
         });
     };
     btn_row.append(ghost_btn);
@@ -2638,4 +2643,93 @@ window.hvh_ensure_sonar_mode = function () {
     ghost_selected_ship = null;
     ghost_preview_direction = null;
     ghost_relocate_anchor = null;
+};
+
+// ── Phase 2C-3 online ghost hooks ────────────────────────────────────────────
+
+// Returns a snapshot of the current ghost UI state so OGC can read private
+// closure variables without direct access.
+window.hvh_get_ghost_params = function () {
+    console.log("[HVH GHOST] hvh_get_ghost_params called", {
+        ship_name:   ghost_selected_ship,
+        direction:   ghost_preview_direction,
+        distance:    ghost_preview_distance,
+        orientation: ghost_relocate_orientation,
+        mode:        current_action_mode
+    });
+    return {
+        ship_name:   ghost_selected_ship,
+        direction:   ghost_preview_direction,
+        distance:    ghost_preview_distance,
+        orientation: ghost_relocate_orientation,
+        mode:        current_action_mode
+    };
+};
+
+// Called by OGC after receiving ghost_slide_result from the server.
+// Applies the server-confirmed board mutation and starts the 800 ms turn-end
+// timer.  show_flash is true only for the mover — the opponent never sees the
+// landing flash, preserving stealth.
+window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_flash) {
+    console.log("[HVH GHOST] hvh_commit_ghost_slide called", {
+        ship_name, direction, distance, show_flash
+    });
+    const active_player_idx = next_player % 2;
+    const own_board_idx     = 1 - active_player_idx;
+
+    record_ghost_scars(own_board_idx, ship_name);
+    game_state[own_board_idx] = Battleship.ghost_slide(
+        game_state[own_board_idx], ship_name, direction, distance
+    );
+    ghost_moves_left[active_player_idx] -= 1;
+    ghost_preview_direction = null;
+    ghost_preview_distance  = 1;
+
+    board_locked = true;
+    document.body.classList.add("board-locked");
+    update_display();
+    if (show_flash) {
+        flash_ghost_landing(active_player_idx, ship_name);
+    }
+    update_battle_controls();
+    setTimeout(function () {
+        board_locked = false;
+        document.body.classList.remove("board-locked");
+        end_current_turn();
+    }, 800);
+};
+
+// Called by OGC after receiving ghost_relocate_result from the server.
+// No ghost_scars recording — intact ships leave no hit-cell trace behind.
+window.hvh_commit_ghost_relocate = function (ship_name, anchor_col, anchor_row, orientation, show_flash) {
+    console.log("[HVH GHOST] hvh_commit_ghost_relocate called", {
+        ship_name, anchor_col, anchor_row, orientation, show_flash
+    });
+    const active_player_idx = next_player % 2;
+    const own_board_idx     = 1 - active_player_idx;
+
+    const ship_len = Battleship.ship_cells_by_name(
+        game_state[own_board_idx], ship_name
+    ).length;
+    const cells = Battleship.relocate_footprint(
+        [anchor_col, anchor_row], ship_len, orientation
+    );
+    game_state[own_board_idx] = Battleship.apply_ghost_relocate(
+        game_state[own_board_idx], ship_name, cells
+    );
+    ghost_moves_left[active_player_idx] -= 1;
+    ghost_relocate_anchor = null;
+
+    board_locked = true;
+    document.body.classList.add("board-locked");
+    update_display();
+    if (show_flash) {
+        flash_ghost_landing(active_player_idx, ship_name);
+    }
+    update_battle_controls();
+    setTimeout(function () {
+        board_locked = false;
+        document.body.classList.remove("board-locked");
+        end_current_turn();
+    }, 800);
 };
