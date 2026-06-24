@@ -58,6 +58,7 @@ io.on("connection", function (socket) {
             started: false,
             in_battle: false,
             turn: 0,
+            sonar_scans_left: [2, 2],
             boards: [Battleship.empty_board(10, 10), Battleship.empty_board(10, 10)]
         });
         socket.join(room_code);
@@ -231,6 +232,41 @@ io.on("connection", function (socket) {
             `${sunk_ship ? " SUNK:" + sunk_ship : ""}` +
             `${won ? " — WON" : ""}`
         );
+    });
+
+    // ── Phase 2C-2: sonar scan ────────────────────────────────────────────────
+
+    socket.on("sonar", function (data) {
+        const room = rooms.get(room_code);
+        if (!room || seat === null || !room.in_battle) { return; }
+        if (room.turn % 2 !== seat) {
+            console.log(`[sonar] ${room_code} seat ${seat} REJECTED — not their turn (turn=${room.turn})`);
+            return;
+        }
+        if (room.sonar_scans_left[seat] <= 0) {
+            console.log(`[sonar] ${room_code} seat ${seat} REJECTED — no scans left`);
+            return;
+        }
+
+        const col = Number(data && data.col);
+        const row = Number(data && data.row);
+        if (!Number.isFinite(col) || col < 0 || col > 9) { return; }
+        if (!Number.isFinite(row) || row < 0 || row > 9) { return; }
+
+        room.sonar_scans_left[seat] -= 1;
+        room.turn += 1;
+
+        console.log(
+            `[sonar] ${room_code} seat ${seat} scanned (${col},${row})` +
+            ` scans_left=[${room.sonar_scans_left}] next_turn=${room.turn}`
+        );
+
+        io.to(room_code).emit("sonar_result", {
+            shooter_seat: seat,
+            col,
+            row,
+            next_turn: room.turn
+        });
     });
 
     // ── Disconnect ────────────────────────────────────────────────────────────

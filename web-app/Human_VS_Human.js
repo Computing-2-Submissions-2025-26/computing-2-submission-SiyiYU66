@@ -2673,3 +2673,11 @@ window.hvh_ensure_shoot_mode = function () {
     ghost_preview_direction = null;
     ghost_relocate_anchor = null;
 };
+
+window.hvh_ensure_sonar_mode = function () {
+    console.log("[HVH] hvh_ensure_sonar_mode called, current_action_mode was:", current_action_mode);
+    current_action_mode = "sonar";
+    ghost_selected_ship = null;
+    ghost_preview_direction = null;
+    ghost_relocate_anchor = null;
+};

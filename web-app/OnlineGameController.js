@@ -254,14 +254,30 @@ function init_online_shooting () {
     );
 
     // MY attack board: intercept unshot-cell clicks and route via server.
+    // Phase 2C-2: sonar branch precedes shoot branch.  Mode is detected via DOM
+    // (".sonar-action.is-active") rather than reading HVH.js's private
+    // current_action_mode — this prevents the opponent from accidentally emitting
+    // "sonar" during the 3500 ms sonar display window (when the opponent's
+    // current_action_mode would be "sonar" due to hvh_ensure_sonar_mode, but
+    // their sonar button has no .is-active class because they never clicked it).
     if (my_attack_el) {
         my_attack_el.addEventListener("click", function (event) {
-            if (bypass_intercept) { return; }   // allow forced shot_result replays
-            if (!my_turn) { return; }            // HVH.js would also reject this
+            if (bypass_intercept) { return; }   // allow forced sonar/shot replays
+            if (!my_turn) { return; }
             const td = event.target.closest("td");
             if (!td || td.className !== "unshot") { return; }
             const tr = td.closest("tr");
             if (!tr) { return; }
+
+            const is_sonar = !!document.querySelector(".sonar-action.is-active");
+            if (is_sonar) {
+                console.log("[OGC] sonar intercept — emitting sonar",
+                    {col: td.cellIndex, row: tr.rowIndex});
+                event.stopImmediatePropagation();
+                socket.emit("sonar", {col: td.cellIndex, row: tr.rowIndex});
+                return;
+            }
+
             event.stopImmediatePropagation();
             socket.emit("shoot", {col: td.cellIndex, row: tr.rowIndex});
         }, true /* capture */);
@@ -275,14 +291,12 @@ function init_online_shooting () {
         }, true /* capture */);
     }
 
-    // Keep sonar + ghost buttons disabled so current_action_mode stays "shoot".
-    // HVH.js's onclick guard requires current_action_mode === "shoot" to fire.
+    // Keep ghost buttons disabled (not synced in Phase 2C-2).
+    // Sonar is now live — its button is managed by HVH.js's update_battle_controls.
     const center_el = document.getElementById("center_control");
     if (center_el) {
         const disable_extras = function () {
-            center_el.querySelectorAll(
-                ".sonar-action, .ghost-action"
-            ).forEach(function (btn) {
+            center_el.querySelectorAll(".ghost-action").forEach(function (btn) {
                 btn.disabled = true;
                 btn.title = "Not available in online mode";
             });
@@ -314,6 +328,60 @@ function init_online_shooting () {
 
         // Sync whose turn it is from the server's authoritative counter.
         my_turn = (data.next_turn % 2 === seat);
+    });
+
+    // ── Phase 2C-2: sonar result — applies to BOTH clients for every sonar scan.
+    // Mirrors shot_result exactly: find the board cell, force HVH.js into sonar
+    // mode, replay the click so HVH.js runs its full sonar path (overlays,
+    // count label, 3500 ms display timer, end_current_turn).
+    socket.on("sonar_result", function (data) {
+        console.log("[OGC] sonar_result received", {
+            shooter_seat: data.shooter_seat,
+            col: data.col,
+            row: data.row,
+            next_turn: data.next_turn,
+            my_seat: seat
+        });
+
+        const board_id = data.shooter_seat === 0 ? "game_board_1" : "game_board_2";
+        const board_el = document.getElementById(board_id);
+        if (!board_el) {
+            console.error("[OGC] sonar_result: board element not found", board_id);
+            return;
+        }
+        const trs = board_el.querySelectorAll("tr");
+        if (!trs[data.row]) {
+            console.error("[OGC] sonar_result: row not found", data.row);
+            return;
+        }
+        const td = trs[data.row].querySelectorAll("td")[data.col];
+        if (!td) {
+            console.error("[OGC] sonar_result: cell not found", data.col, data.row);
+            return;
+        }
+
+        // Set current_action_mode = "sonar" so HVH.js routes td.onclick to the
+        // sonar branch.  Uses the same hook pattern as hvh_ensure_shoot_mode.
+        if (window.hvh_ensure_sonar_mode) {
+            window.hvh_ensure_sonar_mode();
+        } else {
+            console.error("[OGC] hvh_ensure_sonar_mode is not defined");
+            return;
+        }
+
+        // Force the sonar through HVH.js's normal click path so overlays,
+        // sonar_scans_left decrement, display timer and end_current_turn all run
+        // identically on both clients.
+        console.log("[OGC] sonar_result: replaying click on", board_id,
+            `(${data.col}, ${data.row})`);
+        bypass_intercept = true;
+        td.click();
+        bypass_intercept = false;
+
+        // Sync whose turn it is from the server's authoritative counter.
+        my_turn = (data.next_turn % 2 === seat);
+        console.log("[OGC] sonar_result: my_turn =", my_turn,
+            `(next_turn=${data.next_turn} seat=${seat})`);
     });
 }
 
