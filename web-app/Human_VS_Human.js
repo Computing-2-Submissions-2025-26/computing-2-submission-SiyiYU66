@@ -2670,9 +2670,9 @@ window.hvh_get_ghost_params = function () {
 // Applies the server-confirmed board mutation and starts the 800 ms turn-end
 // timer.  show_flash is true only for the mover — the opponent never sees the
 // landing flash, preserving stealth.
-window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_flash) {
+window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_flash, server_moves_left) {
     console.log("[HVH GHOST] hvh_commit_ghost_slide called", {
-        ship_name, direction, distance, show_flash
+        ship_name, direction, distance, show_flash, server_moves_left
     });
     const active_player_idx = next_player % 2;
     const own_board_idx     = 1 - active_player_idx;
@@ -2681,7 +2681,12 @@ window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_f
     game_state[own_board_idx] = Battleship.ghost_slide(
         game_state[own_board_idx], ship_name, direction, distance
     );
-    ghost_moves_left[active_player_idx] -= 1;
+    if (server_moves_left) {
+        ghost_moves_left[0] = server_moves_left[0];
+        ghost_moves_left[1] = server_moves_left[1];
+    } else {
+        ghost_moves_left[active_player_idx] -= 1;
+    }
     ghost_preview_direction = null;
     ghost_preview_distance  = 1;
 
@@ -2701,9 +2706,9 @@ window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_f
 
 // Called by OGC after receiving ghost_relocate_result from the server.
 // No ghost_scars recording — intact ships leave no hit-cell trace behind.
-window.hvh_commit_ghost_relocate = function (ship_name, anchor_col, anchor_row, orientation, show_flash) {
+window.hvh_commit_ghost_relocate = function (ship_name, anchor_col, anchor_row, orientation, show_flash, server_moves_left) {
     console.log("[HVH GHOST] hvh_commit_ghost_relocate called", {
-        ship_name, anchor_col, anchor_row, orientation, show_flash
+        ship_name, anchor_col, anchor_row, orientation, show_flash, server_moves_left
     });
     const active_player_idx = next_player % 2;
     const own_board_idx     = 1 - active_player_idx;
@@ -2717,7 +2722,12 @@ window.hvh_commit_ghost_relocate = function (ship_name, anchor_col, anchor_row, 
     game_state[own_board_idx] = Battleship.apply_ghost_relocate(
         game_state[own_board_idx], ship_name, cells
     );
-    ghost_moves_left[active_player_idx] -= 1;
+    if (server_moves_left) {
+        ghost_moves_left[0] = server_moves_left[0];
+        ghost_moves_left[1] = server_moves_left[1];
+    } else {
+        ghost_moves_left[active_player_idx] -= 1;
+    }
     ghost_relocate_anchor = null;
 
     board_locked = true;

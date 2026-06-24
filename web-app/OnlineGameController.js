@@ -218,6 +218,7 @@ socket.on("battle_ready", function (data) {
     });
 
     // Inject server boards and trigger HVH.js battle-phase setup.
+    window.hvh_skip_ghost_handoff = true;   // suppress "look away" overlay on separate devices
     bypass_deploy_intercept = true;
     if (window.hvh_online_start_battle) {
         window.hvh_online_start_battle(data.boards);
@@ -269,27 +270,77 @@ function init_online_shooting () {
         }, true /* capture */);
     }
 
-    // OPPONENT's board: block all human clicks; allow bypass_intercept forced clicks.
+    // OPPONENT's board (= this player's own fleet board, also used for ghost interaction).
+    // Three branches: bypass replays, ghost ship-selection pass-through,
+    // ghost_relocate placement intercept, default block.
     if (opp_attack_el) {
         opp_attack_el.addEventListener("click", function (event) {
+            // Branch 1: allow forced replays through (shot_result / sonar_result).
             if (bypass_intercept) { return; }
+
+            const is_ghost_active = !!document.querySelector(".ghost-action.is-active");
+            const is_relocate     = !!document.querySelector(".ghost-relocate-controls");
+
+            // Branch 2: ghost_select / ghost_move ship selection — pass through to HVH.js.
+            if (is_ghost_active && !is_relocate) { return; }
+
+            // Branch 3: ghost_relocate placement — intercept and emit to server.
+            if (is_relocate && my_turn) {
+                const td = event.target.closest("td");
+                if (!td) { event.stopImmediatePropagation(); return; }
+                const tr = td.closest("tr");
+                if (!tr) { event.stopImmediatePropagation(); return; }
+                const params = window.hvh_get_ghost_params
+                    ? window.hvh_get_ghost_params() : null;
+                if (!params || !params.ship_name) {
+                    event.stopImmediatePropagation(); return;
+                }
+                console.log("[OGC GHOST] ghost_relocate intercept", {
+                    ship_name:   params.ship_name,
+                    anchor_col:  td.cellIndex,
+                    anchor_row:  tr.rowIndex,
+                    orientation: params.orientation
+                });
+                event.stopImmediatePropagation();
+                socket.emit("ghost_relocate", {
+                    ship_name:   params.ship_name,
+                    anchor_col:  td.cellIndex,
+                    anchor_row:  tr.rowIndex,
+                    orientation: params.orientation
+                });
+                return;
+            }
+
+            // Default: block all other clicks on this board.
             event.stopImmediatePropagation();
         }, true /* capture */);
     }
 
-    // Keep ghost buttons disabled (not synced in Phase 2C-2).
-    // Sonar is now live — its button is managed by HVH.js's update_battle_controls.
+    // Ghost and Sonar are now live — buttons managed by HVH.js's update_battle_controls.
+    // Phase 2C-3: intercept ghost_slide confirm button via capture listener on center_el.
+    // The confirm button is recreated each render, so we listen on the stable parent.
     const center_el = document.getElementById("center_control");
     if (center_el) {
-        const disable_extras = function () {
-            center_el.querySelectorAll(".ghost-action").forEach(function (btn) {
-                btn.disabled = true;
-                btn.title = "Not available in online mode";
+        center_el.addEventListener("click", function (event) {
+            if (!my_turn) { return; }
+            const ghost_confirm = event.target.closest(".ghost-confirm-btn");
+            if (!ghost_confirm) { return; }
+            if (ghost_confirm.disabled) { return; }
+            const params = window.hvh_get_ghost_params
+                ? window.hvh_get_ghost_params() : null;
+            if (!params || !params.ship_name || !params.direction) { return; }
+            console.log("[OGC GHOST] ghost_slide intercept", {
+                ship_name: params.ship_name,
+                direction: params.direction,
+                distance:  params.distance
             });
-        };
-        disable_extras();
-        const controls_obs = new MutationObserver(disable_extras);
-        controls_obs.observe(center_el, {childList: true, subtree: true});
+            event.stopImmediatePropagation();
+            socket.emit("ghost_slide", {
+                ship_name: params.ship_name,
+                direction: params.direction,
+                distance:  params.distance
+            });
+        }, true /* capture */);
     }
 
     // Handle every shot result — applies to BOTH clients for every shot.
@@ -352,6 +403,34 @@ function init_online_shooting () {
         bypass_intercept = false;
 
         // Sync whose turn it is from the server's authoritative counter.
+        my_turn = (data.next_turn % 2 === seat);
+    });
+
+    // ── Phase 2C-3: ghost slide result ────────────────────────────────────────
+    // Called on BOTH clients after the server validates and applies ghost_slide.
+    // show_flash is true only for the mover — opponent gets false to preserve stealth.
+    socket.on("ghost_slide_result", function (data) {
+        console.log("[OGC GHOST] ghost_slide_result received", data);
+        const is_mover = (data.shooter_seat === seat);
+        if (window.hvh_commit_ghost_slide) {
+            window.hvh_commit_ghost_slide(
+                data.ship_name, data.direction, data.distance, is_mover
+            );
+        }
+        my_turn = (data.next_turn % 2 === seat);
+    });
+
+    // ── Phase 2C-3: ghost relocate result ─────────────────────────────────────
+    // Called on BOTH clients after the server validates and applies ghost_relocate.
+    socket.on("ghost_relocate_result", function (data) {
+        console.log("[OGC GHOST] ghost_relocate_result received", data);
+        const is_mover = (data.shooter_seat === seat);
+        if (window.hvh_commit_ghost_relocate) {
+            window.hvh_commit_ghost_relocate(
+                data.ship_name, data.anchor_col, data.anchor_row,
+                data.orientation, is_mover
+            );
+        }
         my_turn = (data.next_turn % 2 === seat);
     });
 }

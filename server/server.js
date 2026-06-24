@@ -324,7 +324,8 @@ io.on("connection", function (socket) {
             ship_name,
             direction,
             distance,
-            next_turn: room.turn
+            next_turn: room.turn,
+            ghost_moves_left: room.ghost_moves_left.slice()
         });
     });
 
@@ -386,7 +387,8 @@ io.on("connection", function (socket) {
             anchor_col,
             anchor_row,
             orientation,
-            next_turn: room.turn
+            next_turn: room.turn,
+            ghost_moves_left: room.ghost_moves_left.slice()
         });
     });
 
