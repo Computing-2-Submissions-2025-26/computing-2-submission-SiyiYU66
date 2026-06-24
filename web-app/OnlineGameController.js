@@ -219,6 +219,7 @@ socket.on("battle_ready", function (data) {
 
     // Inject server boards and trigger HVH.js battle-phase setup.
     window.hvh_skip_ghost_handoff = true;   // suppress "look away" overlay on separate devices
+    window.hvh_display_seat = seat;         // fix sonar/ghost count labels to show this player's own counts
     bypass_deploy_intercept = true;
     if (window.hvh_online_start_battle) {
         window.hvh_online_start_battle(data.boards);

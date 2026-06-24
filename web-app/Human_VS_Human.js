@@ -2123,6 +2123,9 @@ const fill_action_button = function (button, icon, title, desc, count) {
 
 const update_battle_controls = function () {
     const active_player_idx = next_player % 2;
+    const display_idx = (window.hvh_display_seat != null)
+        ? window.hvh_display_seat
+        : active_player_idx;
     const player_name = player_name_of(active_player_idx);
     const inactive_name = player_name_of(1 - active_player_idx);
 
@@ -2283,9 +2286,9 @@ const update_battle_controls = function () {
         "📡",
         "Sonar Scan",
         "Reveals ship count in 3×3 area",
-        sonar_scans_left[active_player_idx] + " left"
+        sonar_scans_left[display_idx] + " left"
     );
-    if (sonar_scans_left[active_player_idx] <= 0) sonar_btn.disabled = true;
+    if (sonar_scans_left[display_idx] <= 0) sonar_btn.disabled = true;
     sonar_btn.onclick = function () {
         current_action_mode = "sonar";
         ghost_selected_ship = null;
@@ -2305,9 +2308,9 @@ const update_battle_controls = function () {
         "👻",
         "Ghost Move",
         "Intact ships teleport · damaged ships escape 2 tiles",
-        ghost_moves_left[active_player_idx] + " left"
+        ghost_moves_left[display_idx] + " left"
     );
-    if (ghost_moves_left[active_player_idx] <= 0) ghost_btn.disabled = true;
+    if (ghost_moves_left[display_idx] <= 0) ghost_btn.disabled = true;
     ghost_btn.onclick = function () {
         ghost_preview_direction = null;
         ghost_preview_distance = 1;
