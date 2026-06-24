@@ -414,7 +414,7 @@ function init_online_shooting () {
         const is_mover = (data.shooter_seat === seat);
         if (window.hvh_commit_ghost_slide) {
             window.hvh_commit_ghost_slide(
-                data.ship_name, data.direction, data.distance, is_mover
+                data.ship_name, data.direction, data.distance, is_mover, data.ghost_moves_left
             );
         }
         my_turn = (data.next_turn % 2 === seat);
@@ -428,7 +428,7 @@ function init_online_shooting () {
         if (window.hvh_commit_ghost_relocate) {
             window.hvh_commit_ghost_relocate(
                 data.ship_name, data.anchor_col, data.anchor_row,
-                data.orientation, is_mover
+                data.orientation, is_mover, data.ghost_moves_left
             );
         }
         my_turn = (data.next_turn % 2 === seat);
