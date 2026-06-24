@@ -343,6 +343,24 @@ function init_online_shooting () {
         }, true /* capture */);
     }
 
+    // ── Turn lock: disable all center buttons when it's not this player's turn ─
+    // MutationObserver fires as a microtask after the full socket handler ends,
+    // so my_turn is already updated to its new value when enforce_turn_lock runs.
+    // Re-enable is implicit: update_battle_controls() always creates fresh button
+    // elements (enabled by default); when my_turn is true we return early and
+    // leave those new elements untouched.
+    const enforce_turn_lock = function () {
+        if (my_turn || !center_el) { return; }
+        center_el.querySelectorAll("button").forEach(function (btn) {
+            btn.disabled = true;
+        });
+    };
+    enforce_turn_lock();
+    if (center_el) {
+        const turn_lock_obs = new MutationObserver(enforce_turn_lock);
+        turn_lock_obs.observe(center_el, {childList: true, subtree: true});
+    }
+
     // Handle every shot result — applies to BOTH clients for every shot.
     socket.on("shot_result", function (data) {
         // data.shooter_seat === the game_board_index that was hit.
