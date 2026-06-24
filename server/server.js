@@ -56,6 +56,8 @@ io.on("connection", function (socket) {
             names:  [null, null],
             ready:  [false, false],
             started: false,
+            in_battle: false,
+            turn: 0,
             boards: [Battleship.empty_board(10, 10), Battleship.empty_board(10, 10)]
         });
         socket.join(room_code);
@@ -161,32 +163,104 @@ io.on("connection", function (socket) {
     socket.on("placement_done", function () {
         const room = rooms.get(room_code);
         if (!room || seat === null) { return; }
+        if (room.ready[seat]) {
+            console.log(`[room] ${room_code} seat ${seat} placement_done ignored (already ready)`);
+            return;
+        }
         room.ready[seat] = true;
         console.log(`[room] ${room_code} seat ${seat} placement done`);
         if (room.ready[0] && room.ready[1]) {
-            io.to(room_code).emit("battle_ready");
+            if (room.in_battle) {
+                console.log(`[room] ${room_code} battle_ready suppressed (already in_battle)`);
+                return;
+            }
+            room.in_battle = true;
+            const b0_ships = room.boards[0].flat().filter(function (c) { return c && c.ship; }).length;
+            const b1_ships = room.boards[1].flat().filter(function (c) { return c && c.ship; }).length;
+            console.log(`[room] ${room_code} — emitting battle_ready`, {
+                board0_ship_cells: b0_ships,
+                board1_ship_cells: b1_ships,
+                payload_keys: Object.keys({boards: room.boards})
+            });
+            io.to(room_code).emit("battle_ready", {boards: room.boards});
             console.log(`[room] ${room_code} — battle ready`);
         }
     });
 
+    // ── Phase 2C-1: standard-fire shot ───────────────────────────────────────
+
+    socket.on("shoot", function (data) {
+        const room = rooms.get(room_code);
+        if (!room || seat === null || !room.in_battle) { return; }
+        if (room.turn % 2 !== seat) { return; }
+
+        const col = Number(data && data.col);
+        const row = Number(data && data.row);
+        if (!Number.isFinite(col) || col < 0 || col > 9) { return; }
+        if (!Number.isFinite(row) || row < 0 || row > 9) { return; }
+
+        const enemy_board_idx = 1 - seat;
+        const enemy_board = room.boards[enemy_board_idx];
+        const target_cell = enemy_board[row] && enemy_board[row][col];
+        if (!target_cell || target_cell.shot) { return; }
+
+        const had_ship = Battleship.is_ship_here(target_cell);
+        const ship_name = had_ship ? target_cell.shipName : null;
+        const new_board = Battleship.shoot_cell(enemy_board, [col, row]);
+        room.boards[enemy_board_idx] = new_board;
+
+        const sunk_ship = (ship_name && Battleship.is_ship_sunk_by_name(new_board, ship_name))
+            ? ship_name : null;
+        const won = Battleship.has_player_won(new_board);
+
+        room.turn += 1;
+
+        io.to(room_code).emit("shot_result", {
+            shooter_seat: seat,
+            col,
+            row,
+            hit: had_ship,
+            sunk_ship,
+            won,
+            next_turn: room.turn
+        });
+
+        console.log(
+            `[room] ${room_code} seat ${seat} shot (${col},${row})` +
+            ` ${had_ship ? "HIT" : "MISS"}` +
+            `${sunk_ship ? " SUNK:" + sunk_ship : ""}` +
+            `${won ? " — WON" : ""}`
+        );
+    });
+
     // ── Disconnect ────────────────────────────────────────────────────────────
 
-    socket.on("disconnect", function () {
-        if (!room_code) { return; }
-        const room = rooms.get(room_code);
-        if (!room) { room_code = null; seat = null; return; }
+    socket.on("disconnect", function (reason) {
+    console.log(`[disconnect] seat=${seat} room=${room_code} reason="${reason}"`);
+    if (!room_code) { return; }
+    const room = rooms.get(room_code);
+    if (!room) { room_code = null; seat = null; return; }
 
-        if (room.started) {
-            // Page navigation in progress — keep room alive for the rejoin
-            room.seats[seat] = null;
-            console.log(`[room] ${room_code} seat ${seat} temp-disconnected (started)`);
-        } else {
-            socket.to(room_code).emit("opponent_left");
-            rooms.delete(room_code);
-            console.log(`[room] ${room_code} closed (disconnect)`);
-        }
+    // Ignore stale socket disconnects.
+    // A newer socket has already taken over this seat.
+    if (room.seats[seat] !== socket.id) {
+        console.log(`[disconnect] ignore the ghost socket ${socket.id}（Seat is now owned by ${room.seats[seat]}）`);
         room_code = null;
         seat = null;
+        return;
+    }
+
+    if (room.started && !room.in_battle) {
+        // Page navigation in progress — keep room alive for the rejoin
+        room.seats[seat] = null;
+        console.log(`[room] ${room_code} seat ${seat} temp-disconnected (started)`);
+    } else {
+        socket.to(room_code).emit("opponent_left");
+        rooms.delete(room_code);
+        console.log(`[room] ${room_code} closed (disconnect${room.in_battle ? " during battle" : ""})`);
+    }
+    room_code = null;
+    seat = null;
     });
 });
 

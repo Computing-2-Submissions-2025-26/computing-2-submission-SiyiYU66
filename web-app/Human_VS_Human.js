@@ -813,6 +813,10 @@ const create_play_button = function () {
     play_button.addEventListener("click", function () {
         if (is_player_ready_to_save(1)) {
             show_swap_animation(function () {
+            console.log("[HVH] battle-start callback fired (show_swap_animation 2200ms)", {
+                gs0_ship_cells: game_state[0].flat().filter(function (c) { return c && c.ship; }).length,
+                gs1_ship_cells: game_state[1].flat().filter(function (c) { return c && c.ship; }).length
+            });
             set_game_phase("battle-phase");
             set_battle_titles();
             reset_display_to_shoot();
@@ -879,9 +883,17 @@ const create_play_button = function () {
             );
 
             // Swap game states
+            console.log("[HVH] BEFORE swap:", {
+                gs0_ships: game_state[0].flat().filter(function (c) { return c && c.ship; }).length,
+                gs1_ships: game_state[1].flat().filter(function (c) { return c && c.ship; }).length
+            });
             const gs_temp = game_state[0];
             game_state[0] = game_state[1];
             game_state[1] = gs_temp;
+            console.log("[HVH] AFTER swap:", {
+                gs0_ships: game_state[0].flat().filter(function (c) { return c && c.ship; }).length,
+                gs1_ships: game_state[1].flat().filter(function (c) { return c && c.ship; }).length
+            });
             Audio_Manager.start_ambient();
 
             update_display = function () {
@@ -1015,12 +1027,24 @@ const create_play_button = function () {
                     });
                 });
 
+                const _gs0_total = game_state[0].flat().filter(function (c) { return c && c.ship; }).length;
+                const _gs0_shot  = game_state[0].flat().filter(function (c) { return c && c.ship && c.shot; }).length;
+                const _gs1_total = game_state[1].flat().filter(function (c) { return c && c.ship; }).length;
+                const _gs1_shot  = game_state[1].flat().filter(function (c) { return c && c.ship && c.shot; }).length;
+                console.log("[HVH] update_display victory check", {
+                    gs0_ship_cells: _gs0_total, gs0_shot: _gs0_shot,
+                    gs1_ship_cells: _gs1_total, gs1_shot: _gs1_shot,
+                    won0: Battleship.has_player_won(game_state[0]),
+                    won1: Battleship.has_player_won(game_state[1])
+                });
                 if (Battleship.has_player_won(game_state[0])) {
+                    console.warn("[HVH] SPURIOUS VICTORY: game_state[0] all sunk (P1 wins) — ship count:", _gs0_total);
                     game_over = true;
                     show_victory_screen(1);
                     return;
                 }
                 if (Battleship.has_player_won(game_state[1])) {
+                    console.warn("[HVH] SPURIOUS VICTORY: game_state[1] all sunk (P2 wins) — ship count:", _gs1_total);
                     game_over = true;
                     show_victory_screen(2);
                     return;
@@ -1278,6 +1302,12 @@ const create_cell_in_row_to_place_ships = function (
                     if (card) card.className = "ship is-placed";
                     update_display();
                     flash_landing(game_board_index, moved_name);
+                    if (typeof window.hvh_on_ship_placed === "function") {
+                        window.hvh_on_ship_placed(
+                            game_board_index, moved_name,
+                            column_index, row_index, ship.orientation
+                        );
+                    }
                 } else {
                     repositioning = false;
                     selected_ship_name = undefined;
@@ -1311,6 +1341,12 @@ const create_cell_in_row_to_place_ships = function (
             if (ship.placed === true) {
                 // Energy-activation effect on the cells the ship landed on.
                 flash_landing(game_board_index, ship.name);
+                if (typeof window.hvh_on_ship_placed === "function") {
+                    window.hvh_on_ship_placed(
+                        game_board_index, ship.name,
+                        column_index, row_index, ship.orientation
+                    );
+                }
             }
             update_deploy_controls();
         };
@@ -2583,3 +2619,57 @@ const start_with_names = function () {
     input_1.select();
 };
 start_with_names();
+
+// ── Online-only hooks ─────────────────────────────────────────────────────────
+// Read exclusively by OnlineGameController.js; never called in local play.
+// Exposing these on window avoids importing private state across modules.
+
+// Injects server-authoritative board data and triggers the battle-phase setup
+// that normally runs after the local swap animation completes.
+// boards[0] = P1's fleet, boards[1] = P2's fleet (server coordinate system).
+// After the game-state swap inside the battle-start callback:
+//   game_state[0] = P2's fleet  (P1 attacks here, game_board_1)
+//   game_state[1] = P1's fleet  (P2 attacks here, game_board_2)
+window.hvh_online_start_battle = function (boards) {
+    const already_battle = document.body.classList.contains("battle-phase");
+    console.log("[HVH] hvh_online_start_battle called", {
+        already_battle,
+        boards_defined: !!boards,
+        board0_ship_cells: (boards && boards[0])
+            ? boards[0].flat().filter(function (c) { return c && c.ship; }).length
+            : "N/A",
+        board1_ship_cells: (boards && boards[1])
+            ? boards[1].flat().filter(function (c) { return c && c.ship; }).length
+            : "N/A"
+    });
+    if (already_battle) { return; }
+    game_state[0] = boards[0];
+    game_state[1] = boards[1];
+    console.log("[HVH] game_state injected", {
+        gs0_ship_cells: game_state[0].flat().filter(function (c) { return c && c.ship; }).length,
+        gs1_ship_cells: game_state[1].flat().filter(function (c) { return c && c.ship; }).length,
+        is_ready_1: is_player_ready_to_save(1),
+        btn_exists: !!player_2_save_button,
+        btn_disabled: player_2_save_button ? player_2_save_button.disabled : "N/A"
+    });
+    if (player_2_save_button) {
+        // Firefox does not dispatch click() on a disabled <button> (spec-compliant).
+        // Chrome fires it anyway.  Force-enable so both browsers behave identically.
+        player_2_save_button.disabled = false;
+        console.log("[HVH] clicking player_2_save_button");
+        player_2_save_button.click();
+        console.log("[HVH] player_2_save_button.click() returned");
+    } else {
+        console.error("[HVH] player_2_save_button is null — battle start blocked");
+    }
+};
+
+// Resets current_action_mode to "shoot" before OGC.js forces a shot click
+// so HVH.js's onclick guard (current_action_mode === "shoot") always passes.
+window.hvh_ensure_shoot_mode = function () {
+    console.log("[HVH] hvh_ensure_shoot_mode called, current_action_mode was:", current_action_mode);
+    current_action_mode = "shoot";
+    ghost_selected_ship = null;
+    ghost_preview_direction = null;
+    ghost_relocate_anchor = null;
+};

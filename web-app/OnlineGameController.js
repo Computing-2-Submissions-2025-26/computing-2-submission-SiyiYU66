@@ -1,20 +1,22 @@
-// OnlineGameController.js — Phase 2B-1
+// OnlineGameController.js — Phase 2B-1 + Phase 2C-1
 //
 // Adapts Human_VS_Human.html for online play.
 // Only activates when sessionStorage holds an "online_session" object written
 // by online.js after both players name themselves.
 //
 // This module runs AFTER Human_VS_Human.js has finished (ES module order).
-// It never modifies BattleShip.js, Human_VS_Human.js, or local 2-player logic.
-// Its only responsibilities:
-//   • reconnect the socket to the server room
-//   • pre-fill the name overlay and auto-submit it
-//   • for the guest (seat 1) auto-dismiss the "HIDE YOUR SCREEN" overlay and
-//     jump directly to the placing-player-2 body class
-//   • intercept the relevant "Confirm Deployment" button (capture phase) so the
-//     placement is sent to the server instead of starting a local pass-screen
-//   • forward each per-ship placement to the server as place_ship events
-//   • show a "Waiting for opponent" overlay while the server waits for both
+// It never modifies BattleShip.js or local 2-player logic.
+// Phase 2B-1 responsibilities:
+//   • reconnect socket, pre-fill names, auto-submit
+//   • suppress "HIDE YOUR SCREEN" and swap-animation overlays online
+//   • intercept Confirm Deployment buttons, emit placement_done
+//   • forward per-ship placements to server as place_ship events
+// Phase 2C-1 responsibilities:
+//   • on battle_ready: inject server boards via window.hvh_online_start_battle,
+//     suppress the local swap-animation, wait for HVH.js to enter battle-phase
+//   • intercept attack-board clicks → emit shoot → server validates
+//   • on shot_result: force td.click() so HVH.js fires all VFX/audio/turn logic
+//   • disable sonar + ghost actions (not synced in Phase 2C-1)
 
 // ── 1. Read session ────────────────────────────────────────────────────────────
 
@@ -26,7 +28,6 @@ const session = (function () {
     }
 }());
 
-// Nothing to do for local 2-player or single-player — module exits silently.
 if (session) {
 
 const { room, seat, my_name, opp_name } = session;
@@ -34,8 +35,6 @@ const { room, seat, my_name, opp_name } = session;
 // ── 2. Guard: socket.io must be loaded ────────────────────────────────────────
 
 if (typeof io === "undefined") {
-    // Human_VS_Human.html was opened without the Node.js server.
-    // Show an inline error and don't proceed.
     const err = document.createElement("div");
     err.className = "online-waiting-overlay";
     err.innerHTML =
@@ -45,7 +44,6 @@ if (typeof io === "undefined") {
         "<a href='./online.html' style='color:#4fe3ff;font-family:inherit;" +
         "font-size:0.8rem;margin-top:1rem;text-decoration:none'>← BACK TO LOBBY</a>";
     document.body.append(err);
-    // Clear the stale session so a refresh of the lobby is clean.
     sessionStorage.removeItem("online_session");
     throw new Error("OnlineGameController: socket.io not available");
 }
@@ -66,38 +64,23 @@ socket.on("opponent_left", function () {
     show_ogc_error("Your opponent disconnected.");
 });
 
-// Phase 2B-1: both players have confirmed deployment; battle can begin.
-socket.on("battle_ready", function () {
-    placement_obs.disconnect();
-    show_combat_start();
-});
-
 // ── 4. Pre-fill name overlay and auto-submit ───────────────────────────────────
-//
-// Human_VS_Human.js already ran start_with_names() which set up listeners on
-// #ns_name_1, #ns_name_2, and #ns_begin.  We fill the inputs with the names
-// agreed in the lobby and click the button — HVH.js's commit() fires normally.
 
 const ns_1   = document.getElementById("ns_name_1");
 const ns_2   = document.getElementById("ns_name_2");
 const ns_btn = document.getElementById("ns_begin");
 
 if (ns_1 && ns_2 && ns_btn) {
-    // seat 0 = P1 (orange, aside), seat 1 = P2 (blue, main)
     ns_1.value = (seat === 0) ? my_name : opp_name;
     ns_2.value = (seat === 0) ? opp_name : my_name;
     ns_btn.click();
 }
 
-// ── 5. Bypass all same-device handoff overlays (both seats) ──────────────────
+// ── 5. Suppress "HIDE YOUR SCREEN" overlay (both seats) ──────────────────────
 //
-// "HIDE YOUR SCREEN" is designed for local same-device play where both players
-// share one screen.  Online players are on separate devices, so this overlay
-// must never block either player.  A MutationObserver fires for BOTH seats and
-// auto-dismisses it the instant HVH.js creates it.
-//
-// "PASS THE SCREEN" and the swap animation are already suppressed because OGC.js
-// intercepts the Confirm Deployment button (capture phase + stopImmediatePropagation).
+// hide_obs disconnects itself after catching the HIDE overlay so it is no
+// longer active when the swap animation fires.  The swap-animation is handled
+// separately via swap_obs inside the battle_ready handler.
 
 const hide_obs = new MutationObserver(function (mutations) {
     for (const m of mutations) {
@@ -109,7 +92,7 @@ const hide_obs = new MutationObserver(function (mutations) {
                 const btn = node.querySelector(".ts-button");
                 if (btn) {
                     hide_obs.disconnect();
-                    btn.click();   // dismiss immediately — no handoff needed online
+                    btn.click();
                 }
             }
         }
@@ -118,12 +101,6 @@ const hide_obs = new MutationObserver(function (mutations) {
 hide_obs.observe(document.body, {childList: true});
 
 // ── 5b. Guest (seat 1) — jump straight to placing-player-2 ───────────────────
-//
-// After the HIDE overlay is auto-dismissed its callback sets placing-player-1.
-// For seat 1 that is wrong — P2's board is in <main> (placing-player-2).
-// Detect the class change and flip it immediately, then reveal P2's elements
-// which start as visibility:hidden by default CSS (the local pass-screen
-// callback that normally shows them never runs in online mode).
 
 if (seat === 1) {
     const phase_obs = new MutationObserver(function () {
@@ -133,8 +110,7 @@ if (seat === 1) {
             document.body.classList.add("placing-player-2");
             // Mirror what HVH.js's pass-screen callback does in local play:
             // hide board 1 elements so HVH.js's keyboard handler correctly
-            // identifies board index 1 as active (it checks
-            // game_board_1.style.visibility === "hidden" to pick the board).
+            // identifies board index 1 as active.
             const gb1 = document.getElementById("game_board_1");
             const s1  = document.getElementById("ships_1");
             const bc1 = document.getElementById("button_container_1");
@@ -154,21 +130,21 @@ if (seat === 1) {
 
 // ── 6. Intercept "Confirm Deployment" for the online player's own board ────────
 //
-// HVH.js wires the buttons with addEventListener (bubble phase).
-// We add a capture-phase listener which fires first and calls
-// stopImmediatePropagation(), preventing the local pass-screen / battle-start
-// from triggering.  We then emit placement_done and show a waiting overlay.
-//
 // seat 0 → intercept .player-1-save (aside board)
 // seat 1 → intercept .player-2-save (main board)
+//
+// bypass_deploy_intercept is set true just before window.hvh_online_start_battle
+// programmatically clicks player_2_save_button so the battle-start click
+// bypasses this listener and reaches HVH.js normally.
+
+let bypass_deploy_intercept = false;
 
 const confirm_selector = (seat === 0) ? ".player-1-save" : ".player-2-save";
 const confirm_btn      = document.querySelector(confirm_selector);
 
 if (confirm_btn) {
     confirm_btn.addEventListener("click", function (event) {
-        // Button is disabled until all ships are placed — if somehow
-        // a click fires while disabled, do nothing.
+        if (bypass_deploy_intercept) { return; }
         if (confirm_btn.disabled) { return; }
         event.stopImmediatePropagation();
         socket.emit("placement_done");
@@ -178,86 +154,170 @@ if (confirm_btn) {
 
 // ── 6.5. Per-ship placement forwarding (Phase 2B-1) ──────────────────────────
 //
-// Each time HVH.js successfully places or repositions a ship on the online
-// player's own board, we emit place_ship to the server so it can validate and
-// store the board state (ready for Phase 2B-2 battle routing).
-//
-// Detection strategy — no HVH.js modification needed:
-//   HVH.js calls flash_landing() — which adds the "place-landed" CSS class to
-//   the ship's cells — ONLY on successful placement (both fresh and reposition).
-//   A MutationObserver on the board element detects this class addition.
-//   A capture-phase click listener records which ship is pending (from the
-//   .dragging / .is-repositioning tray element) and the clicked col/row before
-//   HVH.js processes the click.
+// HVH.js calls window.hvh_on_ship_placed(game_board_index, ship_name, col, row,
+// orientation) immediately after every confirmed placement (fresh or reposition).
+// We only forward events for this player's own board (game_board_index === seat).
 
-const my_board_el = document.getElementById(
-    seat === 0 ? "game_board_1" : "game_board_2"
-);
-const my_ships_el = document.getElementById(
-    seat === 0 ? "ships_1" : "ships_2"
-);
-
-let pending_drop = null;
-
-// Observe "place-landed" class additions — added by HVH.js only on success.
-const placement_obs = new MutationObserver(function () {
-    if (!pending_drop) { return; }
-    if (!my_board_el.querySelector(".place-landed")) { return; }
-    const pd = pending_drop;
-    pending_drop = null;
+window.hvh_on_ship_placed = function (game_board_index, ship_name, col, row, orientation) {
+    if (game_board_index !== seat) { return; }
     socket.emit("place_ship", {
-        shipName:    pd.shipName,
-        col:         pd.col,
-        row:         pd.row,
-        orientation: pd.orientation
+        shipName:    ship_name,
+        col:         col,
+        row:         row,
+        orientation: orientation
     });
+};
+
+// ── 7. Battle-phase entry (Phase 2C-1) ────────────────────────────────────────
+//
+// Board index mapping after HVH.js's internal game-state swap:
+//   game_state[0] = P2's fleet → game_board_1 (aside,  index 0) ← P1 attacks
+//   game_state[1] = P1's fleet → game_board_2 (main,   index 1) ← P2 attacks
+// Therefore: shooter_seat == game_board_index for every shot.
+//
+// Sequence:
+//   t=0    show "DEPLOYMENT CONFIRMED" overlay (2.4 s hold + 0.45 s fade)
+//   t=0    swap_obs installed to catch & discard the swap-animation overlay
+//   t=0    window.hvh_online_start_battle(boards):
+//            • sets game_state[0]/[1] from server data so is_player_ready(1) passes
+//            • programmatically clicks player_2_save_button
+//            • HVH.js calls show_swap_animation → appends .swap-overlay
+//   t≈0ms  swap_obs fires (microtask) → removes .swap-overlay immediately
+//   t=2.2s HVH.js's 2200 ms timer fires → executes battle-start callback
+//            (battle-phase begins behind our overlay)
+//   t=2.85s overlay fully removed → init_online_shooting() called
+
+socket.on("battle_ready", function (data) {
+    console.log("[OGC] raw battle_ready payload", data);
+    const b0_ships = (data && data.boards && data.boards[0])
+        ? data.boards[0].flat().filter(function (c) { return c && c.ship; }).length
+        : "N/A";
+    const b1_ships = (data && data.boards && data.boards[1])
+        ? data.boards[1].flat().filter(function (c) { return c && c.ship; }).length
+        : "N/A";
+    console.log("[OGC] battle_ready received", {
+        seat,
+        has_boards: !!(data && data.boards),
+        board0_ship_cells: b0_ships,
+        board1_ship_cells: b1_ships
+    });
+
+    window.hvh_on_ship_placed = null;
+
+    // Install swap_obs BEFORE triggering hvh_online_start_battle.
+    // hide_obs has already disconnected after the HIDE overlay, so a fresh
+    // observer is needed here to catch and suppress the swap animation.
+    const swap_obs = new MutationObserver(function (mutations) {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1 && node.classList.contains("swap-overlay")) {
+                    console.log("[OGC] swap_obs caught .swap-overlay — removing");
+                    swap_obs.disconnect();
+                    node.remove();
+                }
+            }
+        }
+    });
+    swap_obs.observe(document.body, {childList: true});
+
+    // Show overlay that covers the 2.2 s transition.
+    show_combat_start(function () {
+        console.log("[OGC] show_combat_start on_done fired → init_online_shooting");
+        init_online_shooting();
+    });
+
+    // Inject server boards and trigger HVH.js battle-phase setup.
+    console.log("[OGC] calling hvh_online_start_battle (bypass_deploy_intercept = true)");
+    bypass_deploy_intercept = true;
+    if (window.hvh_online_start_battle) {
+        window.hvh_online_start_battle(data.boards);
+    } else {
+        console.error("[OGC] window.hvh_online_start_battle is not defined!");
+    }
+    bypass_deploy_intercept = false;
+    console.log("[OGC] hvh_online_start_battle returned, bypass_deploy_intercept reset");
 });
 
-if (my_board_el && my_ships_el) {
-    placement_obs.observe(my_board_el, {
-        attributes: true,
-        subtree: true,
-        attributeFilter: ["class"]
-    });
+// ── 8. Online shooting (Phase 2C-1) ───────────────────────────────────────────
 
-    // Capture phase: snapshot the ship being dropped and the target cell before
-    // HVH.js processes the click.  Resets on every board cell click so stale
-    // state from a failed previous attempt is automatically discarded.
-    my_board_el.addEventListener("click", function (event) {
-        pending_drop = null;
-        const td = event.target.closest("td");
+let bypass_intercept = false;
+let my_turn = (seat === 0);   // P1 (seat 0) always fires first
+
+function init_online_shooting () {
+    // The boards were recreated by reset_display_to_shoot inside HVH.js's
+    // battle-start callback — query fresh IDs now.
+    const my_attack_el  = document.getElementById(
+        seat === 0 ? "game_board_1" : "game_board_2"
+    );
+    const opp_attack_el = document.getElementById(
+        seat === 0 ? "game_board_2" : "game_board_1"
+    );
+
+    // MY attack board: intercept unshot-cell clicks and route via server.
+    if (my_attack_el) {
+        my_attack_el.addEventListener("click", function (event) {
+            if (bypass_intercept) { return; }   // allow forced shot_result replays
+            if (!my_turn) { return; }            // HVH.js would also reject this
+            const td = event.target.closest("td");
+            if (!td || td.className !== "unshot") { return; }
+            const tr = td.closest("tr");
+            if (!tr) { return; }
+            event.stopImmediatePropagation();
+            socket.emit("shoot", {col: td.cellIndex, row: tr.rowIndex});
+        }, true /* capture */);
+    }
+
+    // OPPONENT's board: block all human clicks; allow bypass_intercept forced clicks.
+    if (opp_attack_el) {
+        opp_attack_el.addEventListener("click", function (event) {
+            if (bypass_intercept) { return; }
+            event.stopImmediatePropagation();
+        }, true /* capture */);
+    }
+
+    // Keep sonar + ghost buttons disabled so current_action_mode stays "shoot".
+    // HVH.js's onclick guard requires current_action_mode === "shoot" to fire.
+    const center_el = document.getElementById("center_control");
+    if (center_el) {
+        const disable_extras = function () {
+            center_el.querySelectorAll(
+                ".sonar-action, .ghost-action"
+            ).forEach(function (btn) {
+                btn.disabled = true;
+                btn.title = "Not available in online mode";
+            });
+        };
+        disable_extras();
+        const controls_obs = new MutationObserver(disable_extras);
+        controls_obs.observe(center_el, {childList: true, subtree: true});
+    }
+
+    // Handle every shot result — applies to BOTH clients for every shot.
+    socket.on("shot_result", function (data) {
+        // data.shooter_seat === the game_board_index that was hit.
+        const board_id = data.shooter_seat === 0 ? "game_board_1" : "game_board_2";
+        const board_el = document.getElementById(board_id);
+        if (!board_el) { return; }
+        const trs = board_el.querySelectorAll("tr");
+        if (!trs[data.row]) { return; }
+        const td = trs[data.row].querySelectorAll("td")[data.col];
         if (!td) { return; }
 
-        // .dragging  = fresh placement (not yet on board)
-        // .is-repositioning = already placed, being moved
-        const active_el = my_ships_el.querySelector(".dragging")
-            || my_ships_el.querySelector(".is-repositioning");
-        if (!active_el) { return; }
+        // Ensure HVH.js's onclick condition (current_action_mode === "shoot") passes.
+        if (window.hvh_ensure_shoot_mode) { window.hvh_ensure_shoot_mode(); }
 
-        const ship_name = active_el.dataset.ship;
-        if (!ship_name) { return; }
+        // Force the shot through HVH.js's normal click path so all VFX,
+        // audio, stat tracking, and turn logic run identically on both clients.
+        bypass_intercept = true;
+        td.click();
+        bypass_intercept = false;
 
-        const tr = td.closest("tr");
-        if (!tr) { return; }
-
-        // Orientation is tracked by HVH.js via rotate(90deg) on the image.
-        const img = active_el.querySelector("img");
-        const orientation = (img && img.style.transform.includes("rotate(90deg)"))
-            ? "vertical" : "horizontal";
-
-        // td.cellIndex and tr.rowIndex are 0-based, matching HVH.js's
-        // column_index / row_index closures and BattleShip.place_ship's
-        // x_top_left / y_top_left parameters.
-        pending_drop = {
-            shipName:    ship_name,
-            col:         td.cellIndex,
-            row:         tr.rowIndex,
-            orientation: orientation
-        };
-    }, true /* capture — runs before HVH.js onclick */);
+        // Sync whose turn it is from the server's authoritative counter.
+        my_turn = (data.next_turn % 2 === seat);
+    });
 }
 
-// ── 7. UI helpers ──────────────────────────────────────────────────────────────
+// ── 9. UI helpers ──────────────────────────────────────────────────────────────
 
 function show_waiting_overlay () {
     const prev = document.getElementById("ogc-waiting-overlay");
@@ -274,8 +334,10 @@ function show_waiting_overlay () {
     document.body.append(overlay);
 }
 
-function show_combat_start () {
-    // Remove the "waiting" overlay if still present.
+// on_done is called after the overlay fully fades (~2.85 s after this call).
+// The 2400 ms hold deliberately exceeds HVH.js's 2200 ms swap-animation timer
+// so the battle-phase UI is ready before the overlay lifts.
+function show_combat_start (on_done) {
     const prev = document.getElementById("ogc-waiting-overlay");
     if (prev) { prev.remove(); }
 
@@ -287,11 +349,13 @@ function show_combat_start () {
         "<div class='ogc-combat-sub'>ENTERING COMBAT THEATRE</div>";
     document.body.append(overlay);
 
-    // Hold for 1.5 s, then fade out over 0.45 s.
     setTimeout(function () {
         overlay.classList.add("ogc-fade-out");
-        setTimeout(function () { overlay.remove(); }, 450);
-    }, 1500);
+        setTimeout(function () {
+            overlay.remove();
+            if (on_done) { on_done(); }
+        }, 450);
+    }, 2400);
 }
 
 function show_ogc_error (msg, detail) {
