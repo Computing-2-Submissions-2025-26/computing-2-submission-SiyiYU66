@@ -117,8 +117,14 @@
     });
 
     start_btn.onclick = function () {
-        window.location.href = HREFS[index];
-    };
+    // Entering "Same Device" mode: clear any leftover online session so the
+    // game page doesn't mistake this for an online game and try to rejoin a
+    // stale room (which triggers a false "CONNECTION LOST").
+    if (index === 0) {
+        sessionStorage.removeItem("online_session");
+    }
+    window.location.href = HREFS[index];
+};
 
     render();
 </script>

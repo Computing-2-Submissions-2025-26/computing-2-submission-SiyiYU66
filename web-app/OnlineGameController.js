@@ -188,19 +188,12 @@ window.hvh_on_ship_placed = function (game_board_index, ship_name, col, row, ori
 //   t=2.85s overlay fully removed → init_online_shooting() called
 
 socket.on("battle_ready", function (data) {
-    console.log("[OGC] raw battle_ready payload", data);
     const b0_ships = (data && data.boards && data.boards[0])
         ? data.boards[0].flat().filter(function (c) { return c && c.ship; }).length
         : "N/A";
     const b1_ships = (data && data.boards && data.boards[1])
         ? data.boards[1].flat().filter(function (c) { return c && c.ship; }).length
         : "N/A";
-    console.log("[OGC] battle_ready received", {
-        seat,
-        has_boards: !!(data && data.boards),
-        board0_ship_cells: b0_ships,
-        board1_ship_cells: b1_ships
-    });
 
     window.hvh_on_ship_placed = null;
 
@@ -211,7 +204,6 @@ socket.on("battle_ready", function (data) {
         for (const m of mutations) {
             for (const node of m.addedNodes) {
                 if (node.nodeType === 1 && node.classList.contains("swap-overlay")) {
-                    console.log("[OGC] swap_obs caught .swap-overlay — removing");
                     swap_obs.disconnect();
                     node.remove();
                 }
@@ -222,20 +214,16 @@ socket.on("battle_ready", function (data) {
 
     // Show overlay that covers the 2.2 s transition.
     show_combat_start(function () {
-        console.log("[OGC] show_combat_start on_done fired → init_online_shooting");
         init_online_shooting();
     });
 
     // Inject server boards and trigger HVH.js battle-phase setup.
-    console.log("[OGC] calling hvh_online_start_battle (bypass_deploy_intercept = true)");
     bypass_deploy_intercept = true;
     if (window.hvh_online_start_battle) {
         window.hvh_online_start_battle(data.boards);
     } else {
-        console.error("[OGC] window.hvh_online_start_battle is not defined!");
     }
     bypass_deploy_intercept = false;
-    console.log("[OGC] hvh_online_start_battle returned, bypass_deploy_intercept reset");
 });
 
 // ── 8. Online shooting (Phase 2C-1) ───────────────────────────────────────────
@@ -271,8 +259,6 @@ function init_online_shooting () {
 
             const is_sonar = !!document.querySelector(".sonar-action.is-active");
             if (is_sonar) {
-                console.log("[OGC] sonar intercept — emitting sonar",
-                    {col: td.cellIndex, row: tr.rowIndex});
                 event.stopImmediatePropagation();
                 socket.emit("sonar", {col: td.cellIndex, row: tr.rowIndex});
                 return;
@@ -335,28 +321,18 @@ function init_online_shooting () {
     // mode, replay the click so HVH.js runs its full sonar path (overlays,
     // count label, 3500 ms display timer, end_current_turn).
     socket.on("sonar_result", function (data) {
-        console.log("[OGC] sonar_result received", {
-            shooter_seat: data.shooter_seat,
-            col: data.col,
-            row: data.row,
-            next_turn: data.next_turn,
-            my_seat: seat
-        });
 
         const board_id = data.shooter_seat === 0 ? "game_board_1" : "game_board_2";
         const board_el = document.getElementById(board_id);
         if (!board_el) {
-            console.error("[OGC] sonar_result: board element not found", board_id);
             return;
         }
         const trs = board_el.querySelectorAll("tr");
         if (!trs[data.row]) {
-            console.error("[OGC] sonar_result: row not found", data.row);
             return;
         }
         const td = trs[data.row].querySelectorAll("td")[data.col];
         if (!td) {
-            console.error("[OGC] sonar_result: cell not found", data.col, data.row);
             return;
         }
 
@@ -365,23 +341,18 @@ function init_online_shooting () {
         if (window.hvh_ensure_sonar_mode) {
             window.hvh_ensure_sonar_mode();
         } else {
-            console.error("[OGC] hvh_ensure_sonar_mode is not defined");
             return;
         }
 
         // Force the sonar through HVH.js's normal click path so overlays,
         // sonar_scans_left decrement, display timer and end_current_turn all run
         // identically on both clients.
-        console.log("[OGC] sonar_result: replaying click on", board_id,
-            `(${data.col}, ${data.row})`);
         bypass_intercept = true;
         td.click();
         bypass_intercept = false;
 
         // Sync whose turn it is from the server's authoritative counter.
         my_turn = (data.next_turn % 2 === seat);
-        console.log("[OGC] sonar_result: my_turn =", my_turn,
-            `(next_turn=${data.next_turn} seat=${seat})`);
     });
 }
 

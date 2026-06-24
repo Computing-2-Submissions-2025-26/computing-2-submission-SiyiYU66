@@ -280,7 +280,6 @@ io.on("connection", function (socket) {
     // Ignore stale socket disconnects.
     // A newer socket has already taken over this seat.
     if (room.seats[seat] !== socket.id) {
-        console.log(`[disconnect] ignore the ghost socket ${socket.id}（Seat is now owned by ${room.seats[seat]}）`);
         room_code = null;
         seat = null;
         return;
