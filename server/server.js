@@ -59,6 +59,7 @@ io.on("connection", function (socket) {
             in_battle: false,
             turn: 0,
             sonar_scans_left: [2, 2],
+            ghost_moves_left: [1, 1],
             boards: [Battleship.empty_board(10, 10), Battleship.empty_board(10, 10)]
         });
         socket.join(room_code);
@@ -265,6 +266,126 @@ io.on("connection", function (socket) {
             shooter_seat: seat,
             col,
             row,
+            next_turn: room.turn
+        });
+    });
+
+    // ── Phase 2C-3: ghost slide (damaged ship 1–2 tile escape) ───────────────
+
+    socket.on("ghost_slide", function (data) {
+        const room = rooms.get(room_code);
+        if (!room || seat === null || !room.in_battle) { return; }
+        if (room.turn % 2 !== seat) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_slide — not their turn`);
+            return;
+        }
+        if (room.ghost_moves_left[seat] <= 0) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_slide — no moves left`);
+            return;
+        }
+
+        const ship_name = String(data && data.ship_name || "");
+        const direction = String(data && data.direction || "");
+        const distance  = Number(data && data.distance);
+
+        const valid_ship = Battleship.ship_array.some(function (s) { return s.name === ship_name; });
+        if (!valid_ship) { return; }
+        if (!["up", "down", "left", "right"].includes(direction)) { return; }
+        if (distance !== 1 && distance !== 2) { return; }
+
+        const own_board = room.boards[seat];
+        if (Battleship.ship_cells_by_name(own_board, ship_name).length === 0) { return; }
+        if (Battleship.is_ship_sunk_by_name(own_board, ship_name)) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_slide — ship sunk`);
+            return;
+        }
+        if (!Battleship.is_ship_damaged(own_board, ship_name)) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_slide — ship not damaged`);
+            return;
+        }
+
+        const new_board = Battleship.ghost_slide(own_board, ship_name, direction, distance);
+        if (new_board === own_board) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_slide — move blocked`);
+            return;
+        }
+
+        room.boards[seat] = new_board;
+        room.ghost_moves_left[seat] -= 1;
+        room.turn += 1;
+
+        console.log(
+            `[ghost] ${room_code} seat ${seat} slid ${ship_name} ${direction}×${distance}` +
+            ` moves_left=[${room.ghost_moves_left}] next_turn=${room.turn}`
+        );
+
+        io.to(room_code).emit("ghost_slide_result", {
+            shooter_seat: seat,
+            ship_name,
+            direction,
+            distance,
+            next_turn: room.turn
+        });
+    });
+
+    // ── Phase 2C-3: ghost relocate (intact ship teleport) ────────────────────
+
+    socket.on("ghost_relocate", function (data) {
+        const room = rooms.get(room_code);
+        if (!room || seat === null || !room.in_battle) { return; }
+        if (room.turn % 2 !== seat) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_relocate — not their turn`);
+            return;
+        }
+        if (room.ghost_moves_left[seat] <= 0) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_relocate — no moves left`);
+            return;
+        }
+
+        const ship_name   = String(data && data.ship_name || "");
+        const anchor_col  = Number(data && data.anchor_col);
+        const anchor_row  = Number(data && data.anchor_row);
+        const orientation = (data && data.orientation === "vertical") ? "vertical" : "horizontal";
+
+        const valid_ship = Battleship.ship_array.some(function (s) { return s.name === ship_name; });
+        if (!valid_ship) { return; }
+        if (!Number.isFinite(anchor_col) || anchor_col < 0 || anchor_col > 9) { return; }
+        if (!Number.isFinite(anchor_row) || anchor_row < 0 || anchor_row > 9) { return; }
+
+        const own_board = room.boards[seat];
+        const ship_len = Battleship.ship_cells_by_name(own_board, ship_name).length;
+        if (ship_len === 0) { return; }
+        if (Battleship.is_ship_sunk_by_name(own_board, ship_name)) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_relocate — ship sunk`);
+            return;
+        }
+        if (Battleship.is_ship_damaged(own_board, ship_name)) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_relocate — ship damaged`);
+            return;
+        }
+
+        const cells = Battleship.relocate_footprint([anchor_col, anchor_row], ship_len, orientation);
+        if (!Battleship.relocate_valid(own_board, cells, ship_name)) {
+            console.log(`[ghost] ${room_code} seat ${seat} REJECTED ghost_relocate — invalid footprint`);
+            return;
+        }
+
+        room.boards[seat] = Battleship.apply_ghost_relocate(own_board, ship_name, cells);
+        room.ghost_moves_left[seat] -= 1;
+        room.turn += 1;
+
+        console.log(
+            `[ghost] ${room_code} seat ${seat} teleported ${ship_name} to` +
+            ` (${anchor_col},${anchor_row}) ${orientation}` +
+            ` moves_left=[${room.ghost_moves_left}] next_turn=${room.turn}`
+        );
+
+        io.to(room_code).emit("ghost_relocate_result", {
+            shooter_seat: seat,
+            ship_name,
+            anchor_col,
+            anchor_row,
+            orientation,
             next_turn: room.turn
         });
     });
