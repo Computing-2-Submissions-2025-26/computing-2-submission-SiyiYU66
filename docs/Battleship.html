@@ -29,7 +29,7 @@
 <nav >
     
     
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Battleship.html">Battleship</a><ul class='methods'><li data-type='method'><a href="Battleship.html#.cell_state">cell_state</a></li><li data-type='method'><a href="Battleship.html#.empty_board">empty_board</a></li><li data-type='method'><a href="Battleship.html#.has_player_won">has_player_won</a></li><li data-type='method'><a href="Battleship.html#.is_ship_here">is_ship_here</a></li><li data-type='method'><a href="Battleship.html#.is_ship_placed">is_ship_placed</a></li><li data-type='method'><a href="Battleship.html#.move_ship">move_ship</a></li><li data-type='method'><a href="Battleship.html#.place_ship">place_ship</a></li><li data-type='method'><a href="Battleship.html#.random_board">random_board</a></li><li data-type='method'><a href="Battleship.html#.shoot_cell">shoot_cell</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Battleship.html">Battleship</a><ul class='methods'><li data-type='method'><a href="Battleship.html#.apply_ghost_relocate">apply_ghost_relocate</a></li><li data-type='method'><a href="Battleship.html#.cell_state">cell_state</a></li><li data-type='method'><a href="Battleship.html#.count_ships_in_area">count_ships_in_area</a></li><li data-type='method'><a href="Battleship.html#.empty_board">empty_board</a></li><li data-type='method'><a href="Battleship.html#.ghost_slide">ghost_slide</a></li><li data-type='method'><a href="Battleship.html#.has_player_won">has_player_won</a></li><li data-type='method'><a href="Battleship.html#.infer_ship_orientation">infer_ship_orientation</a></li><li data-type='method'><a href="Battleship.html#.is_ship_damaged">is_ship_damaged</a></li><li data-type='method'><a href="Battleship.html#.is_ship_here">is_ship_here</a></li><li data-type='method'><a href="Battleship.html#.is_ship_placed">is_ship_placed</a></li><li data-type='method'><a href="Battleship.html#.is_ship_sunk_by_name">is_ship_sunk_by_name</a></li><li data-type='method'><a href="Battleship.html#.move_ship">move_ship</a></li><li data-type='method'><a href="Battleship.html#.place_ship">place_ship</a></li><li data-type='method'><a href="Battleship.html#.random_board">random_board</a></li><li data-type='method'><a href="Battleship.html#.relocate_footprint">relocate_footprint</a></li><li data-type='method'><a href="Battleship.html#.relocate_valid">relocate_valid</a></li><li data-type='method'><a href="Battleship.html#.ship_cells_by_name">ship_cells_by_name</a></li><li data-type='method'><a href="Battleship.html#.shoot_cell">shoot_cell</a></li></ul></li></ul>
     
 </nav>
 
@@ -192,6 +192,215 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".apply_ghost_relocate"><span class="type-signature type-signature-static">(static) </span>apply_ghost_relocate<span class="signature">(board, ship_name, cells)</span><span class="type-signature"> &rarr; {<a href="Battleship.html#.Board">Battleship.Board</a>}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Lifts the named ship off the board and places it, at full health, on the
+given cells. The vacated cells retain their {@code shot} flag. All other
+cells are untouched. Callers should validate the footprint first with
+<a href="Battleship.html#.relocate_valid"><code>Battleship.relocate_valid</code></a>.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line604">line 604</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ship_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cells</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Array.&lt;number>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>New [col, row] footprint</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A new board with the ship at its new position</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".cell_state"><span class="type-signature type-signature-static">(static) </span>cell_state<span class="signature">(board, cell, coords)</span><span class="type-signature"> &rarr; {string}</span></h4>
 
     
@@ -208,7 +417,7 @@ module state to keep in sync.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line315">line 315</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line372">line 372</a>
     </li></ul></dd>
     
 
@@ -398,6 +607,213 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".count_ships_in_area"><span class="type-signature type-signature-static">(static) </span>count_ships_in_area<span class="signature">(board, col, row)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Counts the number of ship cells within the 3×3 area centred on (col, row).
+Cells that fall outside the board boundary are silently ignored.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line505">line 505</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>col</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Centre column (0-indexed)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>row</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Centre row (0-indexed)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Number of ship cells in the scan area (0–9)</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".empty_board"><span class="type-signature type-signature-static">(static) </span>empty_board<span class="signature">(width<span class="signature-attributes">opt</span>, height<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Battleship.html#.Board">Battleship.Board</a>}</span></h4>
 
     
@@ -414,7 +830,7 @@ module state to keep in sync.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line78">line 78</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line103">line 103</a>
     </li></ul></dd>
     
 
@@ -616,6 +1032,305 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".ghost_slide"><span class="type-signature type-signature-static">(static) </span>ghost_slide<span class="signature">(board, ship_name, direction, distance<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Battleship.html#.Board">Battleship.Board</a>}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Slides the named ship <code>distance</code> tiles in one direction, applying one
+tile at a time via <a href="Battleship.html#.move_ship"><code>Battleship.move_ship</code></a>. The slide is all-or-nothing:
+if any step is illegal (off the board, blocked by another ship, or the ship
+is already sunk) the original board is returned unchanged. Callers can
+detect failure by testing {@code result === board}.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line308">line 308</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ship_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>direction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">"up"</span>
+|
+
+<span class="param-type">"down"</span>
+|
+
+<span class="param-type">"left"</span>
+|
+
+<span class="param-type">"right"</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>distance</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>1</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Number of tiles to slide (typically 1 or 2)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Updated board, or the original board on failure</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".has_player_won"><span class="type-signature type-signature-static">(static) </span>has_player_won<span class="signature">(board)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
 
     
@@ -632,7 +1347,7 @@ module state to keep in sync.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line339">line 339</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line396">line 396</a>
     </li></ul></dd>
     
 
@@ -774,6 +1489,343 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".infer_ship_orientation"><span class="type-signature type-signature-static">(static) </span>infer_ship_orientation<span class="signature">(cells)</span><span class="type-signature"> &rarr; {"horizontal"|"vertical"}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Infers the orientation of a ship from its cell coordinate list.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line534">line 534</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>cells</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Array.&lt;number>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Array of [col, row] pairs (e.g. from
+<a href="Battleship.html#.ship_cells_by_name"><code>Battleship.ship_cells_by_name</code></a>)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">"horizontal"</span>
+|
+
+<span class="param-type">"vertical"</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".is_ship_damaged"><span class="type-signature type-signature-static">(static) </span>is_ship_damaged<span class="signature">(board, ship_name)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Returns true when the named ship has at least one shot cell.
+A ship that has not been placed or has no hit cells returns false.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line452">line 452</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ship_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".is_ship_here"><span class="type-signature type-signature-static">(static) </span>is_ship_here<span class="signature">(cell)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
 
     
@@ -790,7 +1842,7 @@ module state to keep in sync.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line93">line 93</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line118">line 118</a>
     </li></ul></dd>
     
 
@@ -932,7 +1984,7 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
-    <h4 class="name" id=".is_ship_placed"><span class="type-signature type-signature-static">(static) </span>is_ship_placed<span class="signature">(ship_name, multiplayer_ship_array, game_board_index)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    <h4 class="name" id=".is_ship_placed"><span class="type-signature type-signature-static">(static) </span>is_ship_placed<span class="signature">(ship_name, board)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
 
     
 
@@ -948,7 +2000,7 @@ module state to keep in sync.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line353">line 353</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line408">line 408</a>
     </li></ul></dd>
     
 
@@ -1044,13 +2096,13 @@ module state to keep in sync.</p></li></ul></dd>
 
         <tr>
             
-                <td class="name"><code>multiplayer_ship_array</code></td>
+                <td class="name"><code>board</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Battleship.html#.multiplayer_ship_array">Battleship.multiplayer_ship_array</a></span>
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
 
 
 
@@ -1061,34 +2113,7 @@ module state to keep in sync.</p></li></ul></dd>
 
             
 
-            <td class="description last"><p>The ship sets</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>game_board_index</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">0</span>
-|
-
-<span class="param-type">1</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The board number</p></td>
+            <td class="description last"><p>The board to inspect</p></td>
         </tr>
 
     
@@ -1141,6 +2166,186 @@ module state to keep in sync.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".is_ship_sunk_by_name"><span class="type-signature type-signature-static">(static) </span>is_ship_sunk_by_name<span class="signature">(board, ship_name)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Returns true when every cell of the named ship has been shot.
+Returns false when the ship is not on the board or
+has at least one unshot cell.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line436">line 436</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ship_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".move_ship"><span class="type-signature type-signature-static">(static) </span>move_ship<span class="signature">(board, ship_name, direction)</span><span class="type-signature"> &rarr; {<a href="Battleship.html#.Board">Battleship.Board</a>}</span></h4>
 
     
@@ -1160,7 +2365,7 @@ blocked by a different ship) return the original board unchanged.</p></li></ul><
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line219">line 219</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line246">line 246</a>
     </li></ul></dd>
     
 
@@ -1373,7 +2578,7 @@ placed. On any rule violation the original board is returned unchanged
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line176">line 176</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line205">line 205</a>
     </li></ul></dd>
     
 
@@ -1605,7 +2810,7 @@ valid positions.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line383">line 383</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line474">line 474</a>
     </li></ul></dd>
     
 
@@ -1697,6 +2902,605 @@ valid positions.</p></li></ul></dd>
 
     
 
+    <h4 class="name" id=".relocate_footprint"><span class="type-signature type-signature-static">(static) </span>relocate_footprint<span class="signature">(anchor, length, orientation)</span><span class="type-signature"> &rarr; {Array.&lt;Array.&lt;number>>}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Returns the [col, row] cell coordinates a ship of the given length would
+occupy when placed with its top-left corner at <code>anchor</code>.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line555">line 555</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>anchor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;number></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>[col, row] of the top-left placement corner</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>length</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Ship length in cells</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>orientation</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">"horizontal"</span>
+|
+
+<span class="param-type">"vertical"</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Array of [col, row] pairs</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;Array.&lt;number>></span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".relocate_valid"><span class="type-signature type-signature-static">(static) </span>relocate_valid<span class="signature">(board, cells, moving_name)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Returns true when all proposed footprint cells are legal for a ghost
+teleport: within the board, not occupied by another ship, and not previously
+shot. The relocating ship's own un-shot cells are treated as free so the
+check is consistent with the placement it replaces.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line577">line 577</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cells</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Array.&lt;number>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Proposed [col, row] footprint</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>moving_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Name of the ship being relocated</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".ship_cells_by_name"><span class="type-signature type-signature-static">(static) </span>ship_cells_by_name<span class="signature">(board, ship_name)</span><span class="type-signature"> &rarr; {Array.&lt;Array.&lt;number>>}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Returns all [col, row] coordinate pairs currently occupied by the named ship.
+Returns an empty array when the ship is not on the board.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line422">line 422</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>board</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Battleship.html#.Board">Battleship.Board</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ship_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Array of [col, row] pairs,
+left-to-right or top-to-bottom</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;Array.&lt;number>></span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id=".shoot_cell"><span class="type-signature type-signature-static">(static) </span>shoot_cell<span class="signature">(board, cell_coords)</span><span class="type-signature"> &rarr; {<a href="Battleship.html#.Board">Battleship.Board</a>}</span></h4>
 
     
@@ -1713,7 +3517,7 @@ valid positions.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line279">line 279</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line336">line 336</a>
     </li></ul></dd>
     
 
@@ -2368,7 +4172,7 @@ valid positions.</p></li></ul></dd>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line56">line 56</a>
+        <a href="BattleShip.js.html">BattleShip.js</a>, <a href="BattleShip.js.html#line81">line 81</a>
     </li></ul></dd>
     
 
@@ -2525,7 +4329,7 @@ valid positions.</p></li></ul></dd>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Jun 10 2026 11:20:51 GMT+0100 (英国夏令时间) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Jun 25 2026 03:44:57 GMT+0100 (英国夏令时间) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
