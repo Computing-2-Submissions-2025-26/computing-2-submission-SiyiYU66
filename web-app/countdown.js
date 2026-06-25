@@ -2,11 +2,7 @@
 // modes so both feel like the same naval system booting up. Pure
 // presentation: builds an overlay, plays the sequence, then calls on_complete.
 // No game state is touched here.
-//
-// options:
-//   finaleTitle {string} big finale word(s)        (default "GAME START")
-//   finaleSub   {string} optional subtitle line     (default none)
-//   hold        {number} extra ms to linger on the finale before the fade
+
 
 const TICK_MS = 850;
 const FINALE_MS = 1150;
