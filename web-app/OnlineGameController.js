@@ -296,12 +296,6 @@ function init_online_shooting () {
                 if (!params || !params.ship_name) {
                     event.stopImmediatePropagation(); return;
                 }
-                console.log("[OGC GHOST] ghost_relocate intercept", {
-                    ship_name:   params.ship_name,
-                    anchor_col:  td.cellIndex,
-                    anchor_row:  tr.rowIndex,
-                    orientation: params.orientation
-                });
                 event.stopImmediatePropagation();
                 socket.emit("ghost_relocate", {
                     ship_name:   params.ship_name,
@@ -330,11 +324,6 @@ function init_online_shooting () {
             const params = window.hvh_get_ghost_params
                 ? window.hvh_get_ghost_params() : null;
             if (!params || !params.ship_name || !params.direction) { return; }
-            console.log("[OGC GHOST] ghost_slide intercept", {
-                ship_name: params.ship_name,
-                direction: params.direction,
-                distance:  params.distance
-            });
             event.stopImmediatePropagation();
             socket.emit("ghost_slide", {
                 ship_name: params.ship_name,
@@ -429,7 +418,6 @@ function init_online_shooting () {
     // Called on BOTH clients after the server validates and applies ghost_slide.
     // show_flash is true only for the mover — opponent gets false to preserve stealth.
     socket.on("ghost_slide_result", function (data) {
-        console.log("[OGC GHOST] ghost_slide_result received", data);
         const is_mover = (data.shooter_seat === seat);
         if (window.hvh_commit_ghost_slide) {
             window.hvh_commit_ghost_slide(
@@ -442,7 +430,6 @@ function init_online_shooting () {
     // ── Phase 2C-3: ghost relocate result ─────────────────────────────────────
     // Called on BOTH clients after the server validates and applies ghost_relocate.
     socket.on("ghost_relocate_result", function (data) {
-        console.log("[OGC GHOST] ghost_relocate_result received", data);
         const is_mover = (data.shooter_seat === seat);
         if (window.hvh_commit_ghost_relocate) {
             window.hvh_commit_ghost_relocate(

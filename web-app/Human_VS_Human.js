@@ -2653,13 +2653,6 @@ window.hvh_ensure_sonar_mode = function () {
 // Returns a snapshot of the current ghost UI state so OGC can read private
 // closure variables without direct access.
 window.hvh_get_ghost_params = function () {
-    console.log("[HVH GHOST] hvh_get_ghost_params called", {
-        ship_name:   ghost_selected_ship,
-        direction:   ghost_preview_direction,
-        distance:    ghost_preview_distance,
-        orientation: ghost_relocate_orientation,
-        mode:        current_action_mode
-    });
     return {
         ship_name:   ghost_selected_ship,
         direction:   ghost_preview_direction,
@@ -2674,9 +2667,6 @@ window.hvh_get_ghost_params = function () {
 // timer.  show_flash is true only for the mover — the opponent never sees the
 // landing flash, preserving stealth.
 window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_flash, server_moves_left) {
-    console.log("[HVH GHOST] hvh_commit_ghost_slide called", {
-        ship_name, direction, distance, show_flash, server_moves_left
-    });
     const active_player_idx = next_player % 2;
     const own_board_idx     = 1 - active_player_idx;
 
@@ -2710,9 +2700,6 @@ window.hvh_commit_ghost_slide = function (ship_name, direction, distance, show_f
 // Called by OGC after receiving ghost_relocate_result from the server.
 // No ghost_scars recording — intact ships leave no hit-cell trace behind.
 window.hvh_commit_ghost_relocate = function (ship_name, anchor_col, anchor_row, orientation, show_flash, server_moves_left) {
-    console.log("[HVH GHOST] hvh_commit_ghost_relocate called", {
-        ship_name, anchor_col, anchor_row, orientation, show_flash, server_moves_left
-    });
     const active_player_idx = next_player % 2;
     const own_board_idx     = 1 - active_player_idx;
 
