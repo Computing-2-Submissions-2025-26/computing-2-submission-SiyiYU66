@@ -5212,6 +5212,11 @@ body.battle-phase #center_control::before {
     color: rgba(196, 214, 232, 0.72);
 }
 
+.ghost-msg.dim.whisper {
+    color: rgba(196, 214, 232, 0.45);
+    font-style: italic;
+}
+
 .ts-btn-row {
     display: flex;
     flex-wrap: wrap;

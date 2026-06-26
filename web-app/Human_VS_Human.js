@@ -412,7 +412,9 @@ const ghost_scene = function (
     accent, eyebrow, title, message_lines, glyph, buttons_html
 ) {
     const msgs = message_lines.map(function (line, i) {
-        const cls = (i === 0 ? "ghost-msg" : "ghost-msg dim");
+        const cls = i === 0 ? "ghost-msg"
+            : i === 1 ? "ghost-msg dim"
+            : "ghost-msg dim whisper";
         return "<p class=\"" + cls + "\">" + line + "</p>";
     }).join("");
     return "<div class=\"ghost-bg\"></div>"
@@ -465,8 +467,8 @@ const show_ghost_confirm = function (active_idx, on_confirm, on_cancel) {
         "ACTIVATE GHOST MOVE?",
         [
             "Intact ships slip away to any clear waters.",
-            "Damaged ships can only crawl 2 tiles to escape.",
-            "And every hit you took stays on the map."
+            "Damaged ships crawl up to 2 tiles — and can’t slip past other ships.",
+            "The sea remembers where you’ve been."
         ],
         "👻",
         "<button class=\"ts-button ghost-confirm\""
