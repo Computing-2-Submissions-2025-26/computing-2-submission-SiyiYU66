@@ -5701,3 +5701,190 @@ body.battle-phase .ship_container,
 body.battle-phase .button_container {
     display: none;
 }
+
+/* ============================================================
+   BATTLE BRIEFING BUTTON & OVERLAY
+   All selectors are prefixed #battle-briefing- / .bbr- to
+   guarantee zero collision with existing game styles.
+   The JS only calls classList.add/remove — no socket, no game
+   state, no HVH.js / OGC.js interaction of any kind.
+   ============================================================ */
+
+/* ── Button (mirrors .nav-home-btn, right side) ───────────── */
+#battle-briefing-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1.2rem;
+    z-index: 130000;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.2em;
+    padding: 0.38em 0.85em;
+    border: 2px solid rgba(79, 227, 255, 0.55);
+    border-radius: 10px;
+    background: rgba(4, 8, 18, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    color: var(--radar);
+    font-family: var(--title-font-family);
+    font-size: clamp(0.48rem, 0.9vw, 0.62rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 18px rgba(79, 227, 255, 0.8);
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    animation: menu-btn-pulse 2.8s ease-in-out infinite;
+}
+#battle-briefing-btn:hover,
+#battle-briefing-btn:focus-visible {
+    animation: none;
+    background: rgba(79, 227, 255, 0.14);
+    border-color: var(--radar);
+    color: #fff;
+    text-shadow: 0 0 28px rgba(79, 227, 255, 1), 0 0 60px rgba(79, 227, 255, 0.5);
+    box-shadow:
+        0 0 30px rgba(79, 227, 255, 0.55),
+        0 0 70px rgba(79, 227, 255, 0.25),
+        inset 0 0 18px rgba(79, 227, 255, 0.08);
+    transform: translateY(-2px) scale(1.04);
+    outline: none;
+}
+.battle-briefing-icon {
+    width: clamp(3.75rem, 6.6vmin, 5.1rem);
+    height: auto;
+    opacity: 0.80;
+    filter: drop-shadow(0 0 6px rgba(79, 227, 255, 0.45));
+    transition: opacity 0.2s;
+}
+#battle-briefing-btn:hover .battle-briefing-icon,
+#battle-briefing-btn:focus-visible .battle-briefing-icon {
+    opacity: 1;
+}
+
+/* Match .nav-home-btn visibility rules exactly */
+body.battle-initializing #battle-briefing-btn {
+    visibility: hidden !important;
+}
+body.intro-phase #battle-briefing-btn {
+    visibility: visible !important;
+}
+
+/* ── Overlay backdrop ─────────────────────────────────────── */
+#battle-briefing-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 4, 10, 0.80);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+}
+#battle-briefing-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ── Panel ────────────────────────────────────────────────── */
+#battle-briefing-panel {
+    position: relative;
+    width: min(640px, 90vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    background: rgba(5, 8, 15, 0.97);
+    border: 1px solid rgba(79, 227, 255, 0.30);
+    box-shadow:
+        0 0 0 1px rgba(79, 227, 255, 0.07),
+        0 0 50px rgba(79, 227, 255, 0.10),
+        inset 0 0 80px rgba(79, 227, 255, 0.03);
+    padding: clamp(1.6rem, 4vh, 2.6rem) clamp(1.4rem, 5vw, 2.6rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    transform: scale(0.88);
+    transform-origin: top right;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#battle-briefing-overlay.is-open #battle-briefing-panel {
+    transform: scale(1);
+}
+#battle-briefing-panel::-webkit-scrollbar { width: 3px; }
+#battle-briefing-panel::-webkit-scrollbar-track { background: transparent; }
+#battle-briefing-panel::-webkit-scrollbar-thumb {
+    background: rgba(79, 227, 255, 0.28);
+    border-radius: 2px;
+}
+
+/* ── Background grid ──────────────────────────────────────── */
+.bbr-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(79, 227, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 227, 255, 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+    z-index: 0;
+}
+
+/* ── Close button ─────────────────────────────────────────── */
+#battle-briefing-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.8rem;
+    background: none;
+    border: 1px solid rgba(79, 227, 255, 0.20);
+    border-radius: 3px;
+    color: var(--muted-ink);
+    font-family: var(--body-font-family);
+    font-size: 0.8rem;
+    line-height: 1;
+    padding: 0.18rem 0.42rem;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.2s, border-color 0.2s;
+}
+#battle-briefing-close:hover,
+#battle-briefing-close:focus-visible {
+    color: var(--radar);
+    border-color: rgba(79, 227, 255, 0.55);
+    outline: none;
+}
+
+/* ── Content sections ─────────────────────────────────────── */
+#battle-briefing-panel section {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.bbr-eyebrow {
+    margin: 0;
+    font-family: var(--title-font-family);
+    font-size: clamp(0.6rem, 1.15vw, 0.78rem);
+    font-weight: 700;
+    letter-spacing: 0.38em;
+    text-indent: 0.38em;
+    text-transform: uppercase;
+    color: var(--radar);
+    text-shadow: 0 0 14px rgba(79, 227, 255, 0.55);
+}
+.bbr-body {
+    margin: 0;
+    font-family: var(--body-font-family);
+    font-size: clamp(0.85rem, 1.65vw, 1.02rem);
+    line-height: 1.7;
+    color: var(--ink);
+    letter-spacing: 0.025em;
+}
+.bbr-aside {
+    font-size: clamp(0.74rem, 1.3vw, 0.86rem);
+    color: rgba(122, 154, 174, 0.65);
+    font-style: italic;
+    letter-spacing: 0.04em;
+}
