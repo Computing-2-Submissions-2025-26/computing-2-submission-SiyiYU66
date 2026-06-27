@@ -973,11 +973,6 @@ body.battle-phase main {
     background: var(--p2-bg);
 }
 
-/* Larger boards — fill the narrower column */
-body.battle-phase .game_board_container {
-    /* overridden by the more specific rule above; kept for non-battle phases */
-}
-
 body.battle-phase #game_board_1,
 body.battle-phase #game_board_2 {
     border: 0;

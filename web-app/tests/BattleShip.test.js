@@ -46,7 +46,7 @@ describe("empty_board", function () {
         assert.equal(board[0].length, 10);
         assert.deepEqual(
             board,
-            board_from(Array(10).fill(".".repeat(10)))
+            board_from(new Array(10).fill(".".repeat(10)))
         );
     });
 

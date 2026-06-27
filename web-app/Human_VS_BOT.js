@@ -108,8 +108,11 @@ const setup_difficulty_select = function () {
         }
         const dx = e.clientX - drag_x;
         drag_x = null;
-        if (dx < -40) go(index + 1);
-        else if (dx > 40) go(index - 1);
+        if (dx < -40) {
+            go(index + 1);
+        } else if (dx > 40) {
+            go(index - 1);
+        }
     });
 
     start_btn.onclick = function () {

@@ -1,0 +1,6 @@
+{
+    "jslint.exclude": [
+        "**/ramda.js",
+        "**/node_modules/**"
+    ]
+}
