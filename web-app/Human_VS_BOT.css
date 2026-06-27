@@ -163,17 +163,17 @@
    ═══════════════════════════════════════════════ */
 #bot_deploy_banner {
     position: fixed;
-    top: 13%;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 45%;
+    left: calc(var(--side-w) + var(--center-w) + var(--side-w) / 2);
+    transform: translate(-50%, -50%);
     z-index: 9000;
-    padding: 0.9rem 2rem;
-    border-radius: 14px;
+    padding: 0.5rem 1.2rem;
+    border-radius: 10px;
     color: #cdeaff;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: clamp(1rem, 3vw, 1.7rem);
+    font-size: clamp(0.7rem, 1.8vw, 1rem);
     background: rgba(4, 8, 18, 0.85);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(58, 174, 224, 0.5);
@@ -303,4 +303,27 @@ body.battle-phase #game_board_2 {
 body.battle-phase .ship_container,
 body.battle-phase #button_container_1 {
     display: none;
+}
+
+/* ── Cap board size so bot-deploy-list stays visible without scrolling ──
+   Overrides the HVH rule (same selector, this file loads second).
+   Only affects single-player; HVH is untouched. */
+body.battle-phase .game_board_container {
+    width: min(calc(var(--side-w) - 0.8rem), max(51rem, 52vh), 400px);
+}
+
+/* ── Pull YOU/BOT headings away from the coordinate row ── */
+body.battle-phase aside h2,
+body.battle-phase main h2 {
+    margin-bottom: clamp(2rem, 4.5vh, 3rem);
+}
+
+/* ── Centre the countdown finale text (FLEET DEPLOYMENT / PLACE YOUR SHIPS) ──
+   HVH.css sets letter-spacing + text-indent but omits text-align; without it
+   the text is left-anchored inside a centred box. Clear the indent too so the
+   first line doesn't shift right of centre when text-align is centre. */
+.cd-battle-start,
+.cd-finale-sub {
+    text-align: center;
+    text-indent: 0;
 }
