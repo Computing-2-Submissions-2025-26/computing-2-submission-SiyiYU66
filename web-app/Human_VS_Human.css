@@ -2742,7 +2742,7 @@ body.battle-phase td {
     body.placing-player-2 main {
         display: grid;
         /* Fleet roster (left) is intentionally wider than tactical data (right) */
-        grid-template-columns: minmax(12rem, 23vw) minmax(0, 1fr) minmax(9rem, 14vw);
+        grid-template-columns: minmax(20rem, 28vw) minmax(0, 1fr) minmax(9rem, 14vw);
         grid-template-rows: minmax(0, 1fr) auto auto;
         grid-template-areas:
             "fleet    board tactical"
@@ -2764,8 +2764,8 @@ body.battle-phase td {
         min-height: 0;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        gap: clamp(0.45rem, 1.2vh, 1rem);
+        justify-content: flex-start;
+        gap: clamp(0.2rem, 0.5vh, 0.4rem);
         overflow-y: auto;
         overflow-x: hidden;
     }
@@ -2795,37 +2795,51 @@ body.battle-phase td {
     body.placing-player-2 .ship_container table {
         flex-direction: column;
         width: 100%;
-        gap: clamp(0.4rem, 1vh, 0.9rem);
+        gap: clamp(0.2rem, 0.5vh, 0.4rem);
     }
     body.placing-player-1 .ship_container tr,
     body.placing-player-2 .ship_container tr {
         flex-direction: column;
         width: 100%;
-        gap: clamp(0.5rem, 1.2vh, 1rem);
+        gap: clamp(0.2rem, 0.5vh, 0.4rem);
     }
-    /* Horizontal ship cards: icon left, name + length pips right */
+    /* Ship cards: icon left (spans 2 rows), name row-1, pips row-2 */
     body.placing-player-1 .ship_container td,
     body.placing-player-2 .ship_container td {
-        flex-direction: row;
+        display: grid;
+        grid-template-columns: clamp(6.16rem, 9.9vw, 9.9rem) 1fr;
+        grid-template-rows: auto auto;
         align-items: center;
-        justify-content: flex-start;
-        gap: clamp(0.5rem, 1.1vw, 1.2rem);
+        column-gap: clamp(0.4rem, 0.8vw, 0.8rem);
+        row-gap: clamp(0.1rem, 0.3vh, 0.25rem);
         width: 100%;
-        padding: clamp(0.4rem, 1.1vh, 0.9rem) clamp(0.6rem, 1.1vw, 1.2rem);
+        padding: clamp(0.2rem, 0.6vh, 0.5rem) clamp(0.6rem, 1.1vw, 1.2rem);
         text-align: left;
+        overflow: visible;
     }
     body.placing-player-1 .ship_container img,
     body.placing-player-2 .ship_container img {
         height: clamp(2.4rem, 4.2vw, 5rem);
-        flex: 0 0 auto;
+        max-width: clamp(6.16rem, 9.9vw, 9.9rem);
+        object-fit: contain;
+        grid-column: 1;
+        grid-row: 1 / 3;
+        align-self: center;
     }
     body.placing-player-1 .ship_container .ship-name,
     body.placing-player-2 .ship_container .ship-name {
         font-size: clamp(0.68rem, 1.05vw, 1.1rem);
+        grid-column: 2;
+        grid-row: 1;
+        overflow: visible;
+        white-space: normal;
     }
     body.placing-player-1 .ship_container .ship-size-strip,
     body.placing-player-2 .ship_container .ship-size-strip {
         justify-content: flex-start;
+        grid-column: 2;
+        grid-row: 2;
+        align-self: center;
     }
 
     /* Controls (rotate / save) under the fleet panel */
