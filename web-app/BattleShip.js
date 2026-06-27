@@ -47,32 +47,32 @@ const Battleship = Object.create(null);
  */
 Battleship.ship_array = [
     {
-        "name": "carrier",
         "length": 5,
+        "name": "carrier",
         "orientation": "horizontal",
         "placed": false
     },
     {
-        "name": "battleship",
         "length": 4,
+        "name": "battleship",
         "orientation": "horizontal",
         "placed": false
     },
     {
+        "length": 3,
         "name": "cruiser",
-        "length": 3,
         "orientation": "horizontal",
         "placed": false
     },
     {
+        "length": 3,
         "name": "submarine",
-        "length": 3,
         "orientation": "horizontal",
         "placed": false
     },
     {
-        "name": "destroyer",
         "length": 2,
+        "name": "destroyer",
         "orientation": "horizontal",
         "placed": false
     }
@@ -245,10 +245,10 @@ Battleship.place_ship = function (board, ship, x_top_left, y_top_left) {
  */
 Battleship.move_ship = function (board, ship_name, direction) {
     const deltas = {
-        "up": [0, -1],
         "down": [0, 1],
         "left": [-1, 0],
-        "right": [1, 0]
+        "right": [1, 0],
+        "up": [0, -1]
     };
     const delta = deltas[direction];
     const current_coords = ship_cells_of(board, ship_name);
@@ -382,8 +382,12 @@ Battleship.cell_state = function (board, cell, coords) {
     return "hit";
 };
 
+// R.filter is a curried 2-argument function; supplying only the predicate here
+// is partial application — ship_cells_only waits for the list argument.
+const ship_cells_only = R.filter(Battleship.is_ship_here);
+
 const all_ships_hit_in_row = function (row) {
-    return row.filter(Battleship.is_ship_here).every(is_cell_shot);
+    return ship_cells_only(row).every(is_cell_shot);
 };
 
 /**
@@ -464,6 +468,19 @@ const random_orientation = function () {
     return options[Math.floor(Math.random() * options.length)];
 };
 
+// Recursively retries random positions until place_ship succeeds (returns a
+// new board reference). Equivalent to the while loop it replaces.
+const try_place = function (board, ship) {
+    const col = Math.floor(Math.random() * (10 - ship.length));
+    const row = Math.floor(Math.random() * (10 - ship.length));
+    const next = Battleship.place_ship(board, ship, col, row);
+    return (
+        next === board
+        ? try_place(board, ship)
+        : next
+    );
+};
+
 /**
  * Generates a board with all of {@link Battleship.ship_array} placed at random
  * valid positions.
@@ -473,18 +490,10 @@ const random_orientation = function () {
  */
 Battleship.random_board = function () {
     return Battleship.ship_array.reduce(function (board, ship) {
-        const oriented = Object.assign(
-            {},
-            ship,
-            {"orientation": random_orientation()}
+        return try_place(
+            board,
+            Object.assign({}, ship, {"orientation": random_orientation()})
         );
-        let next_board = board;
-        while (next_board === board) {
-            const col = Math.floor(Math.random() * (10 - oriented.length));
-            const row = Math.floor(Math.random() * (10 - oriented.length));
-            next_board = Battleship.place_ship(board, oriented, col, row);
-        }
-        return next_board;
     }, Battleship.empty_board(10, 10));
 };
 
