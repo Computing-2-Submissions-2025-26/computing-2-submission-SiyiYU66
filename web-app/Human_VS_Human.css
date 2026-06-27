@@ -2440,34 +2440,34 @@ body.battle-phase .tracker-ship .ship-size-count {
 
 /* ── Faction colour system (latest): PLAYER 1 = warm orange, PLAYER 2 = cool blue ── */
 
-/* Player 1 side (aside) = ORANGE / warm */
+/* Player 1 side (aside) shows P2's BLUE fleet → tracker tinted blue */
 body.battle-phase aside .ship-tracker {
     border-color: rgba(224, 120, 64, 0.5);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.42), 0 0 26px rgba(224, 120, 64, 0.2);
 }
 
 body.battle-phase aside .tracker-ship img {
-    filter: grayscale(1) brightness(1.05) sepia(1) saturate(2.6) hue-rotate(-18deg);
+    filter: grayscale(1) brightness(1) sepia(1) saturate(3) hue-rotate(160deg);
 }
 
 body.battle-phase aside .tracker-ship .ship-size-pip {
-    background: #ff9040;
-    box-shadow: 0 0 6px rgba(255, 144, 64, 0.6);
+    background: #40b8ff;
+    box-shadow: 0 0 6px rgba(64, 184, 255, 0.6);
 }
 
-/* Player 2 side (main) = BLUE / cool */
+/* Player 2 side (main) shows P1's ORANGE fleet → tracker tinted orange */
 body.battle-phase main .ship-tracker {
     border-color: rgba(58, 174, 224, 0.5);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.42), 0 0 26px rgba(58, 174, 224, 0.2);
 }
 
 body.battle-phase main .tracker-ship img {
-    filter: grayscale(1) brightness(1) sepia(1) saturate(3) hue-rotate(160deg);
+    filter: grayscale(1) brightness(1.05) sepia(1) saturate(2.6) hue-rotate(-18deg);
 }
 
 body.battle-phase main .tracker-ship .ship-size-pip {
-    background: #40b8ff;
-    box-shadow: 0 0 6px rgba(64, 184, 255, 0.6);
+    background: #ff9040;
+    box-shadow: 0 0 6px rgba(255, 144, 64, 0.6);
 }
 
 /* (11) Revealed ship cells follow the same faction colours:
