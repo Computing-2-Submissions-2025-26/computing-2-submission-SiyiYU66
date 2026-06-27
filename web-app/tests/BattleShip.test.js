@@ -678,13 +678,9 @@ describe("ghost_slide", function () {
         const board = Battleship.place_ship(
             Battleship.empty_board(5, 5), ship, 0, 0
         );
-        const snapshot = board.map(function (r) { return r.slice(); });
+        const snapshot = structuredClone(board);
         Battleship.ghost_slide(board, "patrol", "down", 1);
-        board.forEach(function (row, r) {
-            row.forEach(function (cell, c) {
-                assert.deepEqual(cell, snapshot[r][c]);
-            });
-        });
+        assert.deepEqual(board, snapshot);
     });
 });
 
