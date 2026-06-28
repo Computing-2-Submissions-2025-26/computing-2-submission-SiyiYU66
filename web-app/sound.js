@@ -1,4 +1,5 @@
 // Sound effects synthesised with the Web Audio API (no audio files needed).
+/*jslint for*/
 // A shared master chain (reverb + compressor) gives every cue a polished,
 // spacious, modern feel rather than a bare retro beep.
 

@@ -8,6 +8,7 @@ const TICK_MS = 850;
 const FINALE_MS = 1150;
 const FADE_MS = 650;
 
+
 export function run_battle_countdown(on_complete, options) {
     const opts = options || {};
     const finale_title = opts.finaleTitle || "GAME START";
@@ -58,7 +59,7 @@ export function run_battle_countdown(on_complete, options) {
     const pulse = function () {
         number.classList.remove("cd-tick");
         lock.classList.remove("cd-lock-pulse");
-        void number.offsetWidth;
+        number.getBoundingClientRect();
         number.classList.add("cd-tick");
         lock.classList.add("cd-lock-pulse");
     };

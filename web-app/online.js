@@ -1,7 +1,8 @@
 // online.js — lobby matchmaking + name sync (Phase 2A)
+/*global io*/
 
 // Guard: socket.io only loads when served via `npm run server`
-if (typeof io === "undefined") {
+if (io === undefined) {
     document.getElementById("conn-status-hud").textContent = "SERVER NOT RUNNING";
     const panel = document.getElementById("panel-lobby");
     panel.innerHTML =
@@ -13,7 +14,7 @@ if (typeof io === "undefined") {
     throw new Error("socket.io not available — server not running");
 }
 
-// ── Setup ─────────────────────────────────────────────────────────────────────
+// ── Setup ───
 
 const socket = io();
 
@@ -23,7 +24,7 @@ let current_panel = "lobby";
 let my_name = null;
 let name_submitted = false;
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
+// ── DOM refs ──
 
 const panels = {
     lobby:        document.getElementById("panel-lobby"),
@@ -47,8 +48,7 @@ const naming_faction = document.getElementById("naming-faction");
 const naming_status  = document.getElementById("naming-status");
 const hud_status     = document.getElementById("conn-status-hud");
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+// ── Helpers ──
 const show_panel = function (name) {
     Object.keys(panels).forEach(function (key) {
         if (panels[key]) { panels[key].hidden = key !== name; }
@@ -60,7 +60,7 @@ const set_hud = function (text) {
     if (hud_status) { hud_status.textContent = text; }
 };
 
-// ── Socket events ─────────────────────────────────────────────────────────────
+// ── Socket events ──
 
 socket.on("connect", function () {
     set_hud("CONNECTED");
@@ -132,7 +132,7 @@ socket.on("game_start", function (data) {
     }, 500);
 });
 
-// ── Button handlers ───────────────────────────────────────────────────────────
+// ── Button handlers ──
 
 btn_create.addEventListener("click", function () {
     socket.emit("create_room");

@@ -235,9 +235,11 @@ const create_ship_cell = function (ship, tr) {
         // reference until the move is confirmed. A fresh ship is just selected.
         repositioning = Boolean(ship_obj && ship_obj.placed);
         selected_ship_name = img.id;
-        td.className = repositioning
+        td.className = (
+            repositioning
             ? "ship is-placed is-repositioning"
-            : "dragging";
+            : "dragging"
+        );
         if (ship_obj) {
     if (ship_obj.orientation === "vertical") {
         img.style.transform = "rotate(90deg)";
@@ -274,10 +276,15 @@ const create_ship_table = function () {
 // ── Placement preview (green = valid, red = invalid) ──
 const get_preview_cells = function (ship, x, y) {
     const cells = [];
-    if (!ship) return cells;
+    if (!ship) {
+        return cells;
+    }
     R.range(0, ship.length).forEach(function (i) {
-        if (ship.orientation === "vertical") cells.push([x, y + i]);
-        else cells.push([x + i, y]);
+        if (ship.orientation === "vertical") {
+            cells.push([x, y + i]);
+        } else {
+            cells.push([x + i, y]);
+        }
     });
     return cells;
 };
@@ -815,8 +822,8 @@ const render_bot_board_hidden_blank = function () {
 const set_battle_titles = function () {
     const you = document.querySelector("aside h2");
     const bot = document.querySelector("main h2");
-    if (you) you.textContent = "You";
-    if (bot) bot.textContent = "Bot";
+    if (you) you.textContent = "Your Water";
+    if (bot) bot.textContent = "Bot's Water";
 };
 
 // Player board: own ships always visible + damage shown.

@@ -18,8 +18,7 @@
 //   • on shot_result: force td.click() so HVH.js fires all VFX/audio/turn logic
 //   • disable sonar + ghost actions (not synced in Phase 2C-1)
 
-// ── 1. Read session ────────────────────────────────────────────────────────────
-
+// ── 1. Read session ──
 const session = (function () {
     try {
         return JSON.parse(sessionStorage.getItem("online_session") || "null");
@@ -32,8 +31,7 @@ if (session) {
 
 const { room, seat, my_name, opp_name } = session;
 
-// ── 2. Guard: socket.io must be loaded ────────────────────────────────────────
-
+// ── 2. Guard: socket.io must be loaded ──
 if (typeof io === "undefined") {
     const err = document.createElement("div");
     err.className = "online-waiting-overlay";
@@ -48,7 +46,7 @@ if (typeof io === "undefined") {
     throw new Error("OnlineGameController: socket.io not available");
 }
 
-// ── 3. Socket connection ───────────────────────────────────────────────────────
+// ── 3. Socket connection ──
 
 const socket = io();
 
@@ -64,7 +62,7 @@ socket.on("opponent_left", function () {
     show_ogc_error("Your opponent disconnected.");
 });
 
-// ── 4. Pre-fill name overlay and auto-submit ───────────────────────────────────
+// ── 4. Pre-fill name overlay and auto-submit ──
 
 const ns_1   = document.getElementById("ns_name_1");
 const ns_2   = document.getElementById("ns_name_2");
@@ -128,7 +126,7 @@ if (seat === 1) {
     phase_obs.observe(document.body, {attributes: true, attributeFilter: ["class"]});
 }
 
-// ── 6. Intercept "Confirm Deployment" for the online player's own board ────────
+// ── 6. Intercept "Confirm Deployment" for the online player's own board ──
 //
 // seat 0 → intercept .player-1-save (aside board)
 // seat 1 → intercept .player-2-save (main board)
@@ -152,11 +150,13 @@ if (confirm_btn) {
     }, true /* capture */);
 }
 
-// ── 6.5. Per-ship placement forwarding (Phase 2B-1) ──────────────────────────
+// ── 6.5. Per-ship placement forwarding (Phase 2B-1) ──
 //
 // HVH.js calls window.hvh_on_ship_placed(game_board_index, ship_name, col, row,
-// orientation) immediately after every confirmed placement (fresh or reposition).
-// We only forward events for this player's own board (game_board_index === seat).
+// orientation) immediately after every confirmed placement
+//  (fresh or reposition).
+// We only forward events for this player's own board
+//  (game_board_index === seat).
 
 window.hvh_on_ship_placed = function (game_board_index, ship_name, col, row, orientation) {
     if (game_board_index !== seat) { return; }
@@ -168,7 +168,7 @@ window.hvh_on_ship_placed = function (game_board_index, ship_name, col, row, ori
     });
 };
 
-// ── 7. Battle-phase entry (Phase 2C-1) ────────────────────────────────────────
+// ── 7. Battle-phase entry (Phase 2C-1) ──
 //
 // Board index mapping after HVH.js's internal game-state swap:
 //   game_state[0] = P2's fleet → game_board_1 (aside,  index 0) ← P1 attacks
@@ -228,7 +228,7 @@ socket.on("battle_ready", function (data) {
     bypass_deploy_intercept = false;
 });
 
-// ── 8. Online shooting (Phase 2C-1) ───────────────────────────────────────────
+// ── 8. Online shooting (Phase 2C-1) ──
 
 let bypass_intercept = false;
 let my_turn = (seat === 0);   // P1 (seat 0) always fires first
@@ -414,7 +414,7 @@ function init_online_shooting () {
         my_turn = (data.next_turn % 2 === seat);
     });
 
-    // ── Phase 2C-3: ghost slide result ────────────────────────────────────────
+    // ── Phase 2C-3: ghost slide result ──
     // Called on BOTH clients after the server validates and applies ghost_slide.
     // show_flash is true only for the mover — opponent gets false to preserve stealth.
     socket.on("ghost_slide_result", function (data) {
@@ -427,7 +427,7 @@ function init_online_shooting () {
         my_turn = (data.next_turn % 2 === seat);
     });
 
-    // ── Phase 2C-3: ghost relocate result ─────────────────────────────────────
+    // ── Phase 2C-3: ghost relocate result ──
     // Called on BOTH clients after the server validates and applies ghost_relocate.
     socket.on("ghost_relocate_result", function (data) {
         const is_mover = (data.shooter_seat === seat);
@@ -441,7 +441,7 @@ function init_online_shooting () {
     });
 }
 
-// ── 9. UI helpers ──────────────────────────────────────────────────────────────
+// ── 9. UI helpers ──
 
 function show_waiting_overlay () {
     const prev = document.getElementById("ogc-waiting-overlay");

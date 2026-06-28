@@ -15,7 +15,7 @@ const io = new Server(http_server);
 app.use(express.static(join(__dirname, "..", "web-app")));
 app.use("/node_modules/ramda", express.static(join(__dirname, "..", "node_modules", "ramda")));
 
-// ── Room state ────────────────────────────────────────────────────────────────
+// ── Room state ──
 
 const rooms = new Map();
 
@@ -42,7 +42,7 @@ const make_room_code = function () {
     return rooms.has(code) ? make_room_code() : code;
 };
 
-// ── Socket events ─────────────────────────────────────────────────────────────
+// ── Socket events ──
 
 io.on("connection", function (socket) {
     let room_code = null;
@@ -89,7 +89,7 @@ io.on("connection", function (socket) {
         console.log(`[room] ${code} — both players connected`);
     });
 
-    // ── Phase 2A: name sync ───────────────────────────────────────────────────
+    // ── Phase 2A: name sync ──
 
     socket.on("player_name", function (raw_name) {
         const room = rooms.get(room_code);
@@ -103,7 +103,7 @@ io.on("connection", function (socket) {
         }
     });
 
-    // ── Phase 2A: rejoin after page navigation ────────────────────────────────
+    // ── Phase 2A: rejoin after page navigation ──
 
     socket.on("rejoin_room", function (data) {
         const code = String(data && data.room || "").toUpperCase();
@@ -160,7 +160,7 @@ io.on("connection", function (socket) {
         console.log(`[room] ${room_code} seat ${seat}: placed ${ship_name} @ (${col},${row}) ${orientation}`);
     });
 
-    // ── Phase 2A: ship placement complete ────────────────────────────────────
+    // ── Phase 2A: ship placement complete ──
 
     socket.on("placement_done", function () {
         const room = rooms.get(room_code);
@@ -235,7 +235,7 @@ io.on("connection", function (socket) {
         );
     });
 
-    // ── Phase 2C-2: sonar scan ────────────────────────────────────────────────
+    // ── Phase 2C-2: sonar scan ──
 
     socket.on("sonar", function (data) {
         const room = rooms.get(room_code);
@@ -392,7 +392,7 @@ io.on("connection", function (socket) {
         });
     });
 
-    // ── Disconnect ────────────────────────────────────────────────────────────
+    // ── Disconnect ──
 
     socket.on("disconnect", function (reason) {
     console.log(`[disconnect] seat=${seat} room=${room_code} reason="${reason}"`);
@@ -422,7 +422,7 @@ io.on("connection", function (socket) {
     });
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── Start ──
 
 const PORT = process.env.PORT || 3001;
 http_server.listen(PORT, function () {

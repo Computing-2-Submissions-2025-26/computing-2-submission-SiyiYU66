@@ -160,8 +160,14 @@ const count_ship_cells_on_board = function (player_index) {
 };
 
 const count_ship_cells_in_display = function (player_index) {
-    const board = player_index === 0 ? game_board_1 : game_board_2;
-    if (!board) return 0;
+    const board = (
+        player_index === 0
+        ? game_board_1
+        : game_board_2
+    );
+    if (!board) {
+        return 0;
+    }
     return board.querySelectorAll(".cell_with_ship").length;
 };
 
@@ -1017,10 +1023,6 @@ const create_play_button = function () {
                     });
                 });
 
-                const _gs0_total = game_state[0].flat().filter(function (c) { return c && c.ship; }).length;
-                const _gs0_shot  = game_state[0].flat().filter(function (c) { return c && c.ship && c.shot; }).length;
-                const _gs1_total = game_state[1].flat().filter(function (c) { return c && c.ship; }).length;
-                const _gs1_shot  = game_state[1].flat().filter(function (c) { return c && c.ship && c.shot; }).length;
                 if (Battleship.has_player_won(game_state[0])) {
                     game_over = true;
                     show_victory_screen(1);
@@ -2610,7 +2612,7 @@ const start_with_names = function () {
 };
 start_with_names();
 
-// ── Online-only hooks ─────────────────────────────────────────────────────────
+// ── Online-only hooks ──
 // Read exclusively by OnlineGameController.js; never called in local play.
 // Exposing these on window avoids importing private state across modules.
 
