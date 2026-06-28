@@ -1,6 +1,12 @@
 {
-    "jslint.exclude": [
-        "**/ramda.js",
-        "**/node_modules/**"
-    ]
+    "jslint.version": "es6",
+    "jslint.options": {
+        "browser": true,
+        "devel": true,
+        "node": true,
+        "predef": ["describe", "it", "before", "self"]
+    },
+    "jslint.exclude": {
+        "/node_modules/": true
+    }
 }
