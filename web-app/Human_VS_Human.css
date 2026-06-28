@@ -2073,6 +2073,7 @@ body.board-locked #center_control {
         left: 0;
         width: 100vw;
         min-height: auto;
+        overflow-y: scroll;
     }
 
     body.placing-player-1 main,

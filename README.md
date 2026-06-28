@@ -34,6 +34,7 @@ You should see `Battleship server → http://localhost:3001` in the terminal.
 2. One player creates a room and shares the **room code**; the other joins with that code.
 3. Both players name themselves and place their ships, then the battle begins.
 4. To test online mode locally, open two browser tabs (or two different browsers) at `http://localhost:3001`.
+> **Tip for side-by-side testing:** If you open two browser windows next to each other, zoom each one to **70%** (`Ctrl −` / `Cmd −`) for the best layout. The game is fully playable at 100% zoom with scrolling.
 
 ### Single Player — AI Difficulty
 
