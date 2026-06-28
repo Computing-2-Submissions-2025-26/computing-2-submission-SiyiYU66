@@ -239,9 +239,12 @@ const create_ship_cell = function (ship, tr) {
             ? "ship is-placed is-repositioning"
             : "dragging";
         if (ship_obj) {
-            img.style.transform = ship_obj.orientation === "vertical"
-                ? "rotate(90deg)" : "rotate(0deg)";
-        }
+    if (ship_obj.orientation === "vertical") {
+        img.style.transform = "rotate(90deg)";
+    } else {
+        img.style.transform = "rotate(0deg)";
+    }
+}
         render_placement();
         mark_origin();
         update_deploy_controls();
