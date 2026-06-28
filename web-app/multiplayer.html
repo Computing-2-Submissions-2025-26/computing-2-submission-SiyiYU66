@@ -126,6 +126,19 @@
     window.location.href = HREFS[index];
 };
 
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") {
+            go(index - 1);
+            event.preventDefault();
+        } else if (event.key === "ArrowRight") {
+            go(index + 1);
+            event.preventDefault();
+        } else if (event.key === " " || event.key === "Enter") {
+            start_btn.click();
+            event.preventDefault();
+        }
+    });
+
     render();
 </script>
 </body>

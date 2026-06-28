@@ -4117,6 +4117,12 @@ body.placing-player-2 .save-turn-button.is-ready {
     color: rgba(var(--fx), 0.8);
 }
 
+.dk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem 1.1rem;
+}
+
 .dk-row {
     display: flex;
     align-items: center;

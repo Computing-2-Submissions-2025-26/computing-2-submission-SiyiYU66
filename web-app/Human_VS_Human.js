@@ -4,7 +4,8 @@ import { run_battle_countdown } from "./countdown.js";
 import {
     playHitSound,
     playMissSound,
-    playSunkSound
+    playSunkSound,
+    playWinSound
 } from "./sound.js";
 
 // ==========================================
@@ -519,6 +520,7 @@ const show_ghost_handoff = function (active_idx, on_proceed) {
 
 // Cinematic end-game overlay — HTML/CSS text banner + battle report.
 const show_victory_screen = function (winner_player) {
+    playWinSound();
     const player_idx = winner_player - 1;
     const faction = (
         winner_player === 1
@@ -1341,6 +1343,23 @@ const create_cell_in_row_to_place_ships = function (
                 event.preventDefault();
                 return;
             }
+            if (event.key === "ArrowLeft" && column_index === 0) {
+                const ship_table = document.getElementById(
+                    "ships_" + (game_board_index + 1)
+                );
+                const all_ships = Array.from(
+                    ship_table.querySelectorAll("td[data-ship]")
+                );
+                const target = all_ships.find(
+                    (s) => !s.classList.contains("is-placed")
+                ) || all_ships[0];
+                if (target) {
+                    target.focus();
+                }
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
             const moves = {
                 ArrowRight: [(column_index + 1) % width, row_index],
                 ArrowLeft: [(column_index + width - 1) % width, row_index],
@@ -1485,7 +1504,48 @@ const create_ship_cell = function (ship, game_board_index, tr) {
     td.onkeydown = function (event) {
         if (event.key === "Enter" || event.key === " ") {
             td.onclick();
+            const start = (
+                hovered_cell_info && hovered_cell_info.board_index === game_board_index
+                ? hovered_cell_info
+                : { col: 0, row: 0 }
+            );
+            if (table_cells[game_board_index]) {
+                table_cells[game_board_index][start.row][start.col].focus();
+            }
+            event.preventDefault();
             return;
+        }
+        const ship_table = document.getElementById(
+            "ships_" + (game_board_index + 1)
+        );
+        const all_ships = Array.from(ship_table.querySelectorAll("td[data-ship]"));
+        const idx = all_ships.indexOf(td);
+        if (event.key === "ArrowDown") {
+            if (idx < all_ships.length - 1) {
+                all_ships[idx + 1].focus();
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowUp") {
+            if (idx > 0) {
+                all_ships[idx - 1].focus();
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowRight") {
+            const start = (
+                hovered_cell_info && hovered_cell_info.board_index === game_board_index
+                ? hovered_cell_info
+                : { col: 0, row: 0 }
+            );
+            if (table_cells[game_board_index]) {
+                table_cells[game_board_index][start.row][start.col].focus();
+                show_preview(game_board_index, start.col, start.row);
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowLeft") {
+            if (idx > 0) {
+                all_ships[idx - 1].focus();
+            }
+            event.preventDefault();
         }
     };
     td.append(img);
@@ -1834,7 +1894,10 @@ document.body.onkeydown = function (event) {
             const focused = document.activeElement;
             const on_board = focused && focused.tagName === "TD"
                 && board_el.contains(focused);
-            if (!on_board) {
+            const tray_el = active_board_index === 0 ? ships_1 : ships_2;
+            const in_tray = focused && focused.tagName === "TD"
+                && tray_el.contains(focused);
+            if (!on_board && !in_tray) {
                 const start = (hovered_cell_info
                     && hovered_cell_info.board_index === active_board_index)
                     ? hovered_cell_info
@@ -2080,13 +2143,10 @@ const trigger_sunk_bombardment = function (game_board_index, hit_row, hit_col) {
 // 2. Ghost movement helpers
 // ==========================================
 const get_ship_name = function (cell) {
-    if (!cell) return undefined;
-    if (cell.shipName) return cell.shipName;
-    if (cell.ship_name) return cell.ship_name;
-    if (typeof cell.ship === "string") return cell.ship;
-    if (cell.ship && cell.ship.name) return cell.ship.name;
-    if (cell.name) return cell.name;
-    return undefined;
+    if (!cell) {
+        return undefined;
+    }
+    return cell.shipName;
 };
 
 
@@ -2579,7 +2639,7 @@ setInterval(function () {
 }, 250);
 // ── Name-setup phase ─────────────────────────────────────────────
 // Both commanders enter their call signs before anything else; the names
-// then drive every multiplayer label. Defaults to Siyi / Zipei if left blank.
+// then drive every multiplayer label. Defaults to "Player 1" / "Player 2" if left blank.
 const start_with_names = function () {
     const overlay = document.getElementById("name_setup");
     const input_1 = document.getElementById("ns_name_1");
@@ -2632,7 +2692,6 @@ window.hvh_online_start_battle = function (boards) {
         // Chrome fires it anyway.  Force-enable so both browsers behave identically.
         player_2_save_button.disabled = false;
         player_2_save_button.click();
-    } else {
     }
 };
 

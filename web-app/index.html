@@ -134,9 +134,27 @@
     briefingOverlay.addEventListener("click", function (e) {
         if (e.target === briefingOverlay) { closeBriefing(); }
     });
+
+    const modePanels = Array.from(document.querySelectorAll(".mode-panel"));
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && briefingOverlay.classList.contains("is-open")) {
             closeBriefing();
+            return;
+        }
+        if (briefingOverlay.classList.contains("is-open")) { return; }
+        const idx = modePanels.indexOf(document.activeElement);
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            if (idx === -1) {
+                modePanels[0].focus();
+            } else if (e.key === "ArrowRight") {
+                modePanels[Math.min(modePanels.length - 1, idx + 1)].focus();
+            } else {
+                modePanels[Math.max(0, idx - 1)].focus();
+            }
+            e.preventDefault();
+        } else if ((e.key === " " || e.key === "Enter") && idx !== -1) {
+            modePanels[idx].click();
+            e.preventDefault();
         }
     });
 </script>

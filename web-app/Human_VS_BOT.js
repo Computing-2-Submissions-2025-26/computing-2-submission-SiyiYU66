@@ -133,6 +133,20 @@ const setup_difficulty_select = function () {
         });
     };
 
+    document.addEventListener("keydown", function (event) {
+        if (overlay.classList.contains("hidden")) { return; }
+        if (event.key === "ArrowLeft") {
+            go(index - 1);
+            event.preventDefault();
+        } else if (event.key === "ArrowRight") {
+            go(index + 1);
+            event.preventDefault();
+        } else if (event.key === " " || event.key === "Enter") {
+            start_btn.click();
+            event.preventDefault();
+        }
+    });
+
     render();
 };
 
@@ -255,6 +269,37 @@ const create_ship_cell = function (ship, tr) {
     td.onkeydown = function (event) {
         if (event.key === "Enter" || event.key === " ") {
             td.onclick();
+            const start = hovered_cell_info || { col: 0, row: 0 };
+            if (table_cells[0]) {
+                table_cells[0][start.row][start.col].focus();
+            }
+            event.preventDefault();
+            return;
+        }
+        const all_ships = Array.from(ships_1.querySelectorAll("td[data-ship]"));
+        const idx = all_ships.indexOf(td);
+        if (event.key === "ArrowDown") {
+            if (idx < all_ships.length - 1) {
+                all_ships[idx + 1].focus();
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowUp") {
+            if (idx > 0) {
+                all_ships[idx - 1].focus();
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowRight") {
+            const start = hovered_cell_info || { col: 0, row: 0 };
+            if (table_cells[0]) {
+                table_cells[0][start.row][start.col].focus();
+                show_preview(start.col, start.row);
+            }
+            event.preventDefault();
+        } else if (event.key === "ArrowLeft") {
+            if (idx > 0) {
+                all_ships[idx - 1].focus();
+            }
+            event.preventDefault();
         }
     };
     td.append(img, name, create_ship_size_strip(ship));
@@ -365,9 +410,24 @@ const create_place_cell = function (row_index, tr) {
             show_preview(column_index, row_index);
         };
         // Keyboard cursor: arrows move (with wrap-around), Enter/Space places.
+        // At the left edge, ArrowLeft exits to the ship tray.
         td.onkeydown = function (event) {
             if (event.key === "Enter" || event.key === " ") {
                 td.onclick();
+                event.preventDefault();
+                return;
+            }
+            if (event.key === "ArrowLeft" && column_index === 0) {
+                const all_ships = Array.from(
+                    ships_1.querySelectorAll("td[data-ship]")
+                );
+                const target = all_ships.find(
+                    (s) => !s.classList.contains("is-placed")
+                ) || all_ships[0];
+                if (target) {
+                    target.focus();
+                }
+                event.stopPropagation();
                 event.preventDefault();
                 return;
             }
@@ -586,7 +646,9 @@ document.body.onkeydown = function (event) {
         const focused = document.activeElement;
         const on_board = focused && focused.tagName === "TD"
             && game_board_1.contains(focused);
-        if (!on_board) {
+        const in_tray = focused && focused.tagName === "TD"
+            && ships_1.contains(focused);
+        if (!on_board && !in_tray) {
             const start = hovered_cell_info || { col: 0, row: 0 };
             table_cells[0][start.row][start.col].focus();
             hovered_cell_info = { col: start.col, row: start.row };
