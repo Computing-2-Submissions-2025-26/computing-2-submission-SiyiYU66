@@ -215,17 +215,21 @@ const update_deploy_controls = function () {
     // so beginners are not tempted to save an incomplete board.
     if (player_1_save_button) {
         const ready = is_player_ready_to_save(0);
+        const was_disabled = player_1_save_button.disabled;
         player_1_save_button.disabled = !ready;
         player_1_save_button.setAttribute("aria-disabled", String(!ready));
         player_1_save_button.classList.toggle("is-ready", ready);
         player_1_save_button.classList.toggle("is-hidden", !ready);
+        if (ready && was_disabled) { player_1_save_button.focus(); }
     }
     if (player_2_save_button) {
         const ready = is_player_ready_to_save(1);
+        const was_disabled = player_2_save_button.disabled;
         player_2_save_button.disabled = !ready;
         player_2_save_button.setAttribute("aria-disabled", String(!ready));
         player_2_save_button.classList.toggle("is-ready", ready);
         player_2_save_button.classList.toggle("is-hidden", !ready);
+        if (ready && was_disabled) { player_2_save_button.focus(); }
     }
 };
 
@@ -261,6 +265,7 @@ const build_transition_overlay = function (theme, scene_html, on_confirm) {
             overlay.classList.add("ts-exit");
             setTimeout(remove_overlay, 460);
         });
+        btn.focus();
     }
     return overlay;
 };
@@ -492,6 +497,7 @@ const show_ghost_confirm = function (active_idx, on_confirm, on_cancel) {
         "click",
         function () { dismiss_overlay(overlay, on_cancel); }
     );
+    overlay.querySelector(".ghost-confirm").focus();
 };
 
 // Step 2 — addressed to the opponent (themed in the opponent's colour).
@@ -512,10 +518,12 @@ const show_ghost_handoff = function (active_idx, on_proceed) {
         + " type=\"button\">PROCEED</button>"
     );
     const overlay = build_ghost_overlay(opponent_idx, scene);
-    overlay.querySelector(".ghost-confirm").addEventListener(
+    const proceed_btn = overlay.querySelector(".ghost-confirm");
+    proceed_btn.addEventListener(
         "click",
         function () { dismiss_overlay(overlay, on_proceed); }
     );
+    proceed_btn.focus();
 };
 
 // Cinematic end-game overlay — HTML/CSS text banner + battle report.
@@ -1775,46 +1783,6 @@ const create_cell_in_row_to_shoot_ships = function (
             }
         };
 
-        td.onkeydown = function (event) {
-            if (event.key === "Enter" || event.key === " ") {
-                td.onclick();
-                return;
-            }
-            // Ghost mode: skip cell-nav so arrow keys reach body.onkeydown
-            if (current_action_mode === "ghost_select"
-                    || current_action_mode === "ghost_move"
-                    || current_action_mode === "ghost_relocate") {
-                return;
-            }
-            if (event.key === "ArrowRight") {
-                table_cells[game_board_index][row_index][
-                    (column_index + 1) % width
-                ].focus();
-                event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowLeft") {
-                table_cells[game_board_index][row_index][
-                    (column_index + width - 1) % width
-                ].focus();
-                event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowUp") {
-                table_cells[game_board_index][
-                    (row_index + height - 1) % height
-                ][column_index].focus();
-                event.stopPropagation();
-                return;
-            }
-            if (event.key === "ArrowDown") {
-                table_cells[game_board_index][
-                    (row_index + 1) % height
-                ][column_index].focus();
-                event.stopPropagation();
-                return;
-            }
-        };
         tr.append(td);
         return td;
     };
@@ -1913,10 +1881,6 @@ document.body.onkeydown = function (event) {
             }
             return;
         }
-        if (!document.activeElement
-                || document.activeElement.tagName !== "TD") {
-            table_cells[0][0][0].focus();
-        }
     }
 
     // R key: rotate the currently selected/repositioning ship on either board.
@@ -1954,6 +1918,28 @@ document.body.onkeydown = function (event) {
             }
         }
         event.preventDefault();
+    }
+
+    // S key: switch to sonar mode (battle phase only).
+    // querySelector returns null outside battle phase when buttons don't exist.
+    if (event.key === "s" || event.key === "S") {
+        const sonar_btn = document.querySelector(
+            ".sonar-action:not([disabled])"
+        );
+        if (sonar_btn) {
+            sonar_btn.click();
+            event.preventDefault();
+        }
+    }
+    // G key: toggle ghost move mode (battle phase only).
+    if (event.key === "g" || event.key === "G") {
+        const ghost_btn = document.querySelector(
+            ".ghost-action:not([disabled])"
+        );
+        if (ghost_btn) {
+            ghost_btn.click();
+            event.preventDefault();
+        }
     }
 };
 

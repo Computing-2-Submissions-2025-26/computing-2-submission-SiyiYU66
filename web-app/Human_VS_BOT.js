@@ -657,6 +657,16 @@ document.body.onkeydown = function (event) {
         }
         return;
     }
+    if (is_arrow && phase === "battle" && table_cells[1]) {
+        const focused = document.activeElement;
+        const on_board = focused && focused.tagName === "TD"
+            && game_board_2.contains(focused);
+        if (!on_board) {
+            table_cells[1][0][0].focus();
+            event.preventDefault();
+        }
+        return;
+    }
     const is_rotate = event.key === "r" || event.key === "R";
     if (is_rotate && selected_ship_name !== undefined) {
         const ship = player_fleet.find(
@@ -729,6 +739,20 @@ const build_battle_boards = function () {
             td.onkeydown = function (event) {
                 if (event.key === "Enter" || event.key === " ") {
                     player_shoot(c, r);
+                    event.preventDefault();
+                    return;
+                }
+                const moves = {
+                    ArrowRight: [Math.min(width - 1, c + 1), r],
+                    ArrowLeft: [Math.max(0, c - 1), r],
+                    ArrowDown: [c, Math.min(height - 1, r + 1)],
+                    ArrowUp: [c, Math.max(0, r - 1)]
+                };
+                const move = moves[event.key];
+                if (move) {
+                    table_cells[1][move[1]][move[0]].focus();
+                    event.stopPropagation();
+                    event.preventDefault();
                 }
             };
             tr.append(td);
